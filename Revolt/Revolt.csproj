@@ -1,0 +1,31 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <OutputType>Exe</OutputType>
+    <TargetFramework>net8.0</TargetFramework>
+    <LangVersion>12</LangVersion>
+
+    <Product>Revolt</Product>
+    <AssemblyName>revolt</AssemblyName>
+    <Company>veniware</Company>
+    <PublisherName>veniware</PublisherName>
+    <Authors>andreas venizelou</Authors>
+    <Copyright>2024 veniware. Released into the public domain.</Copyright>
+    <Description></Description>
+    <ApplicationIcon>revolt.ico</ApplicationIcon>
+
+    <verYear>$([System.DateTime]::UtcNow.ToString(yyyy))</verYear>
+    <verDoty>$([System.DateTime]::UtcNow.DayOfYear)</verDoty>
+    <VersionPrefix>0.1.$(verYear).$(verDoty)</VersionPrefix>
+    <AssemblyVersion>$(VersionPrefix)</AssemblyVersion>
+    <Version>$(VersionPrefix)</Version>
+
+    <ImplicitUsings>enable</ImplicitUsings>
+    <Nullable>enable</Nullable>
+    <PublishAot>true</PublishAot>
+    <AllowUnsafeBlocks>True</AllowUnsafeBlocks>
+
+    <WarningLevel>9999</WarningLevel>
+    <TreatWarningsAsErrors>True</TreatWarningsAsErrors>
+  </PropertyGroup>
+</Project>
