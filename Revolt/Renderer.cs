@@ -5,6 +5,8 @@ public static class Renderer {
     private static int height = 20;
 
     public static void Start() {
+        Ansi.HideCursor();
+
         new Thread(ResizeLoop) {
             IsBackground = true
         }.Start();
@@ -39,28 +41,24 @@ public static class Renderer {
         width = Math.Min(Console.WindowWidth, 200);
         height = Math.Min(Console.WindowHeight, 50);
 
-        Console.Title = width + " x " + height;
-
         for (int y = 0; y < height; y++) {
-            if (y >= Console.WindowHeight) {
+            if (y > Console.WindowHeight) {
                 break;
             }
 
-            Console.SetCursorPosition(0, y);
+            Ansi.SetCursorPosition(0, y);
 
             for (int x = 0; x < width; x++) {
                 Console.Write(x % 10);
             }
         }
 
-        Console.SetCursorPosition(0, 0);
+        Ansi.SetCursorPosition(0, 0);
         Ansi.SetFgColor(255, 0, 0);
         Ansi.SetBgColor(127, 127, 127);
-        Console.WriteLine("test");
+        Console.Write("-" + DateTime.Now.Second + "-");
         Console.Write($"\x1b[0m");
 
-        Console.SetCursorPosition(0, 1);
-        Console.Write(DateTime.Now.Second);
     }
 
 }

@@ -14,6 +14,9 @@
     <Description></Description>
     <ApplicationIcon>revolt.ico</ApplicationIcon>
 
+    <AppendTargetFrameworkToOutputPath>false</AppendTargetFrameworkToOutputPath>
+    <AppendRuntimeIdentifierToOutputPath>false</AppendRuntimeIdentifierToOutputPath>
+    
     <verYear>$([System.DateTime]::UtcNow.ToString(yyyy))</verYear>
     <verDoty>$([System.DateTime]::UtcNow.DayOfYear)</verDoty>
     <VersionPrefix>0.1.$(verYear).$(verDoty)</VersionPrefix>

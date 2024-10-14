@@ -17,4 +17,16 @@ public static class Ansi {
     public static void ResetAll() {
         Console.Write($"\x1b[0m");
     }
+    public static void HideCursor() {
+        Console.Write($"\x1b[?25l");
+    }
+
+    public static void ShowCursor() {
+        Console.Write($"\x1b[?25h");
+    }
+
+    public static void SetCursorPosition(int x, int y) {
+        Console.Write($"\x1b[{x}{y}H");
+    }
+
 }
