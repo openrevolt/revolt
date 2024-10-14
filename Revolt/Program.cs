@@ -3,7 +3,7 @@ global using System.Linq;
 
 namespace Revolt;
 
-internal class Program {
+public class Program {
 
     static void Main(string[] args) {
         Console.Title = "Revolt";
@@ -15,9 +15,10 @@ internal class Program {
 
             switch (key.Key) {
             case ConsoleKey.Escape : return;
-            case ConsoleKey.F5     : Renderer.Redraw(); break;
-
+            case ConsoleKey.F4     : Ansi.ClearScreen(); break;
+            case ConsoleKey.F5     : Renderer.Redraw(true); break;
             }
+
         }
     }
 }

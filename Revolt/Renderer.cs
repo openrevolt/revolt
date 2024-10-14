@@ -1,41 +1,45 @@
 ﻿namespace Revolt;
 
-internal static class Renderer {
+public static class Renderer {
     private static int width = 80;
     private static int height = 20;
 
     public static void Start() {
-        new Thread(SizeLoop) {
+        new Thread(ResizeLoop) {
             IsBackground = true
         }.Start();
     }
 
-    public static void SizeLoop() {
+    public static void ResizeLoop() {
         while (true) {
             Thread.Sleep(200);
 
-            if (width == Console.WindowWidth && height == Console.WindowHeight) {
+            int newWidth = Math.Min(Console.WindowWidth, 200);
+            int newHeight = Math.Min(Console.WindowHeight, 50);
+
+            if (width == newWidth && height == newHeight) {
+                Thread.Sleep(200);
+
                 continue;
             }
 
-            if (Console.WindowWidth <= 0 || Console.WindowHeight <= 0) {
+            if (newWidth <= 0 || newHeight <= 0) {
                 continue;
-            }
-
-            if (OperatingSystem.IsWindows()) {
-                int w = Math.Min(Console.WindowWidth, Console.LargestWindowWidth);
-                int h = Math.Min(Console.WindowHeight, Console.LargestWindowHeight);
-                Console.BufferWidth = w;
-                Console.BufferHeight = h;
             }
 
             Redraw();
         }
     }
 
-    public static void Redraw() {
-        width = Console.WindowWidth;
-        height = Console.WindowHeight;
+    public static void Redraw(bool clean = false) {
+        if (clean) {
+            Ansi.ClearScreen();
+        }
+
+        width = Math.Min(Console.WindowWidth, 200);
+        height = Math.Min(Console.WindowHeight, 50);
+
+        Console.Title = width + " x " + height;
 
         for (int y = 0; y < height; y++) {
             if (y >= Console.WindowHeight) {
@@ -48,6 +52,15 @@ internal static class Renderer {
                 Console.Write(x % 10);
             }
         }
-        
+
+        Console.SetCursorPosition(0, 0);
+        Ansi.SetFgColor(255, 0, 0);
+        Ansi.SetBgColor(127, 127, 127);
+        Console.WriteLine("test");
+        Console.Write($"\x1b[0m");
+
+        Console.SetCursorPosition(0, 1);
+        Console.Write(DateTime.Now.Second);
     }
+
 }
