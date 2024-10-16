@@ -1,9 +1,13 @@
 ﻿namespace Revolt;
-public class UiElement {
 
-    virtual public void Focus() { }
+public abstract class UiElement {
+    public int[] position;
 
-    virtual public void Blur() { }
+    public virtual void Draw() {
 
-    virtual public void Draw() { }
+    }
+
+    public abstract void Focus();
+
+    public abstract void Blur();
 }

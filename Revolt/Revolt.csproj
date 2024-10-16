@@ -24,7 +24,7 @@
     <Version>$(VersionPrefix)</Version>
 
     <ImplicitUsings>enable</ImplicitUsings>
-    <Nullable>false</Nullable>
+    <Nullable>disable</Nullable>
     <PublishAot>true</PublishAot>
     <AllowUnsafeBlocks>True</AllowUnsafeBlocks>
 
