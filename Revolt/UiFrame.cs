@@ -1,33 +1,26 @@
 ﻿namespace Revolt;
 
 public abstract class UiFrame {
-    //private static int width = 80;
-    //private static int height = 20;
+    public static readonly byte[] FG_COLOR      = [192, 192, 192];
+    public static readonly byte[] BG_COLOR      = [32, 32, 32];
+    public static readonly byte[] TOOLBAR_COLOR = [64, 64, 64];
+    public static readonly byte[] CONTROL_COLOR = [72, 72, 72];
+    public static readonly byte[] INPUT_COLOR   = [128, 128, 128];
+    public static readonly byte[] SELECT_COLOR  = [255, 192, 0];
 
-    public static readonly byte[] FG_COLOR = [192, 192, 192];
-    public static readonly byte[] BG_COLOR = [32, 32, 32];
-    public static readonly byte[] SELECT_COLOR = [255, 192, 0];
-
-    public int[] rows;
-    public int[] cols;
-    public UiElement[] elements;
-    public UiElement defaultElement;
-    public UiElement focusedElement;
+    protected List<UiElement> elements;
+    protected UiElement defaultElement;
+    protected UiElement focusedElement;
 
     public UiFrame() {
-        rows = [];
-        cols = [];
-        elements = [];
+        elements = new List<UiElement>();
     }
 
     public virtual void Draw(int width, int height) {
-        if (elements is null) {
-            return;
-        }
+        int top = 0;
 
         Ansi.SetBgColor(BG_COLOR);
-
-        for (int y = 0; y <= height; y++) {
+        for (int y = top; y <= height; y++) {
             if (y > Console.WindowHeight) break;
 
             Ansi.SetCursorPosition(0, y);
@@ -36,13 +29,57 @@ public abstract class UiFrame {
             }
         }
 
-        /*for (int i = 0; i < elements.Length; i++) {
-            elements[i].Draw();
+        if (elements is null) {
+            return;
         }
 
-        Ansi.SetCursorPosition(0, 0);
-        Ansi.ResetAll();*/
+        for (int i = 0; i < elements?.Count; i++) {
+            elements[i].Draw();
+        }
     }
 
-    public abstract bool HandleKey(ConsoleKey key);
+    public void FocusPrevious() {
+        if (elements is null || elements.Count == 0) {
+            return;
+        }
+
+        if (focusedElement is null) {
+            focusedElement = defaultElement;
+            focusedElement.Focus();
+            return;
+        }
+
+        int index = elements.IndexOf(focusedElement);
+        if (index < 0) return;
+
+        focusedElement.Blur();
+
+        index = Math.Max(index - 1, 0);
+        focusedElement = elements[index];
+        focusedElement.Focus();
+    }
+
+    public void FocusNext() {
+        if (elements is null || elements.Count == 0) {
+            return;
+        }
+
+        if (focusedElement is null) {
+            focusedElement = defaultElement;
+            focusedElement.Focus();
+            return;
+        }
+
+        int index = elements.IndexOf(focusedElement);
+        if (index < 0) return;
+
+        focusedElement.Blur();
+
+        index = (index + 1) % elements.Count;
+        focusedElement = elements[index];
+        focusedElement.Focus();
+    }
+
+
+    public abstract bool HandleKey(ConsoleKeyInfo key);
 }

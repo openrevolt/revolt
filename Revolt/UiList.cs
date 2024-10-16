@@ -1,15 +1,21 @@
 ﻿namespace Revolt;
 
 public sealed class UiList : UiElement {
-    public override void Draw() {
-        base.Draw();
-    }
+    public int index = -1;
 
-    public override void Blur() {
-        throw new NotImplementedException();
+    public override void Draw() {
+        
     }
 
     public override void Focus() {
-        throw new NotImplementedException();
+
+    }
+
+    public override void Blur() {
+        
+    }
+
+    public override void HandleKey(ConsoleKeyInfo key) {
+
     }
 }

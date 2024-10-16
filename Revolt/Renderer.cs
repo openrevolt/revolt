@@ -1,10 +1,12 @@
 ﻿namespace Revolt;
 
 public static class Renderer {
-    public static int lastWidth = 80, lastHeight = 20;
-    private static UiFrame activeFrame = null;
+    public static UiFrame activeFrame;
 
-    private static UiFrame mainMenuFrame;
+    public static UiFrame mainMenuFrame;
+    public static UiFrame pingFrame = null;
+
+    public static int lastWidth = 80, lastHeight = 20;
 
     static Renderer() {
         mainMenuFrame = new UiMainMenu();
@@ -12,6 +14,7 @@ public static class Renderer {
     }
 
     public static void Start() {
+        Console.OutputEncoding = System.Text.Encoding.UTF8;
         Ansi.HideCursor();
 
         new Thread(ResizeLoop) {
@@ -24,9 +27,12 @@ public static class Renderer {
             if (activeFrame is null) continue;
 
             if (key.Key == ConsoleKey.F5) {
+                Ansi.ResetAll();
                 Redraw(true);
             }
-            else if (!activeFrame.HandleKey(key.Key))  {
+            else if (!activeFrame.HandleKey(key)) {
+                Ansi.ResetAll();
+                Console.WriteLine();
                 return;
             }
         }
