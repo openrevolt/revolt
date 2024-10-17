@@ -1,11 +1,15 @@
 ﻿namespace Revolt;
 
 public static class Renderer {
-    public static UiFrame activeFrame;
-    public static int lastWidth = 80, lastHeight = 20;
+    public static int LastWidth{ get; set; }
+    public static int LastHeight { get; set; }
+    public static UiFrame ActiveFrame { get; set; }
+
 
     static Renderer() {
-        activeFrame = UiMainMenu.singleton;
+        ActiveFrame = UiMainMenu.singleton;
+        LastWidth = 80;
+        LastHeight = 20;
     }
 
     public static void Start() {
@@ -19,13 +23,13 @@ public static class Renderer {
         while (true) {
             ConsoleKeyInfo key = Console.ReadKey();
 
-            if (activeFrame is null) continue;
+            if (ActiveFrame is null) continue;
 
             if (key.Key == ConsoleKey.F5) {
                 Ansi.ResetAll();
                 Redraw(true);
             }
-            else if (!activeFrame.HandleKey(key)) {
+            else if (!ActiveFrame.HandleKey(key)) {
                 Ansi.ResetAll();
                 Console.WriteLine();
                 return;
@@ -40,12 +44,12 @@ public static class Renderer {
             int newWidth = Math.Min(Console.WindowWidth, 200);
             int newHeight = Math.Min(Console.WindowHeight, 50);
 
-            if (lastWidth == newWidth && lastHeight == newHeight) continue;
+            if (LastWidth == newWidth && LastHeight == newHeight) continue;
 
             if (newWidth <= 0 || newHeight <= 0) continue;
 
-            lastWidth = Math.Min(Console.WindowWidth, 200);
-            lastHeight = Math.Min(Console.WindowHeight, 50);
+            LastWidth = Math.Min(Console.WindowWidth, 200);
+            LastHeight = Math.Min(Console.WindowHeight, 50);
 
             Redraw();
         }
@@ -56,6 +60,6 @@ public static class Renderer {
             Ansi.ClearScreen();
         }
 
-        activeFrame?.Draw(lastWidth, lastHeight);
+        ActiveFrame?.Draw(LastWidth, LastHeight);
     }
 }

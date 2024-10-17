@@ -11,15 +11,15 @@ public sealed class UiMainMenu : UiFrame {
 
     public UiMainMenu() {
         menu = [
-            "Ping",
-            "DNS lookup",
-            "Trace route",
-            "IP discovery",
-            "Reverse proxy",
-            "Packet capture",
-            null,
-            "Options",
-            "Exit"
+         "Ping",
+         "DNS lookup",
+         "Trace route",
+         "IP discovery",
+         "Reverse proxy",
+         "Packet capture",
+         null,
+         "Options",
+         "Exit"
         ];
     }
 
@@ -39,12 +39,15 @@ public sealed class UiMainMenu : UiFrame {
     }
 
     public void DrawItem(int i, int width, int height) {
+        int y = i + 9;
+        if (y > height) return;
+
         int length = Math.Min(width / 2, 28);
 
         if (String.IsNullOrEmpty(menu[i])) {
             Ansi.SetFgColor([64,64,64]);
             Ansi.SetBgColor(Data.BG_COLOR);
-            Ansi.SetCursorPosition(3, i + 9);
+            Ansi.SetCursorPosition(3, y);
 
             Console.Write(new string('-', length));
             return;
@@ -55,7 +58,7 @@ public sealed class UiMainMenu : UiFrame {
             item = item[..(length - 2)] + "..";
         }
 
-        Ansi.SetCursorPosition(3, i + 9);
+        Ansi.SetCursorPosition(3, y);
 
         if (i == index) {
             Ansi.SetFgColor([16, 16, 16]);
@@ -95,7 +98,7 @@ public sealed class UiMainMenu : UiFrame {
     public bool Enter() {
         switch (menu[index]) {
         case "Ping":
-            Renderer.activeFrame = PingFrame.singleton;
+            Renderer.ActiveFrame = PingFrame.singleton;
             Renderer.Redraw();
             return true;
 
@@ -119,8 +122,8 @@ public sealed class UiMainMenu : UiFrame {
 
         if (index == lastIndex) return;
 
-        DrawItem(lastIndex, Renderer.lastWidth, Renderer.lastHeight);
-        DrawItem(index, Renderer.lastWidth, Renderer.lastHeight);
+        DrawItem(lastIndex, Renderer.LastWidth, Renderer.LastHeight);
+        DrawItem(index, Renderer.LastWidth, Renderer.LastHeight);
     }
 
     public void SelectNext() {
@@ -135,7 +138,7 @@ public sealed class UiMainMenu : UiFrame {
 
         if (index == lastIndex) return;
 
-        DrawItem(lastIndex, Renderer.lastWidth, Renderer.lastHeight);
-        DrawItem(index, Renderer.lastWidth, Renderer.lastHeight);
+        DrawItem(lastIndex, Renderer.LastWidth, Renderer.LastHeight);
+        DrawItem(index, Renderer.LastWidth, Renderer.LastHeight);
     }
 }

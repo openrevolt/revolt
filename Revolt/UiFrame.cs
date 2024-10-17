@@ -18,9 +18,7 @@ public abstract class UiFrame {
             }
         }
 
-        if (elements is null) {
-            return;
-        }
+        if (elements is null) return;
 
         for (int i = 0; i < elements?.Count; i++) {
             elements[i].Draw();
@@ -28,9 +26,7 @@ public abstract class UiFrame {
     }
 
     public void FocusPrevious() {
-        if (elements is null || elements.Count == 0) {
-            return;
-        }
+        if (elements is null || elements.Count == 0) return;
 
         if (focusedElement is null) {
             focusedElement = defaultElement;
@@ -43,15 +39,18 @@ public abstract class UiFrame {
 
         focusedElement.Blur();
 
-        index = Math.Max(index - 1, 0);
+        index--;
+        if (index < 0) {
+            index = elements.Count - 1;
+        }
+
         focusedElement = elements[index];
         focusedElement.Focus();
     }
 
     public void FocusNext() {
-        if (elements is null || elements.Count == 0) {
-            return;
-        }
+        if (elements is null || elements.Count == 0) return;
+        
 
         if (focusedElement is null) {
             focusedElement = defaultElement;

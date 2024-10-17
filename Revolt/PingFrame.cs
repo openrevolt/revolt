@@ -6,20 +6,20 @@ public sealed class PingFrame : UiFrame {
     public UiToolbar toolbar;
     public UiList list;
 
-    public static readonly UiFrame singleton;
+    public static readonly PingFrame singleton;
     static PingFrame() {
         singleton = new PingFrame();
     }
 
     public PingFrame() {
-        toolbar = new UiToolbar(this) { left = 1, right = 1 };
-        list    = new UiList(this) { top = 3 };
+        toolbar = new UiToolbar(this) { left=1, right=1 };
+        list    = new UiList(this) { top=3 };
 
         toolbar.items = [
-            new UiToolbar.ToolbarItem() { text="Add",     action=Add },
-            new UiToolbar.ToolbarItem() { text="Clear",   action=Clear },
-            new UiToolbar.ToolbarItem() { text="Pause",   action=ToggleStatus },
-            new UiToolbar.ToolbarItem() { text="Options", action=Options },
+        new UiToolbar.ToolbarItem() { text="Add",     action=Add },
+        new UiToolbar.ToolbarItem() { text="Clear",   action=Clear },
+        new UiToolbar.ToolbarItem() { text="Pause",   action=ToggleStatus },
+        new UiToolbar.ToolbarItem() { text="Options", action=Options },
         ];
 
         elements.Add(toolbar);
@@ -46,7 +46,7 @@ public sealed class PingFrame : UiFrame {
             break;
 
         case ConsoleKey.Escape:
-            Renderer.activeFrame = UiMainMenu.singleton;
+            Renderer.ActiveFrame = UiMainMenu.singleton;
             Renderer.Redraw();
             break;
 
@@ -59,7 +59,7 @@ public sealed class PingFrame : UiFrame {
     }
 
     private void Add() { }
-    
+
     private void Clear() { }
 
     private void ToggleStatus() {

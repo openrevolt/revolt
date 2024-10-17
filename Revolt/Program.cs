@@ -8,6 +8,10 @@ namespace Revolt;
 public class Program {
 
     static void Main(string[] args) {
+        if (args.Length > 0) {
+            Console.WriteLine("unknown argument");
+        }
+        
         Console.Title = "Revolt";
         Renderer.Start();
     }
