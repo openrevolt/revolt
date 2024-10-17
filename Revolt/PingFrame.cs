@@ -1,10 +1,16 @@
 ﻿namespace Revolt;
 
 public sealed class PingFrame : UiFrame {
+    public struct PingItem {
+        public string host;
+        public short lastStatus;
+        public short[] history;
+    }
+
     private bool status = true;
 
     public UiToolbar toolbar;
-    public UiList list;
+    public UiList<PingItem> list;
 
     public static readonly PingFrame singleton;
     static PingFrame() {
@@ -13,7 +19,11 @@ public sealed class PingFrame : UiFrame {
 
     public PingFrame() {
         toolbar = new UiToolbar(this) { left=1, right=1 };
-        list    = new UiList(this) { top=3 };
+        
+        list = new UiList<PingItem>(this) {
+            top = 3,
+            drawItemHandler = DrawPingItem
+        };
 
         toolbar.items = [
         new UiToolbar.ToolbarItem() { text="Add",     action=Add },
@@ -56,6 +66,11 @@ public sealed class PingFrame : UiFrame {
         }
 
         return true;
+    }
+
+    private void DrawPingItem(int i, int x, int y, int width) {
+        PingItem item = list.items[i];
+        //TODO:
     }
 
     private void Add() { }

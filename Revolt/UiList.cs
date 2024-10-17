@@ -1,11 +1,14 @@
 ﻿namespace Revolt;
 
-public sealed class UiList(UiFrame parentFrame) : UiElement(parentFrame) {
-    public List<string[]> items = [];
+public sealed class UiList<T>(UiFrame parentFrame) : UiElement(parentFrame) {
+    public List<T> items = [];
     public int index = -1;
 
+    public delegate void DrawItemDelegate(int i, int x, int y, int width);
+    public DrawItemDelegate drawItemHandler;
+
     public override void Draw() {
-        (int left, int top, int width, int height ) = GetBounding();
+        (int left, int top, int width, int height) = GetBounding();
 
         int x = left;
         int y = top;
@@ -22,12 +25,14 @@ public sealed class UiList(UiFrame parentFrame) : UiElement(parentFrame) {
 
         Ansi.SetCursorPosition(x+width, y + height);
         Console.Write('.');
+
+        for (int i = 0; i < height; i++) {
+            drawItemHandler(i, x, y, width);
+        }
     }
 
     public override void HandleKey(ConsoleKeyInfo key) {
-        if (items is null || items.Count == 0) {
-            return;
-        }
+        if (items is null || items.Count == 0) return;
 
         switch (key.Key) {
         case ConsoleKey.UpArrow:
