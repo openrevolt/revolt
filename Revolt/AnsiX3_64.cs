@@ -43,5 +43,4 @@ public static class Ansi {
     public static void SetCursorPosition(int x, int y) {
         Console.Write($"\x1b[{y};{x}H");
     }
-
 }

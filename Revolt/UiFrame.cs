@@ -1,25 +1,14 @@
 ﻿namespace Revolt;
 
 public abstract class UiFrame {
-    public static readonly byte[] FG_COLOR      = [192, 192, 192];
-    public static readonly byte[] BG_COLOR      = [32, 32, 32];
-    public static readonly byte[] TOOLBAR_COLOR = [64, 64, 64];
-    public static readonly byte[] CONTROL_COLOR = [72, 72, 72];
-    public static readonly byte[] INPUT_COLOR   = [128, 128, 128];
-    public static readonly byte[] SELECT_COLOR  = [255, 192, 0];
-
-    protected List<UiElement> elements;
+    protected List<UiElement> elements = [];
     protected UiElement defaultElement;
-    protected UiElement focusedElement;
-
-    public UiFrame() {
-        elements = new List<UiElement>();
-    }
+    public UiElement focusedElement;
 
     public virtual void Draw(int width, int height) {
         int top = 0;
 
-        Ansi.SetBgColor(BG_COLOR);
+        Ansi.SetBgColor(Data.BG_COLOR);
         for (int y = top; y <= height; y++) {
             if (y > Console.WindowHeight) break;
 
@@ -79,7 +68,6 @@ public abstract class UiFrame {
         focusedElement = elements[index];
         focusedElement.Focus();
     }
-
 
     public abstract bool HandleKey(ConsoleKeyInfo key);
 }

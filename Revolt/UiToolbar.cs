@@ -1,64 +1,60 @@
 ﻿namespace Revolt;
 
-public sealed class UiToolbar : UiElement {
+public sealed class UiToolbar(UiFrame parentFrame) : UiElement(parentFrame) {
+
     public struct ToolbarItem {
         public string text;
         public Action action;
     }
 
-    private bool focused = false;
-
     public ToolbarItem[] items;
     public int index = 0;
 
     public override void Draw() {
-        int left   = this.left < 1 ? (int)(Renderer.lastWidth * this.left) : (int)this.left;
-        //int top    = this.top < 1 ? (int)(Renderer.lastHeight * this.top) : (int)this.top;
-        int right  = this.right < 1 ? (int)(Renderer.lastWidth * this.right) : (int)this.right;
-        //int bottom = this.bottom < 1 ? (int)(Renderer.lastHeight * this.bottom) : (int)this.bottom;
+        (int left, _, int width, _) = GetBounding();
 
-        int width  = Renderer.lastWidth - left - right;
-        //int height = Renderer.lastHeight - top - bottom;
-
-        int x = left + 1;
-        Ansi.SetBgColor(UiFrame.BG_COLOR);
+        int count = 0;
+        Ansi.SetCursorPosition(left, 1);
+        Ansi.SetBgColor(Data.BG_COLOR);
         for (int i = 0; i < items.Length; i++) {
             int length = items[i].text.Length + 3;
-            if (x + length > width) {
-                break;
-            }
+            if (count + length > width) break;
 
-            Ansi.SetCursorPosition(x, 1);
+            Ansi.SetFgColor(Data.TOOLBAR_COLOR);
+            Console.Write(Data.LOWER_3_8TH_BLOCK);
 
-            Ansi.SetFgColor(focused && i == index ? UiFrame.SELECT_COLOR : UiFrame.CONTROL_COLOR);
-            Console.Write(new String('\u2583', items[i].text.Length + 2));
-            Ansi.SetFgColor(UiFrame.TOOLBAR_COLOR);
-            Console.Write('\u2583');
+            Ansi.SetFgColor(isFocused && i == index ? Data.SELECT_COLOR : Data.CONTROL_COLOR);
+            Console.Write(new String(Data.LOWER_3_8TH_BLOCK, items[i].text.Length + 2));
 
-            x += length;
+            count += length;
         }
 
-        Console.Write(new string('\u2583', Renderer.lastWidth - x + 1 - right));
+        int r = width - count;
+        Ansi.SetFgColor(Data.TOOLBAR_COLOR);
+        Console.Write(new string(Data.LOWER_3_8TH_BLOCK, r));
 
-        x = left + 1;
+
+        count = 0;
+        Ansi.SetCursorPosition(left, 2);
         for (int i = 0; i < items.Length; i++) {
             int length = items[i].text.Length + 3;
-            if (x + length > width) {
+            if (count + length > width) {
                 break;
             }
 
-            Ansi.SetCursorPosition(x, 2);
-            Ansi.SetFgColor(focused && i == index ? [16, 16, 16] : UiFrame.FG_COLOR);
+            Ansi.SetFgColor(isFocused && i == index ? [16, 16, 16] : Data.FG_COLOR);
 
-            Ansi.SetBgColor(focused && i == index ? UiFrame.SELECT_COLOR : UiFrame.CONTROL_COLOR);
-            Console.Write($" {items[i].text} ");
-            Ansi.SetBgColor(UiFrame.TOOLBAR_COLOR);
+            Ansi.SetBgColor(Data.TOOLBAR_COLOR);
             Console.Write(' ');
+            
+            Ansi.SetBgColor(isFocused && i == index ? Data.SELECT_COLOR : Data.CONTROL_COLOR);
+            Console.Write($" {items[i].text} ");
 
-            x += length;
+            count += length;
         }
 
-        Console.Write(new string(' ', Renderer.lastWidth - x + 1 - right));
+        Ansi.SetBgColor(Data.TOOLBAR_COLOR);
+        Console.Write(new string(' ', r));
     }
 
     public override void HandleKey(ConsoleKeyInfo key) {
@@ -81,15 +77,5 @@ public sealed class UiToolbar : UiElement {
             items[index].action();
             break;
         }
-    }
-
-    public override void Focus() {
-        focused = true;
-        Draw();
-    }
-
-    public override void Blur() {
-        focused = false;
-        Draw();
     }
 }

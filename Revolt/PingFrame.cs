@@ -1,15 +1,19 @@
 ﻿namespace Revolt;
-public sealed class PingFrame : UiFrame {
-    private const char PING_CELL = '\x258C';
 
+public sealed class PingFrame : UiFrame {
     private bool status = true;
 
     public UiToolbar toolbar;
     public UiList list;
 
+    public static readonly UiFrame singleton;
+    static PingFrame() {
+        singleton = new PingFrame();
+    }
+
     public PingFrame() {
-        toolbar = new UiToolbar() { left = 1, right = 1 };
-        list = new UiList();
+        toolbar = new UiToolbar(this) { left = 1, right = 1 };
+        list    = new UiList(this) { top = 3 };
 
         toolbar.items = [
             new UiToolbar.ToolbarItem() { text="Add",     action=Add },
@@ -42,7 +46,7 @@ public sealed class PingFrame : UiFrame {
             break;
 
         case ConsoleKey.Escape:
-            Renderer.activeFrame = Renderer.mainMenuFrame;
+            Renderer.activeFrame = UiMainMenu.singleton;
             Renderer.Redraw();
             break;
 
@@ -69,7 +73,6 @@ public sealed class PingFrame : UiFrame {
         }
 
         toolbar.Draw();
-
     }
 
     private void Options() { }

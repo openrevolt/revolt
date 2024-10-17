@@ -2,15 +2,10 @@
 
 public static class Renderer {
     public static UiFrame activeFrame;
-
-    public static UiFrame mainMenuFrame;
-    public static UiFrame pingFrame = null;
-
     public static int lastWidth = 80, lastHeight = 20;
 
     static Renderer() {
-        mainMenuFrame = new UiMainMenu();
-        activeFrame = mainMenuFrame;
+        activeFrame = UiMainMenu.singleton;
     }
 
     public static void Start() {

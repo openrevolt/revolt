@@ -4,6 +4,11 @@ public sealed class UiMainMenu : UiFrame {
     public string[] menu;
     public int index;
 
+    public static readonly UiMainMenu singleton;
+    static UiMainMenu() {
+        singleton = new UiMainMenu();
+    }
+
     public UiMainMenu() {
         menu = [
             "Ping",
@@ -21,8 +26,8 @@ public sealed class UiMainMenu : UiFrame {
     public override void Draw(int width, int height) {
         base.Draw(width, height);
 
-        Ansi.SetFgColor(FG_COLOR);
-        Ansi.SetBgColor(BG_COLOR);
+        Ansi.SetFgColor(Data.FG_COLOR);
+        Ansi.SetBgColor(Data.BG_COLOR);
 
         Ansi.SetCursorPosition(0, 0);
 
@@ -38,7 +43,7 @@ public sealed class UiMainMenu : UiFrame {
 
         if (String.IsNullOrEmpty(menu[i])) {
             Ansi.SetFgColor([64,64,64]);
-            Ansi.SetBgColor(BG_COLOR);
+            Ansi.SetBgColor(Data.BG_COLOR);
             Ansi.SetCursorPosition(3, i + 9);
 
             Console.Write(new string('-', length));
@@ -47,18 +52,18 @@ public sealed class UiMainMenu : UiFrame {
 
         string item = " " + menu[i].PadRight(length-1);
         if (item.Length > length) {
-            item = item.Substring(0, length - 2) + "..";
+            item = item[..(length - 2)] + "..";
         }
 
         Ansi.SetCursorPosition(3, i + 9);
 
         if (i == index) {
             Ansi.SetFgColor([16, 16, 16]);
-            Ansi.SetBgColor(SELECT_COLOR);
+            Ansi.SetBgColor(Data.SELECT_COLOR);
         }
         else {
-            Ansi.SetFgColor(FG_COLOR);
-            Ansi.SetBgColor(BG_COLOR);
+            Ansi.SetFgColor(Data.FG_COLOR);
+            Ansi.SetBgColor(Data.BG_COLOR);
         }
 
         Console.Write(item);
@@ -90,8 +95,7 @@ public sealed class UiMainMenu : UiFrame {
     public bool Enter() {
         switch (menu[index]) {
         case "Ping":
-            Renderer.pingFrame ??= new PingFrame();
-            Renderer.activeFrame = Renderer.pingFrame;
+            Renderer.activeFrame = PingFrame.singleton;
             Renderer.Redraw();
             return true;
 
