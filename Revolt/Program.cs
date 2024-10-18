@@ -11,7 +11,7 @@ public class Program {
         if (args.Length > 0) {
             Console.WriteLine("unknown argument");
         }
-        
+
         Console.Title = "Revolt";
         Renderer.Start();
     }

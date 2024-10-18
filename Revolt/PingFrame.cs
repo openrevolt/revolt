@@ -69,11 +69,19 @@ public sealed class PingFrame : UiFrame {
     }
 
     private void DrawPingItem(int i, int x, int y, int width) {
+        if (list.items is null || list.items.Count > 0) return;
+        if (i > list.items.Count - 1) return;
+
         PingItem item = list.items[i];
         //TODO:
     }
 
-    private void Add() { }
+    private void Add() {
+        UiPopup popup = new UiPopup();
+        
+        Renderer.Popup = popup;
+        popup.Draw();
+    }
 
     private void Clear() { }
 

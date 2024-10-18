@@ -1,10 +1,10 @@
 ﻿namespace Revolt;
 
 public static class Renderer {
-    public static int LastWidth{ get; set; }
+    public static int LastWidth { get; set; }
     public static int LastHeight { get; set; }
     public static UiFrame ActiveFrame { get; set; }
-
+    public static UiPopup Popup { get; set; }
 
     static Renderer() {
         ActiveFrame = UiMainMenu.singleton;
@@ -28,8 +28,15 @@ public static class Renderer {
             if (key.Key == ConsoleKey.F5) {
                 Ansi.ResetAll();
                 Redraw(true);
+                continue;
             }
-            else if (!ActiveFrame.HandleKey(key)) {
+
+            if (Popup is not null) {
+                Popup.HandleKey(key);
+                continue;
+            }
+
+            if (!ActiveFrame.HandleKey(key)) {
                 Ansi.ResetAll();
                 Console.WriteLine();
                 return;
@@ -61,5 +68,6 @@ public static class Renderer {
         }
 
         ActiveFrame?.Draw(LastWidth, LastHeight);
+        Popup?.Draw();
     }
 }

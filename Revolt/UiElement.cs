@@ -20,14 +20,19 @@ public abstract class UiElement(UiFrame parentFrame) {
 
     public abstract void HandleKey(ConsoleKeyInfo key);
 
-    public virtual void Focus() {
+    public virtual void Focus(bool draw = true) {
+        parentFrame?.focusedElement?.Blur();
+
         isFocused = true;
-        Draw();
+        if (draw) {
+            Draw();
+        }
     }
 
-    public virtual void Blur() {
+    public virtual void Blur(bool draw = true) {
         isFocused = false;
-        Draw();
+        if (draw) {
+            Draw();
+        } 
     }
-
 }

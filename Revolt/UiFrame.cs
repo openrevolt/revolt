@@ -28,7 +28,7 @@ public abstract class UiFrame {
     public void FocusPrevious() {
         if (elements is null || elements.Count == 0) return;
 
-        if (focusedElement is null) {
+        if (focusedElement is null && defaultElement is not null) {
             focusedElement = defaultElement;
             focusedElement.Focus();
             return;
@@ -52,7 +52,7 @@ public abstract class UiFrame {
         if (elements is null || elements.Count == 0) return;
         
 
-        if (focusedElement is null) {
+        if (focusedElement is null && defaultElement is not null) {
             focusedElement = defaultElement;
             focusedElement.Focus();
             return;
@@ -69,4 +69,7 @@ public abstract class UiFrame {
     }
 
     public abstract bool HandleKey(ConsoleKeyInfo key);
+
+
+
 }

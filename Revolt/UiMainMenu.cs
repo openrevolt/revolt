@@ -49,7 +49,7 @@ public sealed class UiMainMenu : UiFrame {
             Ansi.SetBgColor(Data.BG_COLOR);
             Ansi.SetCursorPosition(3, y);
 
-            Console.Write(new string('-', length));
+            Console.Write(new string(Data.LINE_H, length));
             return;
         }
 

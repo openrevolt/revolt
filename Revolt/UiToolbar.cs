@@ -55,6 +55,26 @@ public sealed class UiToolbar(UiFrame parentFrame) : UiElement(parentFrame) {
 
         Ansi.SetBgColor(Data.TOOLBAR_COLOR);
         Console.Write(new string(' ', r));
+
+
+        count = 0;
+        Ansi.SetCursorPosition(left, 3);
+        Ansi.SetBgColor(Data.BG_COLOR);
+        for (int i = 0; i < items.Length; i++) {
+            int length = items[i].text.Length + 3;
+            if (count + length > width) break;
+
+            Ansi.SetFgColor(Data.TOOLBAR_COLOR);
+            Console.Write(Data.UPPER_1_8TH_BLOCK);
+
+            Ansi.SetFgColor(isFocused && i == index ? Data.SELECT_COLOR : Data.CONTROL_COLOR);
+            Console.Write(new String(Data.UPPER_1_8TH_BLOCK, items[i].text.Length + 2));
+
+            count += length;
+        }
+
+        Ansi.SetFgColor(Data.TOOLBAR_COLOR);
+        Console.Write(new string(Data.UPPER_1_8TH_BLOCK, r));
     }
 
     public override void HandleKey(ConsoleKeyInfo key) {
