@@ -1,6 +1,6 @@
-﻿namespace Revolt;
+﻿namespace Revolt.Ui;
 
-public sealed class UiList<T>(UiFrame parentFrame) : UiElement(parentFrame) {
+public sealed class ListBox<T>(Frame parentFrame) : Element(parentFrame) {
     public List<T> items = [];
     public int index = -1;
 
@@ -17,13 +17,13 @@ public sealed class UiList<T>(UiFrame parentFrame) : UiElement(parentFrame) {
         Ansi.SetCursorPosition(x, y);
         Console.Write('.');
 
-        Ansi.SetCursorPosition(x+width-1, y);
+        Ansi.SetCursorPosition(x + width - 1, y);
         Console.Write('.');
 
-        Ansi.SetCursorPosition(x, y + height-1);
+        Ansi.SetCursorPosition(x, y + height - 1);
         Console.Write('.');
 
-        Ansi.SetCursorPosition(x+width-1, y + height-1);
+        Ansi.SetCursorPosition(x + width - 1, y + height - 1);
         Console.Write('.');
 
         for (int i = 0; i < height; i++) {

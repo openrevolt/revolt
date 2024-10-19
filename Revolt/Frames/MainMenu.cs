@@ -1,15 +1,15 @@
-﻿namespace Revolt;
+﻿namespace Revolt.Frames;
 
-public sealed class UiMainMenu : UiFrame {
+public sealed class MainMenu : Ui.Frame {
     public string[] menu;
     public int index;
 
-    public static readonly UiMainMenu singleton;
-    static UiMainMenu() {
-        singleton = new UiMainMenu();
+    public static readonly MainMenu singleton;
+    static MainMenu() {
+        singleton = new MainMenu();
     }
 
-    public UiMainMenu() {
+    public MainMenu() {
         menu = [
          "Ping",
          "DNS lookup",
@@ -44,8 +44,8 @@ public sealed class UiMainMenu : UiFrame {
 
         int length = Math.Min(width / 2, 28);
 
-        if (String.IsNullOrEmpty(menu[i])) {
-            Ansi.SetFgColor([64,64,64]);
+        if (string.IsNullOrEmpty(menu[i])) {
+            Ansi.SetFgColor([64, 64, 64]);
             Ansi.SetBgColor(Data.BG_COLOR);
             Ansi.SetCursorPosition(3, y);
 
@@ -53,7 +53,7 @@ public sealed class UiMainMenu : UiFrame {
             return;
         }
 
-        string item = " " + menu[i].PadRight(length-1);
+        string item = " " + menu[i].PadRight(length - 1);
         if (item.Length > length) {
             item = item[..(length - 2)] + "..";
         }
@@ -74,7 +74,6 @@ public sealed class UiMainMenu : UiFrame {
 
     public override bool HandleKey(ConsoleKeyInfo key) {
         switch (key.Key) {
-
         case ConsoleKey.Escape:
             return false;
 
@@ -102,8 +101,8 @@ public sealed class UiMainMenu : UiFrame {
             Renderer.Redraw();
             return true;
 
-        case "Exit":
-            return false;
+         case "Exit":
+             return false;
 
         default:
             return true;
@@ -116,7 +115,7 @@ public sealed class UiMainMenu : UiFrame {
         int lastIndex = index;
         index = Math.Max(0, index - 1);
 
-        if (String.IsNullOrEmpty(menu[index])) {
+        if (string.IsNullOrEmpty(menu[index])) {
             index = Math.Max(0, index - 1);
         }
 
@@ -131,8 +130,8 @@ public sealed class UiMainMenu : UiFrame {
 
         int lastIndex = index;
         index = Math.Min(menu.Length - 1, index + 1);
-        
-        if (String.IsNullOrEmpty(menu[index])) {
+
+        if (string.IsNullOrEmpty(menu[index])) {
             index = Math.Min(menu.Length - 1, index + 1);
         }
 

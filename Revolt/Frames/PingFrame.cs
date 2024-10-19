@@ -1,16 +1,17 @@
-﻿namespace Revolt;
+﻿
+namespace Revolt.Frames;
 
-public sealed class PingFrame : UiFrame {
+public sealed class PingFrame : Ui.Frame {
     public struct PingItem {
-        public string host;
-        public short lastStatus;
+        public string  host;
+        public short   lastStatus;
         public short[] history;
     }
 
     private bool status = true;
 
-    public UiToolbar toolbar;
-    public UiList<PingItem> list;
+    public Ui.Toolbar toolbar;
+    public Ui.ListBox<PingItem> list;
 
     public static readonly PingFrame singleton;
     static PingFrame() {
@@ -18,18 +19,18 @@ public sealed class PingFrame : UiFrame {
     }
 
     public PingFrame() {
-        toolbar = new UiToolbar(this) { left=1, right=1 };
-        
-        list = new UiList<PingItem>(this) {
+        toolbar = new Ui.Toolbar(this) { left = 1, right = 1 };
+
+        list = new Ui.ListBox<PingItem>(this) {
             top = 3,
             drawItemHandler = DrawPingItem
         };
 
         toolbar.items = [
-        new UiToolbar.ToolbarItem() { text="Add",     action=Add },
-        new UiToolbar.ToolbarItem() { text="Clear",   action=Clear },
-        new UiToolbar.ToolbarItem() { text="Pause",   action=ToggleStatus },
-        new UiToolbar.ToolbarItem() { text="Options", action=Options },
+        new Ui.Toolbar.ToolbarItem() { text="Add",     action=Add },
+        new Ui.Toolbar.ToolbarItem() { text="Clear",   action=Clear },
+        new Ui.Toolbar.ToolbarItem() { text="Pause",   action=ToggleStatus },
+        new Ui.Toolbar.ToolbarItem() { text="Options", action=Options },
         ];
 
         elements.Add(toolbar);
@@ -56,7 +57,7 @@ public sealed class PingFrame : UiFrame {
             break;
 
         case ConsoleKey.Escape:
-            Renderer.ActiveFrame = UiMainMenu.singleton;
+            Renderer.ActiveFrame = MainMenu.singleton;
             Renderer.Redraw();
             break;
 
@@ -72,22 +73,27 @@ public sealed class PingFrame : UiFrame {
         if (list.items is null || list.items.Count > 0) return;
         if (i > list.items.Count - 1) return;
 
-        PingItem item = list.items[i];
+        //PingItem item = list.items[i];
         //TODO:
     }
 
     private void Add() {
-        UiPopup popup = new UiPopup();
-        
+        Ui.Popup popup = new Ui.Popup() {
+            text = "Enter IP, domain or hostname:"
+        };
+
         Renderer.Popup = popup;
         popup.Draw();
     }
 
-    private void Clear() { }
+    private void Clear() {
+        list.items.Clear();
+        list.Draw();
+    }
 
     private void ToggleStatus() {
         status = !status;
-        
+
         if (status) {
             toolbar.items[2].text = "Pause";
         }

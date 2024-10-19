@@ -1,6 +1,6 @@
-﻿namespace Revolt;
+﻿namespace Revolt.Ui;
 
-public sealed class UiToolbar(UiFrame parentFrame) : UiElement(parentFrame) {
+public sealed class Toolbar(Frame parentFrame) : Element(parentFrame) {
 
     public struct ToolbarItem {
         public string text;
@@ -24,7 +24,7 @@ public sealed class UiToolbar(UiFrame parentFrame) : UiElement(parentFrame) {
             Console.Write(Data.LOWER_3_8TH_BLOCK);
 
             Ansi.SetFgColor(isFocused && i == index ? Data.SELECT_COLOR : Data.CONTROL_COLOR);
-            Console.Write(new String(Data.LOWER_3_8TH_BLOCK, items[i].text.Length + 2));
+            Console.Write(new string(Data.LOWER_3_8TH_BLOCK, items[i].text.Length + 2));
 
             count += length;
         }
@@ -38,15 +38,13 @@ public sealed class UiToolbar(UiFrame parentFrame) : UiElement(parentFrame) {
         Ansi.SetCursorPosition(left, 2);
         for (int i = 0; i < items.Length; i++) {
             int length = items[i].text.Length + 3;
-            if (count + length > width) {
-                break;
-            }
+            if (count + length > width) break;
 
             Ansi.SetFgColor(isFocused && i == index ? [16, 16, 16] : Data.FG_COLOR);
 
             Ansi.SetBgColor(Data.TOOLBAR_COLOR);
             Console.Write(' ');
-            
+
             Ansi.SetBgColor(isFocused && i == index ? Data.SELECT_COLOR : Data.CONTROL_COLOR);
             Console.Write($" {items[i].text} ");
 
@@ -68,7 +66,7 @@ public sealed class UiToolbar(UiFrame parentFrame) : UiElement(parentFrame) {
             Console.Write(Data.UPPER_1_8TH_BLOCK);
 
             Ansi.SetFgColor(isFocused && i == index ? Data.SELECT_COLOR : Data.CONTROL_COLOR);
-            Console.Write(new String(Data.UPPER_1_8TH_BLOCK, items[i].text.Length + 2));
+            Console.Write(new string(Data.UPPER_1_8TH_BLOCK, items[i].text.Length + 2));
 
             count += length;
         }
@@ -78,9 +76,7 @@ public sealed class UiToolbar(UiFrame parentFrame) : UiElement(parentFrame) {
     }
 
     public override void HandleKey(ConsoleKeyInfo key) {
-        if (items is null || items.Length == 0) {
-            return;
-        }
+        if (items is null || items.Length == 0) return;
 
         switch (key.Key) {
         case ConsoleKey.LeftArrow:

@@ -1,16 +1,12 @@
-﻿namespace Revolt;
+﻿namespace Revolt.Ui;
 
-public sealed class UiButton : UiElement {
-    public string text;
-
-    public UiButton(UiFrame parentFrame, string text) : base(parentFrame) {
-        this.text = text;
-    }
+public sealed class Button(Frame parentFrame, string text) : Element(parentFrame) {
+    public string text = text;
 
     public override void Draw() {
         (int left, int top, _, _) = GetBounding();
 
-        byte[] foreColor = isFocused ? [16,16,16] : Data.FG_COLOR;
+        byte[] foreColor = isFocused ? [16, 16, 16] : Data.FG_COLOR;
         byte[] backColor = isFocused ? Data.SELECT_COLOR : Data.CONTROL_COLOR;
 
         Ansi.SetFgColor(foreColor);

@@ -1,13 +1,16 @@
-﻿namespace Revolt;
+﻿using Revolt.Frames;
+using Revolt.Ui;
+
+namespace Revolt;
 
 public static class Renderer {
     public static int LastWidth { get; set; }
     public static int LastHeight { get; set; }
-    public static UiFrame ActiveFrame { get; set; }
-    public static UiPopup Popup { get; set; }
+    public static Frame ActiveFrame { get; set; }
+    public static Popup Popup { get; set; }
 
     static Renderer() {
-        ActiveFrame = UiMainMenu.singleton;
+        ActiveFrame = MainMenu.singleton;
         LastWidth = 80;
         LastHeight = 20;
     }

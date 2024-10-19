@@ -1,9 +1,9 @@
-﻿namespace Revolt;
+﻿namespace Revolt.Ui;
 
-public abstract class UiFrame {
-    protected List<UiElement> elements = [];
-    protected UiElement defaultElement;
-    public UiElement focusedElement;
+public abstract class Frame {
+    protected List<Element> elements = [];
+    protected Element defaultElement;
+    public Element focusedElement;
 
     public virtual void Draw(int width, int height) {
         int top = 0;
@@ -50,7 +50,7 @@ public abstract class UiFrame {
 
     public void FocusNext() {
         if (elements is null || elements.Count == 0) return;
-        
+
 
         if (focusedElement is null && defaultElement is not null) {
             focusedElement = defaultElement;
@@ -69,7 +69,5 @@ public abstract class UiFrame {
     }
 
     public abstract bool HandleKey(ConsoleKeyInfo key);
-
-
 
 }
