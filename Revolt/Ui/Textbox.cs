@@ -48,8 +48,12 @@ public sealed class Textbox(Frame parentFrame) : Element(parentFrame) {
             Console.Write(new String(' ', calculatedWidth - _value.Length));
             Ansi.SetCursorPosition(left + index, top);
         }
-        else {
-            //TODO:
+        else if (index > calculatedWidth) {
+            int start = Math.Max(index - calculatedWidth, 0);
+            string visibleValue = _value.Substring(start, Math.Min(calculatedWidth, _value.Length - start - 1));
+
+            Console.Write(visibleValue);
+            Ansi.SetCursorPosition(left + (index - start), top);
         }
     }
 
@@ -63,12 +67,11 @@ public sealed class Textbox(Frame parentFrame) : Element(parentFrame) {
                 if (spaceIndex == index - 1) {
                     spaceIndex = _value.LastIndexOf(' ', Math.Max(spaceIndex - 1, 0));
                 }
-                index = Math.Max(Math.Min(spaceIndex + 1, _value.Length), 0);
+                index = Math.Clamp(spaceIndex + 1, 0, _value.Length);
                 Ansi.SetCursorPosition(left + index, top);
             }
             else {
-                index = Math.Max(index - 1, 0);
-                index = Math.Min(index, _value.Length);
+                index = Math.Clamp(index - 1, 0, _value.Length);
                 Ansi.SetCursorPosition(left + index, top);
             }
             break;
@@ -83,8 +86,7 @@ public sealed class Textbox(Frame parentFrame) : Element(parentFrame) {
                 Ansi.SetCursorPosition(left + index, top);
             }
             else {
-                index = Math.Min(index + 1, _value.Length);
-                index = Math.Max(index, 0);
+                index = Math.Clamp(index + 1, 0, _value.Length);
                 Ansi.SetCursorPosition(left + index, top);
             }
             break;
