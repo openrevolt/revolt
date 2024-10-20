@@ -5,7 +5,7 @@ public static class Data {
     public static readonly byte[] BG_COLOR      = [32, 32, 32];
     public static readonly byte[] TOOLBAR_COLOR = [64, 64, 64];
     public static readonly byte[] CONTROL_COLOR = [72, 72, 72];
-    public static readonly byte[] INPUT_COLOR   = [128, 128, 128];
+    public static readonly byte[] INPUT_COLOR   = [96, 96, 96];
     public static readonly byte[] PANE_COLOR    = [160, 160, 160];
     public static readonly byte[] SELECT_COLOR  = [255, 192, 0];
 

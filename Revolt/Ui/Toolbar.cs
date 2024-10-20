@@ -24,14 +24,14 @@ public sealed class Toolbar(Frame parentFrame) : Element(parentFrame) {
             Console.Write(Data.LOWER_3_8TH_BLOCK);
 
             Ansi.SetFgColor(isFocused && i == index ? Data.SELECT_COLOR : Data.CONTROL_COLOR);
-            Console.Write(new string(Data.LOWER_3_8TH_BLOCK, items[i].text.Length + 2));
+            Console.Write(new String(Data.LOWER_3_8TH_BLOCK, items[i].text.Length + 2));
 
             count += length;
         }
 
         int r = width - count;
         Ansi.SetFgColor(Data.TOOLBAR_COLOR);
-        Console.Write(new string(Data.LOWER_3_8TH_BLOCK, r));
+        Console.Write(new String(Data.LOWER_3_8TH_BLOCK, r));
 
 
         count = 0;
@@ -52,7 +52,7 @@ public sealed class Toolbar(Frame parentFrame) : Element(parentFrame) {
         }
 
         Ansi.SetBgColor(Data.TOOLBAR_COLOR);
-        Console.Write(new string(' ', r));
+        Console.Write(new String(' ', r));
 
 
         count = 0;
@@ -66,13 +66,13 @@ public sealed class Toolbar(Frame parentFrame) : Element(parentFrame) {
             Console.Write(Data.UPPER_1_8TH_BLOCK);
 
             Ansi.SetFgColor(isFocused && i == index ? Data.SELECT_COLOR : Data.CONTROL_COLOR);
-            Console.Write(new string(Data.UPPER_1_8TH_BLOCK, items[i].text.Length + 2));
+            Console.Write(new String(Data.UPPER_1_8TH_BLOCK, items[i].text.Length + 2));
 
             count += length;
         }
 
         Ansi.SetFgColor(Data.TOOLBAR_COLOR);
-        Console.Write(new string(Data.UPPER_1_8TH_BLOCK, r));
+        Console.Write(new String(Data.UPPER_1_8TH_BLOCK, r));
     }
 
     public override void HandleKey(ConsoleKeyInfo key) {

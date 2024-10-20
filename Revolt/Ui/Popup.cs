@@ -28,7 +28,7 @@ public sealed class Popup : Frame {
         int left = (Renderer.LastWidth - width) / 2 + 1;
         int top = 1;
 
-        string gap = new string(' ', width);
+        string gap = new String(' ', width);
 
         Ansi.SetBgColor(Data.PANE_COLOR);
         Ansi.SetCursorPosition(left, top++);
@@ -48,7 +48,7 @@ public sealed class Popup : Frame {
             }
 
             if (xOffset < width) {
-                Console.Write(new string(' ', width - xOffset));
+                Console.Write(new String(' ', width - xOffset));
             }
         }
 

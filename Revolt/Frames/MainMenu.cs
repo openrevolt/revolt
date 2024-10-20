@@ -49,7 +49,7 @@ public sealed class MainMenu : Ui.Frame {
             Ansi.SetBgColor(Data.BG_COLOR);
             Ansi.SetCursorPosition(3, y);
 
-            Console.Write(new string(Data.LINE_H, length));
+            Console.Write(new String(Data.LINE_H, length));
             return;
         }
 
