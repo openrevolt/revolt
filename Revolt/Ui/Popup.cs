@@ -88,14 +88,6 @@ public sealed class Popup : Frame {
 
     public override bool HandleKey(ConsoleKeyInfo key) {
         switch (key.Key) {
-        case ConsoleKey.LeftArrow:
-            //FocusPrevious();
-            break;
-
-        case ConsoleKey.RightArrow:
-            //FocusNext();
-            break;
-
         case ConsoleKey.Tab:
             if (key.Modifiers == ConsoleModifiers.Shift) {
                 FocusPrevious();
@@ -105,11 +97,12 @@ public sealed class Popup : Frame {
             }
             break;
 
-        case ConsoleKey.Enter:
-            break;
-
         case ConsoleKey.Escape:
             Close();
+            break;
+
+        default:
+            focusedElement?.HandleKey(key);
             break;
         }
 

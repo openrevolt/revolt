@@ -23,6 +23,10 @@ public static class Renderer {
             IsBackground = true
         }.Start();
 
+        HandleKeys();
+    }
+
+    public static void HandleKeys() {
         while (true) {
             ConsoleKeyInfo key = Console.ReadKey();
 
