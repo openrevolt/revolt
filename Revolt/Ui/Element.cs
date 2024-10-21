@@ -7,12 +7,12 @@ public abstract class Element(Frame parentFrame) {
     protected bool isFocused = false;
 
     protected (int, int, int, int) GetBounding() {
-        if (this?.parentFrame is Popup) {
+        if (this?.parentFrame is InputDialog) {
             int left = this.left < 1 ? (int)(Renderer.LastWidth * this.left) : (int)this.left;
             //int right = this.right < 1 ? (int)(Renderer.LastWidth * this.right) : (int)this.right;
             int top = this.top < 1 ? (int)(Renderer.LastHeight * this.top) : (int)this.top;
             int bottom = this.bottom < 1 ? (int)(Renderer.LastHeight * this.bottom) : (int)this.bottom;
-            int width = ((Popup)this.parentFrame).lastWidth;
+            int width = ((InputDialog)this.parentFrame).lastWidth;
             int height = Renderer.LastHeight - top - bottom;
             return (left + 1, top + 1, width, height);
         }

@@ -1,6 +1,6 @@
 ﻿namespace Revolt.Ui;
 
-public sealed class Popup : Frame {
+public sealed class InputDialog : Frame {
     public int lastWidth = 48;
 
     public string text;
@@ -8,7 +8,7 @@ public sealed class Popup : Frame {
     public Button okButton;
     public Button cancelButton;
 
-    public Popup() {
+    public InputDialog() {
         valueTextbox = new Textbox(this);
         okButton = new Button(this, "   OK   ");
         cancelButton = new Button(this, " Cancel ");
@@ -16,6 +16,8 @@ public sealed class Popup : Frame {
         elements.Add(valueTextbox);
         elements.Add(okButton);
         elements.Add(cancelButton);
+
+        cancelButton.action = Close;
 
         defaultElement = valueTextbox;
         valueTextbox.Focus(false);
@@ -97,8 +99,19 @@ public sealed class Popup : Frame {
             }
             break;
 
+        case ConsoleKey.Enter:
+            if (okButton.action is not null) {
+                okButton.action();
+            }
+            break;
+
         case ConsoleKey.Escape:
-            Close();
+            if (valueTextbox.Value.Length == 0) {
+                Close();
+            }
+            else {
+                valueTextbox.Value = String.Empty;
+            }
             break;
 
         default:
@@ -110,7 +123,7 @@ public sealed class Popup : Frame {
     }
 
     public static void Close() {
-        Renderer.Popup = null;
+        Renderer.Dialog = null;
         Renderer.Redraw();
     }
 

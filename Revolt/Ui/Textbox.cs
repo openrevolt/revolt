@@ -45,8 +45,6 @@ public sealed class Textbox(Frame parentFrame) : Element(parentFrame) {
         Ansi.SetBgColor(Data.INPUT_COLOR);
         Ansi.SetCursorPosition(left, top);
 
-        Console.Title = _value.Length + " / " + usableWidth;
-
         if (_value.Length <= usableWidth) {
             Console.Write(_value);
             Console.Write(new String(' ', usableWidth - _value.Length));

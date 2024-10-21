@@ -78,12 +78,19 @@ public sealed class PingFrame : Ui.Frame {
     }
 
     private void Add() {
-        Ui.Popup popup = new Ui.Popup() {
+        Ui.InputDialog dialog = new Ui.InputDialog() {
             text = "Enter IP, domain or hostname:"
         };
 
-        Renderer.Popup = popup;
-        popup.Draw();
+        dialog.okButton.action = () => AddItem(dialog.valueTextbox.Value);
+
+        Renderer.Dialog = dialog;
+        dialog.Draw();
+    }
+
+    private void AddItem(string host) {
+        if (host is null) return;
+        
     }
 
     private void Clear() {

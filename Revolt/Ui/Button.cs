@@ -2,7 +2,7 @@
 
 public sealed class Button(Frame parentFrame, string text) : Element(parentFrame) {
     public string text = text;
-
+    public Action action;
     public override void Draw() {
         (int left, int top, _, _) = GetBounding();
 
@@ -25,6 +25,12 @@ public sealed class Button(Frame parentFrame, string text) : Element(parentFrame
     }
 
     public override void HandleKey(ConsoleKeyInfo key) {
+        if (action is null) {
+            return;
+        }
 
+        if (key.Key == ConsoleKey.Enter || key.Key == ConsoleKey.Spacebar) {
+            action();
+        }
     }
 }

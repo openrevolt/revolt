@@ -7,7 +7,7 @@ public static class Renderer {
     public static int LastWidth { get; set; }
     public static int LastHeight { get; set; }
     public static Frame ActiveFrame { get; set; }
-    public static Popup Popup { get; set; }
+    public static InputDialog Dialog { get; set; }
 
     static Renderer() {
         ActiveFrame = MainMenu.singleton;
@@ -38,8 +38,8 @@ public static class Renderer {
                 continue;
             }
 
-            if (Popup is not null) {
-                Popup.HandleKey(key);
+            if (Dialog is not null) {
+                Dialog.HandleKey(key);
                 continue;
             }
 
@@ -75,6 +75,6 @@ public static class Renderer {
         }
 
         ActiveFrame?.Draw(LastWidth, LastHeight);
-        Popup?.Draw();
+        Dialog?.Draw();
     }
 }
