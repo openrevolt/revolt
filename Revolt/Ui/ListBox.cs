@@ -55,4 +55,11 @@ public sealed class ListBox<T>(Frame parentFrame) : Element(parentFrame) {
             break;
         }
     }
+
+    public void Add(T item) =>
+        items.Add(item);
+
+    public void Remove(T item) =>
+        items.Add(item);
+
 }

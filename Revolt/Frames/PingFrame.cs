@@ -1,10 +1,9 @@
-﻿
-namespace Revolt.Frames;
+﻿namespace Revolt.Frames;
 
 public sealed class PingFrame : Ui.Frame {
     public struct PingItem {
         public string  host;
-        public short   lastStatus;
+        public short   status;
         public short[] history;
     }
 
@@ -70,11 +69,15 @@ public sealed class PingFrame : Ui.Frame {
     }
 
     private void DrawPingItem(int i, int x, int y, int width) {
-        if (list.items is null || list.items.Count > 0) return;
-        if (i > list.items.Count - 1) return;
+        if (list.items is null || list.items.Count == 0) return;
+        if (i >= list.items.Count) return;
 
-        //PingItem item = list.items[i];
-        //TODO:
+        PingItem item = list.items[i];
+
+        Ansi.SetCursorPosition(x, y + i);
+        Ansi.SetFgColor(Data.FG_COLOR);
+        Ansi.SetBgColor(Data.BG_COLOR);
+        Console.Write(item.host);
     }
 
     private void Add() {
@@ -82,7 +85,10 @@ public sealed class PingFrame : Ui.Frame {
             text = "Enter IP, domain or hostname:"
         };
 
-        dialog.okButton.action = () => AddItem(dialog.valueTextbox.Value);
+        dialog.okButton.action = () => {
+            AddItem(dialog.valueTextbox.Value);
+            dialog.Close();
+        };
 
         Renderer.Dialog = dialog;
         dialog.Draw();
@@ -90,7 +96,12 @@ public sealed class PingFrame : Ui.Frame {
 
     private void AddItem(string host) {
         if (host is null) return;
-        
+
+        list.Add(new PingItem {
+            host = host,
+            status = 0,
+            history = new short[50]
+        });
     }
 
     private void Clear() {

@@ -32,6 +32,7 @@ public sealed class InputDialog : Frame {
 
         string gap = new String(' ', width);
 
+        Ansi.SetFgColor([16, 16, 16]);
         Ansi.SetBgColor(Data.PANE_COLOR);
         Ansi.SetCursorPosition(left, top++);
         Console.Write(gap);
@@ -122,9 +123,11 @@ public sealed class InputDialog : Frame {
         return true;
     }
 
-    public static void Close() {
+    public void Close() {
+        okButton.action = null;
+        cancelButton.action = null;
         Renderer.Dialog = null;
         Renderer.Redraw();
+        Ansi.HideCursor();
     }
-
 }
