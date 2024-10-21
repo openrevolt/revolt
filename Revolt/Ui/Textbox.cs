@@ -1,10 +1,11 @@
-﻿using System.ComponentModel.DataAnnotations;
-
-namespace Revolt.Ui;
+﻿namespace Revolt.Ui;
 
 public sealed class Textbox(Frame parentFrame) : Element(parentFrame) {
     private int index = 0;
+    private int offset = 0;
+
     private string _value = String.Empty;
+
     public string Value {
         get {
             return _value;
@@ -23,7 +24,6 @@ public sealed class Textbox(Frame parentFrame) : Element(parentFrame) {
         Ansi.SetFgColor(Data.FG_COLOR);
         Ansi.SetBgColor(Data.INPUT_COLOR);
         Ansi.SetCursorPosition(left, top);
-
         Console.Write(new String(' ', calculatedWidth));
 
         Ansi.SetFgColor(isFocused ? Data.SELECT_COLOR : Data.INPUT_COLOR);
@@ -37,22 +37,26 @@ public sealed class Textbox(Frame parentFrame) : Element(parentFrame) {
 
     private void DrawValue() {
         (int left, int top, int width, _) = GetBounding();
-        int calculatedWidth = width - 2;
+        int calculatedWidth = width - 3;
 
         Ansi.SetFgColor(Data.FG_COLOR);
         Ansi.SetBgColor(Data.INPUT_COLOR);
         Ansi.SetCursorPosition(left, top);
-        
+
         if (_value.Length < calculatedWidth) {
             Console.Write(_value);
             Console.Write(new String(' ', calculatedWidth - _value.Length));
             Ansi.SetCursorPosition(left + index, top);
         }
-        else if (index > calculatedWidth) {
-            int start = Math.Max(index - calculatedWidth, 0);
-            string visibleValue = _value.Substring(start, Math.Min(calculatedWidth, _value.Length - start - 1));
 
-            Console.Write(visibleValue);
+        if (index > calculatedWidth) {
+            int start = Math.Max(index - calculatedWidth, 0);
+            string visible = _value.Substring(start, Math.Min(calculatedWidth, _value.Length - start));
+
+            Console.Write(visible);
+            //Ansi.SetCursorPosition(left + calculatedWidth, top);
+            Console.Write(' ');
+
             Ansi.SetCursorPosition(left + (index - start), top);
         }
     }
@@ -68,11 +72,9 @@ public sealed class Textbox(Frame parentFrame) : Element(parentFrame) {
                     spaceIndex = _value.LastIndexOf(' ', Math.Max(spaceIndex - 1, 0));
                 }
                 index = Math.Clamp(spaceIndex + 1, 0, _value.Length);
-                Ansi.SetCursorPosition(left + index, top);
             }
             else {
                 index = Math.Clamp(index - 1, 0, _value.Length);
-                Ansi.SetCursorPosition(left + index, top);
             }
             break;
 
@@ -83,22 +85,18 @@ public sealed class Textbox(Frame parentFrame) : Element(parentFrame) {
                     spaceIndex = _value.Length;
                 }
                 index = spaceIndex;
-                Ansi.SetCursorPosition(left + index, top);
             }
             else {
                 index = Math.Clamp(index + 1, 0, _value.Length);
-                Ansi.SetCursorPosition(left + index, top);
             }
             break;
 
         case ConsoleKey.Home:
             index = 0;
-            DrawValue();
             break;
 
         case ConsoleKey.End:
             index = _value.Length;
-            DrawValue();
             break;
 
         case ConsoleKey.Backspace:
@@ -108,22 +106,28 @@ public sealed class Textbox(Frame parentFrame) : Element(parentFrame) {
             }
             
             if (key.Modifiers == ConsoleModifiers.Control) {
-                //TODO:
+                int spaceIndex = Math.Max(_value.LastIndexOf(' ', Math.Max(index - 1, 0)), 0);
+
+                _value = _value[..spaceIndex] + _value[index..];
+
+                index = spaceIndex;
             }
             else {
                 _value = _value[..(Math.Max(index - 1, 0))] + _value[index..];
                 index--;
-                DrawValue();
             }
             break;
 
         case ConsoleKey.Delete:
             if (key.Modifiers == ConsoleModifiers.Control) {
-                //TODO:
+                int spaceIndex = _value.IndexOf(' ', Math.Min(index + 1, _value.Length));
+                if (spaceIndex == -1) {
+                    spaceIndex = _value.Length;
+                }
+                _value = _value[..index] + _value[spaceIndex..];
             }
             else if (index < _value.Length) {
                 _value = _value[..index] + _value[(index + 1)..];
-                DrawValue();
             }
             break;
 
@@ -132,16 +136,18 @@ public sealed class Textbox(Frame parentFrame) : Element(parentFrame) {
             if (asci > 31 && asci < 127) {
                 _value = _value[..index] + key.KeyChar + _value[index..];
                 index++;
-                DrawValue();
             }
             break;
         }
+
+        DrawValue();
     }
 
     public override void Focus(bool draw = true) {
         base.Focus(draw);
         Ansi.ShowCursor();
     }
+
     public override void Blur(bool draw = true) {
         base.Blur(draw);
         Ansi.HideCursor();
