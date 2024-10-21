@@ -1,6 +1,8 @@
 ﻿namespace Revolt.Ui;
 
 public sealed class Textbox(Frame parentFrame) : Element(parentFrame) {
+    const int scrollInterval = 16;
+
     private int index = 0;
     private int offset = 0;
 
@@ -19,45 +21,56 @@ public sealed class Textbox(Frame parentFrame) : Element(parentFrame) {
 
     public override void Draw() {
         (int left, int top, int width, _) = GetBounding();
-        int calculatedWidth = width - 2;
+        int usableWidth = width - 2;
 
         Ansi.SetFgColor(Data.FG_COLOR);
         Ansi.SetBgColor(Data.INPUT_COLOR);
         Ansi.SetCursorPosition(left, top);
-        Console.Write(new String(' ', calculatedWidth));
+        Console.Write(new String(' ', usableWidth));
 
         Ansi.SetFgColor(isFocused ? Data.SELECT_COLOR : Data.INPUT_COLOR);
         Ansi.SetBgColor(Data.PANE_COLOR);
         Ansi.SetCursorPosition(left, top + 1);
 
-        Console.Write(new String(Data.UPPER_1_8TH_BLOCK, calculatedWidth));
+        Console.Write(new String(Data.UPPER_1_8TH_BLOCK, usableWidth));
 
         DrawValue();
     }
 
     private void DrawValue() {
         (int left, int top, int width, _) = GetBounding();
-        int calculatedWidth = width - 3;
+        int usableWidth = width - 3;
 
         Ansi.SetFgColor(Data.FG_COLOR);
         Ansi.SetBgColor(Data.INPUT_COLOR);
         Ansi.SetCursorPosition(left, top);
 
-        if (_value.Length < calculatedWidth) {
+        Console.Title = _value.Length + " / " + usableWidth;
+
+        if (_value.Length <= usableWidth) {
             Console.Write(_value);
-            Console.Write(new String(' ', calculatedWidth - _value.Length));
+            Console.Write(new String(' ', usableWidth - _value.Length));
             Ansi.SetCursorPosition(left + index, top);
         }
+        else {
+            if (index < offset) {
+                offset = Math.Max(0, index - (index % scrollInterval));
+            }
+            else if (index >= offset + usableWidth) {
+                offset = Math.Min(_value.Length - usableWidth, index - usableWidth + scrollInterval);
+            }
 
-        if (index > calculatedWidth) {
-            int start = Math.Max(index - calculatedWidth, 0);
-            string visible = _value.Substring(start, Math.Min(calculatedWidth, _value.Length - start));
+            if (_value.Length - offset < usableWidth) {
+                offset = Math.Max(0, _value.Length - usableWidth);
+            }
 
+            string visible = _value.Substring(offset, Math.Min(usableWidth, _value.Length - offset));
             Console.Write(visible);
-            //Ansi.SetCursorPosition(left + calculatedWidth, top);
+
+            Ansi.SetCursorPosition(left + usableWidth, top);
             Console.Write(' ');
 
-            Ansi.SetCursorPosition(left + (index - start), top);
+            Ansi.SetCursorPosition(left + (index - offset), top);
         }
     }
 
