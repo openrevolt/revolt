@@ -3,11 +3,11 @@
 public sealed class Textbox(Frame parentFrame) : Element(parentFrame) {
     const int scrollInterval = 16;
 
+    public byte[] backColor = Data.BG_COLOR;
     private int index = 0;
     private int offset = 0;
 
     private string _value = String.Empty;
-
     public string Value {
         get {
             return _value;
@@ -29,7 +29,7 @@ public sealed class Textbox(Frame parentFrame) : Element(parentFrame) {
         Console.Write(new String(' ', usableWidth));
 
         Ansi.SetFgColor(isFocused ? Data.SELECT_COLOR : Data.INPUT_COLOR);
-        Ansi.SetBgColor(Data.PANE_COLOR);
+        Ansi.SetBgColor(backColor);
         Ansi.SetCursorPosition(left, top + 1);
 
         Console.Write(new String(Data.UPPER_1_8TH_BLOCK, usableWidth));

@@ -10,24 +10,8 @@ public sealed class ListBox<T>(Frame parentFrame) : Element(parentFrame) {
     public override void Draw() {
         (int left, int top, int width, int height) = GetBounding();
 
-        int x = left;
-        int y = top;
-
-        Ansi.SetBgColor(isFocused ? Data.SELECT_COLOR : Data.CONTROL_COLOR);
-        Ansi.SetCursorPosition(x, y);
-        Console.Write('.');
-
-        Ansi.SetCursorPosition(x + width - 1, y);
-        Console.Write('.');
-
-        Ansi.SetCursorPosition(x, y + height - 1);
-        Console.Write('.');
-
-        Ansi.SetCursorPosition(x + width - 1, y + height - 1);
-        Console.Write('.');
-
         for (int i = 0; i < height; i++) {
-            drawItemHandler(i, x, y, width);
+            drawItemHandler(i, left, top, width);
         }
     }
 
@@ -37,12 +21,12 @@ public sealed class ListBox<T>(Frame parentFrame) : Element(parentFrame) {
         switch (key.Key) {
         case ConsoleKey.UpArrow:
             index = Math.Max(0, index - 1);
-            //Draw();
+            Draw();
             break;
 
         case ConsoleKey.DownArrow:
             index = Math.Min(items.Count - 1, index + 1);
-            //Draw();
+            Draw();
             break;
 
         case ConsoleKey.LeftArrow:
@@ -62,4 +46,19 @@ public sealed class ListBox<T>(Frame parentFrame) : Element(parentFrame) {
     public void Remove(T item) =>
         items.Add(item);
 
+    public override void Focus(bool draw = true) {
+        base.Focus(draw);
+        if (index > -1) {
+            (int left, int top, int width, int height) = GetBounding();
+            drawItemHandler(index, left, top, width);
+        }
+    }
+
+    public override void Blur(bool draw = true) {
+        base.Blur(draw);
+        if (index > -1) {
+            (int left, int top, int width, int height) = GetBounding();
+            drawItemHandler(index, left, top, width);
+        }
+    }
 }

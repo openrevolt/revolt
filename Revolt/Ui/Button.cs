@@ -25,11 +25,13 @@ public sealed class Button(Frame parentFrame, string text) : Element(parentFrame
     }
 
     public override void HandleKey(ConsoleKeyInfo key) {
-        if (action is null) {
-            return;
+        if (key.Key == ConsoleKey.LeftArrow || key.Key == ConsoleKey.UpArrow) {
+            parentFrame.FocusPrevious();
         }
-
-        if (key.Key == ConsoleKey.Enter || key.Key == ConsoleKey.Spacebar) {
+        else if (key.Key == ConsoleKey.RightArrow || key.Key == ConsoleKey.DownArrow) {
+            parentFrame.FocusNext();
+        }
+        else if ((key.Key == ConsoleKey.Enter || key.Key == ConsoleKey.Spacebar) && action is not null) {
             action();
         }
     }

@@ -9,7 +9,10 @@ public sealed class InputDialog : Frame {
     public Button cancelButton;
 
     public InputDialog() {
-        valueTextbox = new Textbox(this);
+        valueTextbox = new Textbox(this) {
+            backColor = Data.PANE_COLOR
+        };
+
         okButton = new Button(this, "   OK   ");
         cancelButton = new Button(this, " Cancel ");
 

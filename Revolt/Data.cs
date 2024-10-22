@@ -9,6 +9,8 @@ public static class Data {
     public static readonly byte[] PANE_COLOR    = [160, 160, 160];
     public static readonly byte[] SELECT_COLOR  = [255, 192, 0];
 
+    public const char ELLIPSIS = '\u2026';
+
     public const char UPPER_1_8TH_BLOCK = '\u2594';
     public const char UPPER_4_8TH_BLOCK = '\u2580';
 

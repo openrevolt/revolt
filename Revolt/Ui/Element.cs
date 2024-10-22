@@ -4,7 +4,7 @@ public abstract class Element(Frame parentFrame) {
     public float left = 0, right = 0, top = 0, bottom = 0;
     public readonly Frame parentFrame = parentFrame;
 
-    protected bool isFocused = false;
+    public bool isFocused = false;
 
     protected (int, int, int, int) GetBounding() {
         if (this?.parentFrame is InputDialog) {
