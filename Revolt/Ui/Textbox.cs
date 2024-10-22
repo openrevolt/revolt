@@ -4,6 +4,9 @@ public sealed class Textbox(Frame parentFrame) : Element(parentFrame) {
     const int scrollInterval = 16;
 
     public byte[] backColor = Data.BG_COLOR;
+    public string placeholder = String.Empty;
+    public Action action;
+
     private int index = 0;
     private int offset = 0;
 
@@ -21,7 +24,7 @@ public sealed class Textbox(Frame parentFrame) : Element(parentFrame) {
 
     public override void Draw() {
         (int left, int top, int width, _) = GetBounding();
-        int usableWidth = width - 2;
+        int usableWidth = Math.Max(width, 0);
 
         Ansi.SetFgColor(Data.FG_COLOR);
         Ansi.SetBgColor(Data.INPUT_COLOR);
@@ -37,13 +40,24 @@ public sealed class Textbox(Frame parentFrame) : Element(parentFrame) {
         DrawValue();
     }
 
-    private void DrawValue() {
-        (int left, int top, int width, _) = GetBounding();
-        int usableWidth = width - 3;
+    private void DrawValue(int left = -1, int top = -11, int width = -1) {
+        if (width == -1) {
+            (left, top, width,  _) = GetBounding();
+        }
+
+        int usableWidth = Math.Max(width - 1, 0);
 
         Ansi.SetFgColor(Data.FG_COLOR);
         Ansi.SetBgColor(Data.INPUT_COLOR);
         Ansi.SetCursorPosition(left, top);
+
+        if (!String.IsNullOrEmpty(placeholder) && _value.Length == 0) {
+            Ansi.SetFgColor([128, 128 ,128]);
+            Console.Write(placeholder);
+            Console.Write(new String(' ', usableWidth - placeholder.Length));
+            Ansi.SetCursorPosition(left + index, top);
+            return;
+        }
 
         if (_value.Length <= usableWidth) {
             Console.Write(_value);
@@ -118,6 +132,7 @@ public sealed class Textbox(Frame parentFrame) : Element(parentFrame) {
             
             if (key.Modifiers == ConsoleModifiers.Control) {
                 int spaceIndex = Math.Max(_value.LastIndexOf(' ', Math.Max(index - 1, 0)), 0);
+                while (spaceIndex > 0 && _value[spaceIndex - 1] == ' ') spaceIndex--;
 
                 _value = _value[..spaceIndex] + _value[index..];
 
@@ -139,6 +154,12 @@ public sealed class Textbox(Frame parentFrame) : Element(parentFrame) {
             }
             else if (index < _value.Length) {
                 _value = _value[..index] + _value[(index + 1)..];
+            }
+            break;
+
+        case ConsoleKey.Enter:
+            if (action is not null) {
+                action();
             }
             break;
 

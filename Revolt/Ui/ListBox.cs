@@ -10,6 +10,8 @@ public sealed class ListBox<T>(Frame parentFrame) : Element(parentFrame) {
     public override void Draw() {
         (int left, int top, int width, int height) = GetBounding();
 
+        //TODO: clear previous
+
         for (int i = 0; i < height; i++) {
             drawItemHandler(i, left, top, width);
         }
@@ -48,6 +50,11 @@ public sealed class ListBox<T>(Frame parentFrame) : Element(parentFrame) {
 
     public override void Focus(bool draw = true) {
         base.Focus(draw);
+
+        if (index == -1 && items.Count > 0) {
+            index = 0;
+        }
+
         if (index > -1) {
             (int left, int top, int width, int height) = GetBounding();
             drawItemHandler(index, left, top, width);

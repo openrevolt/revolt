@@ -23,9 +23,8 @@ public sealed class PingFrame : Ui.Frame {
             left  = 1,
             right = 1,
             items = [
-                new Ui.Toolbar.ToolbarItem() { text="Add",     action=Add },
-                new Ui.Toolbar.ToolbarItem() { text="Clear",   action=Clear },
                 new Ui.Toolbar.ToolbarItem() { text="Pause",   action=ToggleStatus },
+                new Ui.Toolbar.ToolbarItem() { text="Clear",   action=Clear },
                 new Ui.Toolbar.ToolbarItem() { text="Options", action=Options },
             ]
         };
@@ -39,17 +38,21 @@ public sealed class PingFrame : Ui.Frame {
         };
 
         input = new Ui.Textbox(this) {
-            left   = 1,
-            right  = 1,
-            top    = -1,
-            bottom = 0
+            left   = 2,
+            right  = 2,
+            bottom = 0,
+            placeholder = "IP, domain or hostname",
+            action = () => {
+                AddItem(input.Value);
+                input.Value = String.Empty;
+            }
         };
 
         elements.Add(toolbar);
         elements.Add(list);
         elements.Add(input);
 
-        defaultElement = toolbar;
+        defaultElement = input;
         FocusNext();
     }
 
@@ -100,7 +103,7 @@ public sealed class PingFrame : Ui.Frame {
         }
 
         if (item.host.Length > 24) {
-            Console.Write(item.host[..24]);
+            Console.Write(item.host[..23]);
             Console.Write(Data.ELLIPSIS);
         }
         else {
@@ -125,7 +128,7 @@ public sealed class PingFrame : Ui.Frame {
         Console.Write(new String(' ', 11 - status.ToString().Length));
     }
 
-    private void Add() {
+    /*private void Add() {
         Ui.InputDialog dialog = new Ui.InputDialog() {
             text = "Enter IP, domain or hostname:",
         };
@@ -137,7 +140,7 @@ public sealed class PingFrame : Ui.Frame {
 
         Renderer.Dialog = dialog;
         dialog.Draw();
-    }
+    }*/
 
     private void AddItem(string host) {
         if (String.IsNullOrEmpty(host)) return;
@@ -147,6 +150,8 @@ public sealed class PingFrame : Ui.Frame {
             status = 0,
             history = new short[160]
         });
+
+        list.Draw();
     }
 
     private void Clear() {
@@ -158,10 +163,10 @@ public sealed class PingFrame : Ui.Frame {
         status = !status;
 
         if (status) {
-            toolbar.items[2].text = "Pause";
+            toolbar.items[0].text = "Pause";
         }
         else {
-            toolbar.items[2].text = "Start";
+            toolbar.items[0].text = "Start";
         }
 
         toolbar.Draw();
