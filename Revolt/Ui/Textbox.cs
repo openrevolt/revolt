@@ -10,6 +10,10 @@ public sealed class Textbox(Frame parentFrame) : Element(parentFrame) {
     private int index = 0;
     private int offset = 0;
 
+    public bool enableHistory = false;
+    private List<string> history = [];
+    private int historyIndex = -1;
+
     private string _value = String.Empty;
     public string Value {
         get {
@@ -40,9 +44,9 @@ public sealed class Textbox(Frame parentFrame) : Element(parentFrame) {
         DrawValue();
     }
 
-    private void DrawValue(int left = -1, int top = -11, int width = -1) {
+    private void DrawValue(int left = -1, int top = -1, int width = -1) {
         if (width == -1) {
-            (left, top, width,  _) = GetBounding();
+            (left, top, width, _) = GetBounding();
         }
 
         int usableWidth = Math.Max(width - 1, 0);
@@ -52,7 +56,7 @@ public sealed class Textbox(Frame parentFrame) : Element(parentFrame) {
         Ansi.SetCursorPosition(left, top);
 
         if (!String.IsNullOrEmpty(placeholder) && _value.Length == 0) {
-            Ansi.SetFgColor([128, 128 ,128]);
+            Ansi.SetFgColor([128, 128, 128]);
             Console.Write(placeholder);
             Console.Write(new String(' ', usableWidth - placeholder.Length));
             Ansi.SetCursorPosition(left + index, top);
@@ -92,6 +96,7 @@ public sealed class Textbox(Frame parentFrame) : Element(parentFrame) {
         switch (key.Key) {
         case ConsoleKey.LeftArrow:
             if (key.Modifiers == ConsoleModifiers.Control) {
+                while (index > 0 && _value[index - 1] == ' ') index--;
                 int spaceIndex = _value.LastIndexOf(' ', Math.Max(index - 1, 0));
                 if (spaceIndex == index - 1) {
                     spaceIndex = _value.LastIndexOf(' ', Math.Max(spaceIndex - 1, 0));
@@ -106,10 +111,11 @@ public sealed class Textbox(Frame parentFrame) : Element(parentFrame) {
         case ConsoleKey.RightArrow:
             if (key.Modifiers == ConsoleModifiers.Control) {
                 int spaceIndex = _value.IndexOf(' ', Math.Min(index + 1, _value.Length));
+                while (spaceIndex < _value.Length - 1 && _value[spaceIndex + 1] == ' ') spaceIndex++;
                 if (spaceIndex == -1) {
                     spaceIndex = _value.Length;
                 }
-                index = spaceIndex;
+                index = Math.Clamp(spaceIndex + 1, 0, _value.Length);
             }
             else {
                 index = Math.Clamp(index + 1, 0, _value.Length);
@@ -124,18 +130,48 @@ public sealed class Textbox(Frame parentFrame) : Element(parentFrame) {
             index = _value.Length;
             break;
 
+        case ConsoleKey.UpArrow:
+            if (!enableHistory) break;
+
+            if (history.Count > 0) {
+                if (historyIndex == -1) {
+                    historyIndex = history.Count - 1;
+                }
+                else if (historyIndex > 0) {
+                    historyIndex--;
+                }
+                _value = history[historyIndex];
+                index = _value.Length;
+            }
+            break;
+
+        case ConsoleKey.DownArrow:
+            if (!enableHistory) break;
+            
+            if (historyIndex >= 0) {
+                historyIndex++;
+                if (historyIndex >= history.Count) {
+                    historyIndex = -1;
+                    _value = String.Empty;
+                }
+                else {
+                    _value = history[historyIndex];
+                }
+                index = _value.Length;
+            }
+            break;
+
         case ConsoleKey.Backspace:
             if (index == 0) {
                 Ansi.SetCursorPosition(left + index, top);
                 break;
             }
-            
+
             if (key.Modifiers == ConsoleModifiers.Control) {
                 int spaceIndex = Math.Max(_value.LastIndexOf(' ', Math.Max(index - 1, 0)), 0);
                 while (spaceIndex > 0 && _value[spaceIndex - 1] == ' ') spaceIndex--;
 
                 _value = _value[..spaceIndex] + _value[index..];
-
                 index = spaceIndex;
             }
             else {
@@ -147,6 +183,7 @@ public sealed class Textbox(Frame parentFrame) : Element(parentFrame) {
         case ConsoleKey.Delete:
             if (key.Modifiers == ConsoleModifiers.Control) {
                 int spaceIndex = _value.IndexOf(' ', Math.Min(index + 1, _value.Length));
+
                 if (spaceIndex == -1) {
                     spaceIndex = _value.Length;
                 }
@@ -158,9 +195,15 @@ public sealed class Textbox(Frame parentFrame) : Element(parentFrame) {
             break;
 
         case ConsoleKey.Enter:
+            if (enableHistory && !String.IsNullOrWhiteSpace(_value)) {
+                history.Add(_value);
+                historyIndex = -1;
+            }
+
             if (action is not null) {
                 action();
             }
+
             break;
 
         default:

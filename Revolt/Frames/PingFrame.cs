@@ -1,4 +1,6 @@
-﻿namespace Revolt.Frames;
+﻿using System.Runtime.CompilerServices;
+
+namespace Revolt.Frames;
 
 public sealed class PingFrame : Ui.Frame {
     public struct PingItem {
@@ -8,6 +10,7 @@ public sealed class PingFrame : Ui.Frame {
     }
 
     private bool status = true;
+    //private int rotatingIndex = 0;
 
     public Ui.Toolbar toolbar;
     public Ui.ListBox<PingItem> list;
@@ -38,12 +41,13 @@ public sealed class PingFrame : Ui.Frame {
         };
 
         input = new Ui.Textbox(this) {
-            left   = 2,
-            right  = 2,
-            bottom = 0,
-            placeholder = "IP, domain or hostname",
+            left          = 2,
+            right         = 2,
+            bottom        = 0,
+            enableHistory = true,
+            placeholder   = "IP, domain or hostname",
             action = () => {
-                AddItem(input.Value);
+                ParseQuery(input.Value.Trim());
                 input.Value = String.Empty;
             }
         };
@@ -128,19 +132,80 @@ public sealed class PingFrame : Ui.Frame {
         Console.Write(new String(' ', 11 - status.ToString().Length));
     }
 
-    /*private void Add() {
-        Ui.InputDialog dialog = new Ui.InputDialog() {
-            text = "Enter IP, domain or hostname:",
-        };
+    private void ParseQuery(string query) {
+        if (query.Contains(';')) {
+            foreach (string host in query.Split(';').Select(o => o.Trim())){
+                AddItem(host);
+            }
+        }
+        else if (query.Contains(',')) {
+            foreach (string host in query.Split(',').Select(o => o.Trim())) {
+                AddItem(host);
+            }
+        }
+        else if (query.Contains('-')) {
+            string[] split = query.Split("-");
+            string[] start = split[0].Trim().Split(".");
+            string[] end  = split[1].Trim().Split(".");
 
-        dialog.okButton.action = () => {
-            AddItem(dialog.valueTextbox.Value);
-            dialog.Close();
-        };
+            if (start.Length == 4 && end.Length == 4 && start.All(o => int.TryParse(o, out _)) && end.All(o => int.TryParse(o, out _))) {
+                int iStart = (int.Parse(start[0]) << 24) + (int.Parse(start[1]) << 16) + (int.Parse(start[2]) << 8) + int.Parse(start[3]);
+                int iEnd = (int.Parse(end[0]) << 24) + (int.Parse(end[1]) << 16) + (int.Parse(end[2]) << 8) + int.Parse(end[3]);
 
-        Renderer.Dialog = dialog;
-        dialog.Draw();
-    }*/
+                if (iStart > iEnd) iEnd = iStart;
+                if (iEnd - iStart > 1024) iEnd = iStart + 1024;
+
+                for (int i = iStart; i <= iEnd; i++) {
+                    int value = i;
+                    byte[] bytes = new byte[4];
+                    for (int j = 3; j >= 0; j--) {
+                        bytes[j] = (byte)(value & 255);
+                        value >>= 8;
+                    }
+                    AddItem(string.Join(".", bytes.Select(b => b.ToString())));
+                }
+            }
+            else {
+                AddItem(query);
+            }
+        }
+        else if (query.Contains('/')) {
+            string[] parts = query.Split('/');
+            if (parts.Length != 2 || !int.TryParse(parts[1].Trim(), out int cidr)) {
+                return;
+            }
+
+            string ip = parts[0].Trim();
+            string[] ipBytes = ip.Split('.');
+            if (ipBytes.Length != 4 || !ipBytes.All(o => int.TryParse(o, out _))) {
+                return;
+            }
+
+            int[] ipIntBytes = ipBytes.Select(o => int.Parse(o)).ToArray();
+
+            string bits = new string('1', cidr).PadRight(32, '0');
+            int[] mask = [
+                Convert.ToInt32(bits[..8], 2),
+                Convert.ToInt32(bits[8..16], 2),
+                Convert.ToInt32(bits[16..24], 2),
+                Convert.ToInt32(bits[24..], 2),
+            ];
+
+            int[] net = new int[4];
+            int[] broadcast = new int[4];
+
+            for (int i = 0; i < 4; i++) {
+                net[i] = ipIntBytes[i] & mask[i];
+                broadcast[i] = ipIntBytes[i] | (255 - mask[i]);
+            }
+
+            string networkRange = string.Join(".", net) + " - " + string.Join(".", broadcast);
+            ParseQuery(networkRange);
+        }
+        else {
+            AddItem(query);
+        }
+    }
 
     private void AddItem(string host) {
         if (String.IsNullOrEmpty(host)) return;
@@ -153,6 +218,20 @@ public sealed class PingFrame : Ui.Frame {
 
         list.Draw();
     }
+
+    /*private void Add() {
+        Ui.InputDialog dialog = new Ui.InputDialog() {
+            text = "Enter IP, domain or hostname:",
+        };
+
+        dialog.okButton.action = () => {
+            AddItem(dialog.valueTextbox.Value);
+            dialog.Close();
+        };
+
+        Renderer.Dialog = dialog;
+    dialog.Draw();
+    }*/
 
     private void Clear() {
         list.items.Clear();
