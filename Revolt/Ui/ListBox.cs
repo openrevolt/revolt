@@ -34,7 +34,7 @@ public sealed class ListBox<T>(Frame parentFrame) : Element(parentFrame) {
         case ConsoleKey.LeftArrow:
             break;
 
-        case ConsoleKey.RightWindows:
+        case ConsoleKey.RightArrow:
             break;
 
         case ConsoleKey.Enter:

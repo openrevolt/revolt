@@ -11,8 +11,8 @@ public sealed class Textbox(Frame parentFrame) : Element(parentFrame) {
     private int offset = 0;
 
     public bool enableHistory = false;
-    private List<string> history = [];
     private int historyIndex = -1;
+    private readonly List<string> history = [];
 
     private string _value = String.Empty;
     public string Value {

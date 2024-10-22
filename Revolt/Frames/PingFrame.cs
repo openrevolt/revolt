@@ -126,7 +126,7 @@ public sealed class PingFrame : Ui.Frame {
         Ansi.SetFgColor(Data.FG_COLOR);
         Ansi.SetBgColor(Data.BG_COLOR);
 
-        string status = item.status + "ms";
+        string status = $"{item.status}ms";
         Ansi.SetCursorPosition(x + width - 10, y + idx*2);
         Console.Write(status);
         Console.Write(new String(' ', 11 - status.ToString().Length));
@@ -144,9 +144,9 @@ public sealed class PingFrame : Ui.Frame {
             }
         }
         else if (query.Contains('-')) {
-            string[] split = query.Split("-");
-            string[] start = split[0].Trim().Split(".");
-            string[] end  = split[1].Trim().Split(".");
+            string[] split = query.Split('-');
+            string[] start = split[0].Trim().Split('.');
+            string[] end   = split[1].Trim().Split('.');
 
             if (start.Length == 4 && end.Length == 4 && start.All(o => int.TryParse(o, out _)) && end.All(o => int.TryParse(o, out _))) {
                 int iStart = (int.Parse(start[0]) << 24) + (int.Parse(start[1]) << 16) + (int.Parse(start[2]) << 8) + int.Parse(start[3]);
@@ -162,7 +162,7 @@ public sealed class PingFrame : Ui.Frame {
                         bytes[j] = (byte)(value & 255);
                         value >>= 8;
                     }
-                    AddItem(string.Join(".", bytes.Select(b => b.ToString())));
+                    AddItem(string.Join('.', bytes.Select(b => b.ToString())));
                 }
             }
             else {
@@ -195,8 +195,7 @@ public sealed class PingFrame : Ui.Frame {
                 broadcast[i] = ipIntBytes[i] | (255 - mask[i]);
             }
 
-            string networkRange = string.Join(".", net) + " - " + string.Join(".", broadcast);
-            ParseQuery(networkRange);
+            ParseQuery(string.Join(".", net) + " - " + string.Join(".", broadcast));
         }
         else {
             AddItem(query);
