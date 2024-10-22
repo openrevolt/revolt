@@ -45,9 +45,7 @@ public sealed class Textbox(Frame parentFrame) : Element(parentFrame) {
     }
 
     private void DrawValue(int left = -1, int top = -1, int width = -1) {
-        if (width == -1) {
-            (left, top, width, _) = GetBounding();
-        }
+        if (width == -1) (left, top, width, _) = GetBounding();
 
         int usableWidth = Math.Max(width - 1, 0);
 

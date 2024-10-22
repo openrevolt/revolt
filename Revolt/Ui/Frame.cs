@@ -14,7 +14,7 @@ public abstract class Frame {
 
             Ansi.SetCursorPosition(0, y);
             for (int x = 0; x < width; x++) {
-                Console.Write(" ");
+                Console.Write(' ');
             }
         }
 
@@ -50,7 +50,6 @@ public abstract class Frame {
 
     public void FocusNext() {
         if (elements is null || elements.Count == 0) return;
-
 
         if (focusedElement is null && defaultElement is not null) {
             focusedElement = defaultElement;

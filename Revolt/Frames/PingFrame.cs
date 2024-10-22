@@ -171,15 +171,11 @@ public sealed class PingFrame : Ui.Frame {
         }
         else if (query.Contains('/')) {
             string[] parts = query.Split('/');
-            if (parts.Length != 2 || !int.TryParse(parts[1].Trim(), out int cidr)) {
-                return;
-            }
+            if (parts.Length != 2 || !int.TryParse(parts[1].Trim(), out int cidr)) return;
 
             string ip = parts[0].Trim();
             string[] ipBytes = ip.Split('.');
-            if (ipBytes.Length != 4 || !ipBytes.All(o => int.TryParse(o, out _))) {
-                return;
-            }
+            if (ipBytes.Length != 4 || !ipBytes.All(o => int.TryParse(o, out _))) return;
 
             int[] ipIntBytes = ipBytes.Select(o => int.Parse(o)).ToArray();
 
@@ -216,7 +212,8 @@ public sealed class PingFrame : Ui.Frame {
             history = new short[160]
         });
 
-        list.Draw();
+        (int left, int top, int width, _) = list.GetBounding();
+        list.drawItemHandler(list.items.Count - 1, left, top, width);
     }
 
     /*private void Add() {

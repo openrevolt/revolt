@@ -6,7 +6,7 @@ public abstract class Element(Frame parentFrame) {
 
     public bool isFocused = false;
 
-    protected (int, int, int, int) GetBounding() {
+    public (int, int, int, int) GetBounding() {
         int left   = this.left < 1   ? (int)(Renderer.LastWidth * this.left)    : (int)this.left;
         int right  = this.right < 1  ? (int)(Renderer.LastWidth * this.right)   : (int)this.right;
         int top    = this.top < 1    ? (int)(Renderer.LastHeight * this.top)    : (int)this.top;
