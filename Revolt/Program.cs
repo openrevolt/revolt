@@ -13,7 +13,7 @@ public class Program {
         }
 
         Console.Title = "Revolt";
-        Renderer.Start();
+        Renderer.Initialize();
     }
 
     public static void DrawBanner() {

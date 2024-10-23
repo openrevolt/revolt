@@ -4,20 +4,20 @@ using Revolt.Ui;
 namespace Revolt;
 
 public static class Renderer {
+    const int MAX_WIDTH = 280, MAX_HEIGHT = 72;
     public static int LastWidth { get; set; }
     public static int LastHeight { get; set; }
     public static Frame ActiveFrame { get; set; }
     public static InputDialog Dialog { get; set; }
 
     static Renderer() {
-        ActiveFrame = MainMenu.singleton;
         LastWidth = 80;
         LastHeight = 20;
+        MainMenu.singleton.Show(false);
     }
 
-    public static void Start() {
+    public static void Initialize() {
         Console.OutputEncoding = System.Text.Encoding.UTF8;
-        Ansi.HideCursor();
 
         new Thread(ResizeLoop) {
             IsBackground = true
@@ -55,15 +55,15 @@ public static class Renderer {
         while (true) {
             Thread.Sleep(200);
 
-            int newWidth = Math.Min(Console.WindowWidth, 200);
-            int newHeight = Math.Min(Console.WindowHeight, 50);
+            int newWidth = Math.Min(Console.WindowWidth, MAX_WIDTH);
+            int newHeight = Math.Min(Console.WindowHeight, MAX_HEIGHT);
 
             if (LastWidth == newWidth && LastHeight == newHeight) continue;
 
             if (newWidth <= 0 || newHeight <= 0) continue;
 
-            LastWidth = Math.Min(Console.WindowWidth, 200);
-            LastHeight = Math.Min(Console.WindowHeight, 50);
+            LastWidth = Math.Min(Console.WindowWidth, MAX_WIDTH);
+            LastHeight = Math.Min(Console.WindowHeight, MAX_HEIGHT);
 
             Redraw();
         }

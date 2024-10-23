@@ -54,7 +54,7 @@ public sealed class Textbox(Frame parentFrame) : Element(parentFrame) {
         Ansi.SetCursorPosition(left, top);
 
         if (!String.IsNullOrEmpty(placeholder) && _value.Length == 0) {
-            Ansi.SetFgColor([128, 128, 128]);
+            Ansi.SetFgColor([64, 64, 64]);
             Console.Write(placeholder);
             Console.Write(new String(' ', usableWidth - placeholder.Length));
             Ansi.SetCursorPosition(left + index, top);
@@ -130,7 +130,6 @@ public sealed class Textbox(Frame parentFrame) : Element(parentFrame) {
 
         case ConsoleKey.UpArrow:
             if (!enableHistory) break;
-
             if (history.Count > 0) {
                 if (historyIndex == -1) {
                     historyIndex = history.Count - 1;
@@ -145,7 +144,6 @@ public sealed class Textbox(Frame parentFrame) : Element(parentFrame) {
 
         case ConsoleKey.DownArrow:
             if (!enableHistory) break;
-            
             if (historyIndex >= 0) {
                 historyIndex++;
                 if (historyIndex >= history.Count) {

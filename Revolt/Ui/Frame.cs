@@ -5,6 +5,19 @@ public abstract class Frame {
     protected Element defaultElement;
     public Element focusedElement;
 
+    public virtual void Show(bool draw = true) {
+        Renderer.ActiveFrame = this;
+
+        if (defaultElement is not null) {
+            focusedElement = defaultElement;
+            focusedElement.Focus(false);
+        }
+        
+        if (draw) {
+            Renderer.Redraw();
+        }
+    }
+
     public virtual void Draw(int width, int height) {
         int top = 0;
 

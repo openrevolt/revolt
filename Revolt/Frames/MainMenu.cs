@@ -23,6 +23,11 @@ public sealed class MainMenu : Ui.Frame {
         ];
     }
 
+    public override void Show(bool draw = true) {
+        Ansi.HideCursor();
+        base.Show(draw);
+    }
+
     public override void Draw(int width, int height) {
         base.Draw(width, height);
 
@@ -97,8 +102,7 @@ public sealed class MainMenu : Ui.Frame {
     public bool Enter() {
         switch (menu[index]) {
         case "Ping":
-            Renderer.ActiveFrame = PingFrame.singleton;
-            Renderer.Redraw();
+            PingFrame.singleton.Show();
             return true;
 
          case "Exit":

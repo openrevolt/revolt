@@ -1,8 +1,6 @@
 ﻿namespace Revolt.Ui;
 
 public sealed class InputDialog : Frame {
-    private int dialogWidth = 48;
-
     public string text;
     public Textbox valueTextbox;
     public Button okButton;
@@ -28,8 +26,6 @@ public sealed class InputDialog : Frame {
     }
 
     public override void Draw(int width, int height) {
-        dialogWidth = width;
-
         int left = (Renderer.LastWidth - width) / 2 + 1;
         int top = 1;
 
