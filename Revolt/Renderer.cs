@@ -4,7 +4,7 @@ using Revolt.Ui;
 namespace Revolt;
 
 public static class Renderer {
-    const int MAX_WIDTH = 280, MAX_HEIGHT = 72;
+    const int MAX_WIDTH = 200, MAX_HEIGHT = 50;
     public static int LastWidth { get; set; }
     public static int LastHeight { get; set; }
     public static Frame ActiveFrame { get; set; }
