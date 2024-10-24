@@ -126,7 +126,7 @@ public sealed class InputDialog : Frame {
     public void Close() {
         okButton.action = null;
         cancelButton.action = null;
-        Renderer.Dialog = null;
+        Renderer.ActiveDialog = null;
         Renderer.Redraw();
         Ansi.HideCursor();
     }

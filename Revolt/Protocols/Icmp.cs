@@ -12,18 +12,18 @@ public static class Icmp {
 
     public static readonly byte[] ICMP_PAYLOAD = "---- revolt ----"u8.ToArray();
 
-    public static async Task<short[]> PingArrayAsync(string[] name, int timeout) {
+    public static async Task<short[]> PingArrayAsync(string[] hosts, int timeout) {
         List<Task<short>> tasks = [];
-        for (int i = 0; i < name.Length; i++) tasks.Add(PingAsync(name[i], timeout));
+        for (int i = 0; i < hosts.Length; i++) tasks.Add(PingAsync(hosts[i], timeout));
         short[] result = await Task.WhenAll(tasks);
         return result;
     }
 
-    private static async Task<short> PingAsync(string hostname, int timeout) {
+    private static async Task<short> PingAsync(string host, int timeout) {
         using Ping p = new Ping();
 
         try {
-            PingReply reply = await p.SendPingAsync(hostname, timeout, ICMP_PAYLOAD);
+            PingReply reply = await p.SendPingAsync(host, timeout, ICMP_PAYLOAD);
 
             return (int)reply.Status switch {
                 (int)IPStatus.DestinationUnreachable or

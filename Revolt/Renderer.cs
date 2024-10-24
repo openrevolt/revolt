@@ -8,7 +8,7 @@ public static class Renderer {
     public static int LastWidth { get; set; }
     public static int LastHeight { get; set; }
     public static Frame ActiveFrame { get; set; }
-    public static InputDialog Dialog { get; set; }
+    public static InputDialog ActiveDialog { get; set; }
 
     static Renderer() {
         LastWidth = 80;
@@ -38,8 +38,8 @@ public static class Renderer {
                 continue;
             }
 
-            if (Dialog is not null) {
-                Dialog.HandleKey(key);
+            if (ActiveDialog is not null) {
+                ActiveDialog.HandleKey(key);
                 continue;
             }
 
@@ -75,6 +75,6 @@ public static class Renderer {
         }
 
         ActiveFrame?.Draw(LastWidth, LastHeight);
-        Dialog?.Draw();
+        ActiveDialog?.Draw();
     }
 }

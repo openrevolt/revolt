@@ -84,11 +84,13 @@ public sealed class PingFrame : Ui.Frame {
         if (list.items is null || list.items.Count == 0) return;
         if (i >= list.items.Count) return;
 
-        PingItem item = list.items[i];
-
         int yPos = y + i * 2;
         int statusPosX = x + width - 10;
         int pingCellPosX = x + 25;
+        int usableWidth = Math.Min(width - 36, HISTORY_LEN);
+        int historyOffset = (rotatingIndex + (HISTORY_LEN - usableWidth + 1)) % HISTORY_LEN;
+
+        PingItem item = list.items[i];
 
         Ansi.SetCursorPosition(x, yPos);
         if (i == list.index) {
@@ -100,16 +102,10 @@ public sealed class PingFrame : Ui.Frame {
             Ansi.SetBgColor(Data.BG_COLOR);
         }
 
-        string paddedHost = item.host.Length > 24
-            ? item.host[..23] + Data.ELLIPSIS
-            : item.host.PadRight(24);
-        Console.Write(paddedHost);
+        Console.Write(item.host.Length > 24 ? item.host[..23] + Data.ELLIPSIS : item.host.PadRight(24));
 
         Ansi.SetBgColor(Data.BG_COLOR);
         Ansi.SetCursorPosition(pingCellPosX, yPos);
-
-        int usableWidth = Math.Min(width - 36, HISTORY_LEN);
-        int historyOffset = (rotatingIndex + (HISTORY_LEN - usableWidth + 1)) % HISTORY_LEN;
 
         for (int t = 0; t < usableWidth; t++) {
             Ansi.SetFgColor(RttColor(item.history[(historyOffset + t) % HISTORY_LEN]));
@@ -117,15 +113,36 @@ public sealed class PingFrame : Ui.Frame {
         }
 
         Ansi.SetFgColor(Data.FG_COLOR);
-        Ansi.SetBgColor(Data.BG_COLOR);
 
-        string status = $"{item.status}ms".PadLeft(6, ' ');
+        string text = RttText(item.status);
         Ansi.SetCursorPosition(statusPosX, yPos);
-        Console.Write(status.PadRight(11));
+        Console.Write(text);
     }
 
-    private void UpdatePingItem(int i, int x, int y, int width, short stauts) {
+    private void UpdatePingItem(int i, int x, int y, int width, short status) {
+        int yPos = y + i * 2;
+        int statusPosX = x + width - 10;
+        int pingCellPosX = x + 25;
+        int usableWidth = Math.Min(width - 36, HISTORY_LEN);
+        int historyOffset = (rotatingIndex + (HISTORY_LEN - usableWidth + 1)) % HISTORY_LEN;
 
+        PingItem item = list.items[i];
+
+        Ansi.SetBgColor(Data.BG_COLOR);
+        Ansi.SetCursorPosition(pingCellPosX, yPos);
+
+        for (int t = 0; t < usableWidth; t++) {
+            Ansi.SetFgColor(RttColor(item.history[(historyOffset + t) % HISTORY_LEN]));
+            Console.Write(Data.PING_CELL);
+        }
+
+
+
+        Ansi.SetFgColor(Data.FG_COLOR);
+
+        string text = RttText(status);
+        Ansi.SetCursorPosition(statusPosX, yPos);
+        Console.Write(text);
     }
 
     private static byte[] RttColor(short rtt) => rtt switch {
@@ -134,8 +151,8 @@ public sealed class PingFrame : Ui.Frame {
         Protocols.Icmp.INVALID_ADDREDD => [255, 0, 0],
         Protocols.Icmp.GENERAL_FAILURE => [255, 0, 0],
         Protocols.Icmp.ERROR           => [255, 0, 0],
+        Protocols.Icmp.UNKNOWN         => [255, 0, 0],
         Protocols.Icmp.UNDEFINED       => Data.CONTROL_COLOR,
-
         < 10  => [128, 224, 48],
         < 100 => [48, 224, 228],
         < 200 => [48, 140, 224],
@@ -143,44 +160,44 @@ public sealed class PingFrame : Ui.Frame {
         _     => [224, 52, 192]
     };
 
-    private void PingLoop() {
+    private static string RttText(short rtt) => rtt switch {
+        Protocols.Icmp.TIMEDOUT        => "timed out ",
+        Protocols.Icmp.UNREACHABLE     => "unreachab.",
+        Protocols.Icmp.INVALID_ADDREDD => "invalid   ",
+        Protocols.Icmp.GENERAL_FAILURE => "failure   ",
+        Protocols.Icmp.ERROR           => "error     ",
+        Protocols.Icmp.UNKNOWN         => "unknown   ",
+        Protocols.Icmp.UNDEFINED       => "undefine  ",
+        _ => $"{rtt}ms".PadLeft(10, ' ')
+    };
+
+    private async Task PingLoop() {
         cancellationTokenSource = new CancellationTokenSource();
         cancellationToken = cancellationTokenSource.Token;
 
-        Random r = new Random();
-
         while (!cancellationToken.IsCancellationRequested) {
+            (int left, int top, int width, _) = list.GetBounding();
+            string[] hosts = list.items.Select(o => o.host).ToArray();
+
+            short[] result = await Protocols.Icmp.PingArrayAsync(hosts, 1000);
 
             for (int i = 0; i < list.items.Count; i++) {
-                short status = (short)r.Next(0, 1000);
+                short status = result[i];
+
                 PingItem item = list.items[i];
                 item.status = status;
                 item.history[rotatingIndex % HISTORY_LEN] = status;
                 list.items[i] = item;
+
+                if (Renderer.ActiveFrame == this && Renderer.ActiveDialog == null) {
+                    UpdatePingItem(i, left, top, width, status);
+                }
             }
 
-            Console.Title = rotatingIndex.ToString();
-                /*
-                (int left, int top, int width, _) = list.GetBounding();
-
-                for (int j = 0; j < HISTORY_LEN; j++) {
-
-                    for (int i = 0; i < list.items.Count; i++) {
-                        int t = (rotatingIndex + j) % HISTORY_LEN;
-                        list.items[i].history[t] = 0;
-
-                        if (Renderer.ActiveFrame == this) {
-                            DrawPingItem(i, left, top, width);
-                        }
-
-                    }
-                }*/
-
-                Thread.Sleep(1000);
+            Thread.Sleep(1000);
             rotatingIndex++;
         }
     }
-
 
     private void ParseQuery(string query) {
         if (query.Contains(';')) {
@@ -266,7 +283,7 @@ public sealed class PingFrame : Ui.Frame {
     }
 
     private void Start() =>
-        new Thread(PingLoop).Start();
+        new Thread(async () => await PingLoop()).Start();
 
     private void Stop() =>
         cancellationTokenSource.Cancel();
@@ -285,7 +302,7 @@ public sealed class PingFrame : Ui.Frame {
             dialog.Close();
         };
 
-        Renderer.Dialog = dialog;
+        Renderer.ActiveDialog = dialog;
         dialog.Draw();
     }
 

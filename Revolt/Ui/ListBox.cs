@@ -10,8 +10,6 @@ public sealed class ListBox<T>(Frame parentFrame) : Element(parentFrame) {
     public override void Draw() {
         (int left, int top, int width, int height) = GetBounding();
 
-        //TODO: clear previous
-
         for (int i = 0; i < height; i++) {
             drawItemHandler(i, left, top, width);
         }
