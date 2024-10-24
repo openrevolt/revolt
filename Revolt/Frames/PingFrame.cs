@@ -146,8 +146,8 @@ public sealed class PingFrame : Ui.Frame {
     }
 
     private static byte[] RttColor(short rtt) => rtt switch {
-        Protocols.Icmp.TIMEDOUT        => [240, 80, 24],
-        Protocols.Icmp.UNREACHABLE     => [232, 118, 0],
+        Protocols.Icmp.TIMEDOUT        => [224, 32, 16],
+        Protocols.Icmp.UNREACHABLE     => [224, 128, 0],
         Protocols.Icmp.INVALID_ADDREDD => [255, 0, 0],
         Protocols.Icmp.GENERAL_FAILURE => [255, 0, 0],
         Protocols.Icmp.ERROR           => [255, 0, 0],
@@ -162,7 +162,7 @@ public sealed class PingFrame : Ui.Frame {
 
     private static string RttText(short rtt) => rtt switch {
         Protocols.Icmp.TIMEDOUT        => "timed out ",
-        Protocols.Icmp.UNREACHABLE     => "unreachab.",
+        Protocols.Icmp.UNREACHABLE     => $"unreachab{Data.ELLIPSIS}",
         Protocols.Icmp.INVALID_ADDREDD => "invalid   ",
         Protocols.Icmp.GENERAL_FAILURE => "failure   ",
         Protocols.Icmp.ERROR           => "error     ",
@@ -182,6 +182,7 @@ public sealed class PingFrame : Ui.Frame {
             short[] result = await Protocols.Icmp.PingArrayAsync(hosts, 1000);
 
             for (int i = 0; i < list.items.Count; i++) {
+                if (i >= result.Length) break;
                 short status = result[i];
 
                 PingItem item = list.items[i];
@@ -196,6 +197,7 @@ public sealed class PingFrame : Ui.Frame {
 
             Thread.Sleep(1000);
             rotatingIndex++;
+            rotatingIndex %= HISTORY_LEN;
         }
     }
 
