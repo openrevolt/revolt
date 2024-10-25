@@ -7,8 +7,8 @@ public static class Icmp {
     public const short INVALID_ADDREDD = -3;
     public const short GENERAL_FAILURE = -4;
     public const short ERROR           = -5;
-    public const short UNKNOWN         = -9;
-    public const short UNDEFINED       = -10;
+    public const short UNKNOWN         = -8;
+    public const short UNDEFINED       = -9;
 
     public static readonly byte[] ICMP_PAYLOAD = "---- revolt ----"u8.ToArray();
 

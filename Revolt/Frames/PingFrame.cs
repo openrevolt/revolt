@@ -85,7 +85,7 @@ public sealed class PingFrame : Ui.Frame {
         if (i >= list.items.Count) return;
 
         int yPos = y + i * 2;
-        int statusPosX = x + width - 10;
+        int statusPosX = x + width - 12;
         int pingCellPosX = x + 25;
         int usableWidth = Math.Min(width - 36, HISTORY_LEN);
         int historyOffset = (rotatingIndex + (HISTORY_LEN - usableWidth + 1)) % HISTORY_LEN;
@@ -119,9 +119,9 @@ public sealed class PingFrame : Ui.Frame {
         Console.Write(text);
     }
 
-    private void UpdatePingItem(int i, int x, int y, int width, short status) {
+    private string UpdatePingItem(int i, int x, int y, int width, short status) {
         int yPos = y + i * 2;
-        int statusPosX = x + width - 10;
+        int statusPosX = x + width - 12;
         int pingCellPosX = x + 25;
         int usableWidth = Math.Min(width - 36, HISTORY_LEN);
         int historyOffset = (rotatingIndex + (HISTORY_LEN - usableWidth + 1)) % HISTORY_LEN;
@@ -135,8 +135,6 @@ public sealed class PingFrame : Ui.Frame {
             Ansi.SetFgColor(RttColor(item.history[(historyOffset + t) % HISTORY_LEN]));
             Console.Write(Data.PING_CELL);
         }
-
-
 
         Ansi.SetFgColor(Data.FG_COLOR);
 
@@ -153,22 +151,24 @@ public sealed class PingFrame : Ui.Frame {
         Protocols.Icmp.ERROR           => [255, 0, 0],
         Protocols.Icmp.UNKNOWN         => [255, 0, 0],
         Protocols.Icmp.UNDEFINED       => Data.CONTROL_COLOR,
-        < 10  => [128, 224, 48],
-        < 100 => [48, 224, 228],
-        < 200 => [48, 140, 224],
-        < 400 => [128, 64, 232],
-        _     => [224, 52, 192]
+        < 5 => [128, 224, 48],
+        < 10 => [48, 224, 128],
+        < 50 => [48, 224, 222],
+        < 100 => [48, 128, 224],
+        < 400 => [96, 64, 232],
+        < 600 => [160, 64, 232],
+        _ => [224, 52, 192]
     };
 
     private static string RttText(short rtt) => rtt switch {
-        Protocols.Icmp.TIMEDOUT        => "timed out ",
-        Protocols.Icmp.UNREACHABLE     => $"unreachab{Data.ELLIPSIS}",
-        Protocols.Icmp.INVALID_ADDREDD => "invalid   ",
-        Protocols.Icmp.GENERAL_FAILURE => "failure   ",
-        Protocols.Icmp.ERROR           => "error     ",
-        Protocols.Icmp.UNKNOWN         => "unknown   ",
-        Protocols.Icmp.UNDEFINED       => "undefine  ",
-        _ => $"{rtt}ms".PadLeft(10, ' ')
+        Protocols.Icmp.TIMEDOUT        => "timed out   ",
+        Protocols.Icmp.UNREACHABLE     => $"unreachable",
+        Protocols.Icmp.INVALID_ADDREDD => "invalid     ",
+        Protocols.Icmp.GENERAL_FAILURE => "failure     ",
+        Protocols.Icmp.ERROR           => "error       ",
+        Protocols.Icmp.UNKNOWN         => "unknown     ",
+        Protocols.Icmp.UNDEFINED       => "undefine    ",
+        _ => $"{rtt}ms".PadLeft(12, ' ')
     };
 
     private async Task PingLoop() {

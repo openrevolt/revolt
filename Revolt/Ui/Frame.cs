@@ -21,14 +21,14 @@ public abstract class Frame {
     public virtual void Draw(int width, int height) {
         int top = 0;
 
+        string blank = new string(' ', width);
+
         Ansi.SetBgColor(Data.BG_COLOR);
         for (int y = top; y <= height; y++) {
             if (y > Console.WindowHeight) break;
 
             Ansi.SetCursorPosition(0, y);
-            for (int x = 0; x < width; x++) {
-                Console.Write(' ');
-            }
+            Console.Write(blank);
         }
 
         if (elements is null) return;

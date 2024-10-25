@@ -29,12 +29,12 @@ public sealed class InputDialog : Frame {
         int left = (Renderer.LastWidth - width) / 2 + 1;
         int top = 1;
 
-        string gap = new String(' ', width);
+        string blank = new String(' ', width);
 
         Ansi.SetFgColor([16, 16, 16]);
         Ansi.SetBgColor(Data.PANE_COLOR);
         Ansi.SetCursorPosition(left, top++);
-        Console.Write(gap);
+        Console.Write(blank);
 
         if (text is not null) {
             string[] words = text.Split(' ');
@@ -62,11 +62,11 @@ public sealed class InputDialog : Frame {
 
         for (int i = 0; i < 4; i++) {
             Ansi.SetCursorPosition(left, top + i);
-            Console.Write(gap);
+            Console.Write(blank);
         }
 
         Ansi.SetCursorPosition(left, top++);
-        Console.Write(gap);
+        Console.Write(blank);
 
         okButton.left = left + (width - 20) / 2;
         okButton.top = top;
