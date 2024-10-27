@@ -47,16 +47,9 @@ public static class Ansi {
          builder.Append("\x1b[?25l");
 
     public static void ShowCursor() =>
-        builder.Append  ("\x1b[?25h");
+        builder.Append("\x1b[?25h");
 
-    public static void SetCursorPosition(int x, int y) {
-        if (x < 2) {
-            Console.Title = x + " x " + y;
-            builder.Append($"\x1b[{y};{x}H");
-        }
-        else {
-            builder.Append($"\x1b[{y};{x}H");
-        }
-    }
+    public static void SetCursorPosition(int x, int y) =>
+        builder.Append($"\x1b[{y};{x}H");
 
 }

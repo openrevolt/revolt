@@ -42,7 +42,6 @@ public sealed class Textbox(Frame parentFrame) : Element(parentFrame) {
         Ansi.Write(new String(Data.UPPER_1_8TH_BLOCK, usableWidth));
 
         DrawValue();
-        //Ansi.Push();
     }
 
     private void DrawValue(int left = -1, int top = -1, int width = -1) {

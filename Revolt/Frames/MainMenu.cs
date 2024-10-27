@@ -86,6 +86,10 @@ public sealed class MainMenu : Ui.Frame {
         case ConsoleKey.Enter:
             return Enter();
 
+        case ConsoleKey.Tab:
+            Tab(key.Modifiers == ConsoleModifiers.Shift);
+            return true;
+
         case ConsoleKey.LeftArrow:
         case ConsoleKey.UpArrow:
             SelectPrevious();
@@ -112,6 +116,29 @@ public sealed class MainMenu : Ui.Frame {
         default:
             return true;
         }
+    }
+
+    public void Tab(bool invert) {
+        if (menu is null) return;
+
+        int lastIndex = index;
+
+        if (!invert && lastIndex == menu.Length - 1) {
+            index = 0;
+        }
+        else if (invert && lastIndex == 0) {
+            index = menu.Length - 1;
+        }
+        else {
+            index = Math.Min(menu.Length - 1, index + (invert ? -1 : 1));
+        }
+
+        if (string.IsNullOrEmpty(menu[index])) {
+            index = Math.Min(menu.Length - 1, index + (invert ? -1 : 1));
+        }
+
+        DrawItem(lastIndex, Renderer.LastWidth, Renderer.LastHeight);
+        DrawItem(index, Renderer.LastWidth, Renderer.LastHeight);
     }
 
     public void SelectPrevious() {
