@@ -88,7 +88,7 @@ public sealed class PingFrame : Ui.Frame {
         int statusPosX = x + width - 12;
         int pingCellPosX = x + 25;
         int usableWidth = Math.Min(width - 36, HISTORY_LEN);
-        int historyOffset = (rotatingIndex + (HISTORY_LEN - usableWidth + 1)) % HISTORY_LEN;
+        int historyOffset = (rotatingIndex + (HISTORY_LEN - usableWidth + 2)) % HISTORY_LEN;
 
         PingItem item = list.items[i];
 
@@ -114,17 +114,16 @@ public sealed class PingFrame : Ui.Frame {
 
         Ansi.SetFgColor(Data.FG_COLOR);
 
-        string text = RttText(item.status);
         Ansi.SetCursorPosition(statusPosX, yPos);
-        Console.Write(text);
+        Console.Write(RttText(item.status));
     }
 
-    private string UpdatePingItem(int i, int x, int y, int width, short status) {
+    private void UpdatePingItem(int i, int x, int y, int width, short status) {
         int yPos = y + i * 2;
         int statusPosX = x + width - 12;
         int pingCellPosX = x + 25;
         int usableWidth = Math.Min(width - 36, HISTORY_LEN);
-        int historyOffset = (rotatingIndex + (HISTORY_LEN - usableWidth + 1)) % HISTORY_LEN;
+        int historyOffset = (rotatingIndex + (HISTORY_LEN - usableWidth + 2)) % HISTORY_LEN;
 
         PingItem item = list.items[i];
 
@@ -151,23 +150,24 @@ public sealed class PingFrame : Ui.Frame {
         Protocols.Icmp.ERROR           => [255, 0, 0],
         Protocols.Icmp.UNKNOWN         => [255, 0, 0],
         Protocols.Icmp.UNDEFINED       => Data.CONTROL_COLOR,
-        < 5 => [128, 224, 48],
-        < 10 => [48, 224, 128],
-        < 50 => [48, 224, 222],
+        < 5   => [128, 224, 48],
+        < 10  => [48, 224, 128],
+        < 20  => [48, 224, 160],
+        < 50  => [48, 224, 224],
         < 100 => [48, 128, 224],
         < 400 => [96, 64, 232],
         < 600 => [160, 64, 232],
-        _ => [224, 52, 192]
+        _     => [224, 52, 192]
     };
 
     private static string RttText(short rtt) => rtt switch {
-        Protocols.Icmp.TIMEDOUT        => "timed out   ",
-        Protocols.Icmp.UNREACHABLE     => $"unreachable",
-        Protocols.Icmp.INVALID_ADDREDD => "invalid     ",
-        Protocols.Icmp.GENERAL_FAILURE => "failure     ",
-        Protocols.Icmp.ERROR           => "error       ",
-        Protocols.Icmp.UNKNOWN         => "unknown     ",
-        Protocols.Icmp.UNDEFINED       => "undefine    ",
+        Protocols.Icmp.TIMEDOUT        => " timed out  ",
+        Protocols.Icmp.UNREACHABLE     => " unreachable",
+        Protocols.Icmp.INVALID_ADDREDD => " invalid    ",
+        Protocols.Icmp.GENERAL_FAILURE => " failure    ",
+        Protocols.Icmp.ERROR           => " error      ",
+        Protocols.Icmp.UNKNOWN         => " unknown    ",
+        Protocols.Icmp.UNDEFINED       => " undefine   ",
         _ => $"{rtt}ms".PadLeft(12, ' ')
     };
 
@@ -180,9 +180,9 @@ public sealed class PingFrame : Ui.Frame {
             string[] hosts = list.items.Select(o => o.host).ToArray();
 
             short[] result = await Protocols.Icmp.PingArrayAsync(hosts, 1000);
+            rotatingIndex++;
 
-            for (int i = 0; i < list.items.Count; i++) {
-                if (i >= result.Length) break;
+            for (int i = 0; i < list.items.Count && i < result.Length; i++) {
                 short status = result[i];
 
                 PingItem item = list.items[i];
@@ -196,7 +196,6 @@ public sealed class PingFrame : Ui.Frame {
             }
 
             Thread.Sleep(1000);
-            rotatingIndex++;
             rotatingIndex %= HISTORY_LEN;
         }
     }

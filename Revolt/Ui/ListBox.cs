@@ -44,7 +44,7 @@ public sealed class ListBox<T>(Frame parentFrame) : Element(parentFrame) {
         items.Add(item);
 
     public void Remove(T item) =>
-        items.Add(item);
+        items.Remove(item);
 
     public override void Focus(bool draw = true) {
         base.Focus(draw);
