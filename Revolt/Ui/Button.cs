@@ -3,7 +3,7 @@
 public sealed class Button(Frame parentFrame, string text) : Element(parentFrame) {
     public string text = text;
     public Action action;
-    public override void Draw() {
+    public override void Draw(bool push) {
         (int left, int top, _, _) = GetBounding();
 
         byte[] foreColor = isFocused ? [16, 16, 16] : Data.FG_COLOR;
@@ -13,14 +13,18 @@ public sealed class Button(Frame parentFrame, string text) : Element(parentFrame
         Ansi.SetBgColor(backColor);
         Ansi.SetCursorPosition(left, top);
 
-        Console.Write(text);
+        Ansi.Write(text);
 
         Ansi.SetFgColor(backColor);
         Ansi.SetBgColor(Data.PANE_COLOR);
         Ansi.SetCursorPosition(left, top + 1);
 
         for (int i = 0; i < text.Length; i++) {
-            Console.Write(Data.UPPER_1_8TH_BLOCK);
+            Ansi.Write(Data.UPPER_1_8TH_BLOCK);
+        }
+
+        if (push) {
+            Ansi.Push();
         }
     }
 

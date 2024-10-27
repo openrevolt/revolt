@@ -7,7 +7,7 @@ public sealed class ListBox<T>(Frame parentFrame) : Element(parentFrame) {
     public delegate void DrawItemDelegate(int i, int x, int y, int width);
     public DrawItemDelegate drawItemHandler;
 
-    public override void Draw() {
+    public override void Draw(bool push) {
         (int left, int top, int width, int height) = GetBounding();
 
         for (int i = 0; i < height; i++) {
@@ -21,12 +21,12 @@ public sealed class ListBox<T>(Frame parentFrame) : Element(parentFrame) {
         switch (key.Key) {
         case ConsoleKey.UpArrow:
             index = Math.Max(0, index - 1);
-            Draw();
+            Draw(true);
             break;
 
         case ConsoleKey.DownArrow:
             index = Math.Min(items.Count - 1, index + 1);
-            Draw();
+            Draw(true);
             break;
 
         case ConsoleKey.LeftArrow:

@@ -28,14 +28,16 @@ public abstract class Frame {
             if (y > Console.WindowHeight) break;
 
             Ansi.SetCursorPosition(0, y);
-            Console.Write(blank);
+            Ansi.Write(blank);
         }
 
         if (elements is null) return;
 
         for (int i = 0; i < elements?.Count; i++) {
-            elements[i].Draw();
+            elements[i].Draw(false);
         }
+
+        Ansi.Push();
     }
 
     public void FocusPrevious() {

@@ -16,7 +16,7 @@ public abstract class Element(Frame parentFrame) {
         return (left + 1, top + 1, width, height);
     }
 
-    public abstract void Draw();
+    public abstract void Draw(bool push);
 
     public abstract void HandleKey(ConsoleKeyInfo key);
 
@@ -25,14 +25,14 @@ public abstract class Element(Frame parentFrame) {
 
         isFocused = true;
         if (draw) {
-            Draw();
+            Draw(true);
         }
     }
 
     public virtual void Blur(bool draw = true) {
         isFocused = false;
         if (draw) {
-            Draw();
+            Draw(true);
         }
     }
 }

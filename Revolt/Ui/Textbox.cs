@@ -26,22 +26,23 @@ public sealed class Textbox(Frame parentFrame) : Element(parentFrame) {
         }
     }
 
-    public override void Draw() {
+    public override void Draw(bool push) {
         (int left, int top, int width, _) = GetBounding();
         int usableWidth = Math.Max(width, 0);
 
         Ansi.SetFgColor(Data.FG_COLOR);
         Ansi.SetBgColor(Data.INPUT_COLOR);
         Ansi.SetCursorPosition(left, top);
-        Console.Write(new String(' ', usableWidth));
+        Ansi.Write(new String(' ', usableWidth));
 
         Ansi.SetFgColor(isFocused ? Data.SELECT_COLOR : Data.INPUT_COLOR);
         Ansi.SetBgColor(backColor);
         Ansi.SetCursorPosition(left, top + 1);
 
-        Console.Write(new String(Data.UPPER_1_8TH_BLOCK, usableWidth));
+        Ansi.Write(new String(Data.UPPER_1_8TH_BLOCK, usableWidth));
 
         DrawValue();
+        //Ansi.Push();
     }
 
     private void DrawValue(int left = -1, int top = -1, int width = -1) {
@@ -55,15 +56,16 @@ public sealed class Textbox(Frame parentFrame) : Element(parentFrame) {
 
         if (!String.IsNullOrEmpty(placeholder) && _value.Length == 0) {
             Ansi.SetFgColor([64, 64, 64]);
-            Console.Write(placeholder);
-            Console.Write(new String(' ', usableWidth - placeholder.Length));
+            Ansi.Write(placeholder);
+            Ansi.Write(new String(' ', usableWidth - placeholder.Length));
             Ansi.SetCursorPosition(left + index, top);
+            Ansi.Push();
             return;
         }
 
         if (_value.Length <= usableWidth) {
-            Console.Write(_value);
-            Console.Write(new String(' ', usableWidth - _value.Length));
+            Ansi.Write(_value);
+            Ansi.Write(new String(' ', usableWidth - _value.Length));
             Ansi.SetCursorPosition(left + index, top);
         }
         else {
@@ -79,13 +81,15 @@ public sealed class Textbox(Frame parentFrame) : Element(parentFrame) {
             }
 
             string visible = _value.Substring(offset, Math.Min(usableWidth, _value.Length - offset));
-            Console.Write(visible);
+            Ansi.Write(visible);
 
             Ansi.SetCursorPosition(left + usableWidth, top);
-            Console.Write(' ');
+            Ansi.Write(' ');
 
             Ansi.SetCursorPosition(left + (index - offset), top);
         }
+
+        Ansi.Push();
     }
 
     public override void HandleKey(ConsoleKeyInfo key) {
@@ -160,6 +164,7 @@ public sealed class Textbox(Frame parentFrame) : Element(parentFrame) {
         case ConsoleKey.Backspace:
             if (index == 0) {
                 Ansi.SetCursorPosition(left + index, top);
+                Ansi.Push();
                 break;
             }
 
@@ -217,10 +222,12 @@ public sealed class Textbox(Frame parentFrame) : Element(parentFrame) {
     public override void Focus(bool draw = true) {
         base.Focus(draw);
         Ansi.ShowCursor();
+        Ansi.Push();
     }
 
     public override void Blur(bool draw = true) {
         base.Blur(draw);
         Ansi.HideCursor();
+        Ansi.Push();
     }
 }

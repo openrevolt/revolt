@@ -87,8 +87,8 @@ public sealed class PingFrame : Ui.Frame {
         int yPos = y + i * 2;
         int statusPosX = x + width - 12;
         int pingCellPosX = x + 25;
-        int usableWidth = Math.Min(width - 36, HISTORY_LEN);
-        int historyOffset = (rotatingIndex + (HISTORY_LEN - usableWidth + 2)) % HISTORY_LEN;
+        int usableWidth = Math.Min(width - 38, HISTORY_LEN);
+        int historyOffset = (rotatingIndex + HISTORY_LEN - usableWidth + 1) % HISTORY_LEN;
 
         PingItem item = list.items[i];
 
@@ -102,28 +102,30 @@ public sealed class PingFrame : Ui.Frame {
             Ansi.SetBgColor(Data.BG_COLOR);
         }
 
-        Console.Write(item.host.Length > 24 ? item.host[..23] + Data.ELLIPSIS : item.host.PadRight(24));
+        Ansi.Write(item.host.Length > 24 ? item.host[..23] + Data.ELLIPSIS : item.host.PadRight(24));
 
         Ansi.SetBgColor(Data.BG_COLOR);
         Ansi.SetCursorPosition(pingCellPosX, yPos);
 
         for (int t = 0; t < usableWidth; t++) {
             Ansi.SetFgColor(RttColor(item.history[(historyOffset + t) % HISTORY_LEN]));
-            Console.Write(Data.PING_CELL);
+            Ansi.Write(Data.PING_CELL);
         }
 
         Ansi.SetFgColor(Data.FG_COLOR);
 
         Ansi.SetCursorPosition(statusPosX, yPos);
-        Console.Write(RttText(item.status));
+        Ansi.Write(RttText(item.status));
+
+        Ansi.Push();
     }
 
     private void UpdatePingItem(int i, int x, int y, int width, short status) {
         int yPos = y + i * 2;
         int statusPosX = x + width - 12;
         int pingCellPosX = x + 25;
-        int usableWidth = Math.Min(width - 36, HISTORY_LEN);
-        int historyOffset = (rotatingIndex + (HISTORY_LEN - usableWidth + 2)) % HISTORY_LEN;
+        int usableWidth = Math.Min(width - 38, HISTORY_LEN);
+        int historyOffset = (rotatingIndex + HISTORY_LEN - usableWidth + 1) % HISTORY_LEN;
 
         PingItem item = list.items[i];
 
@@ -132,14 +134,16 @@ public sealed class PingFrame : Ui.Frame {
 
         for (int t = 0; t < usableWidth; t++) {
             Ansi.SetFgColor(RttColor(item.history[(historyOffset + t) % HISTORY_LEN]));
-            Console.Write(Data.PING_CELL);
+            Ansi.Write(Data.PING_CELL);
         }
 
         Ansi.SetFgColor(Data.FG_COLOR);
 
         string text = RttText(status);
         Ansi.SetCursorPosition(statusPosX, yPos);
-        Console.Write(text);
+        Ansi.Write(text);
+
+        Ansi.Push();
     }
 
     private static byte[] RttColor(short rtt) => rtt switch {
@@ -309,7 +313,7 @@ public sealed class PingFrame : Ui.Frame {
 
     private void Clear() {
         list.items.Clear();
-        list.Draw();
+        list.Draw(true);
     }
 
     private void ToggleStatus() {
@@ -324,7 +328,7 @@ public sealed class PingFrame : Ui.Frame {
             toolbar.items[1].text = "Start";
         }
 
-        toolbar.Draw();
+        toolbar.Draw(true);
     }
 
     private void Options() { }

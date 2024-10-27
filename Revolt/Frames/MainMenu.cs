@@ -54,7 +54,7 @@ public sealed class MainMenu : Ui.Frame {
             Ansi.SetBgColor(Data.BG_COLOR);
             Ansi.SetCursorPosition(3, y);
 
-            Console.Write(new String(Data.LINE_H, length));
+            Ansi.Write(new String(Data.LINE_H, length));
             return;
         }
 
@@ -74,7 +74,8 @@ public sealed class MainMenu : Ui.Frame {
             Ansi.SetBgColor(Data.BG_COLOR);
         }
 
-        Console.Write(item);
+        Ansi.Write(item);
+        Ansi.Push();
     }
 
     public override bool HandleKey(ConsoleKeyInfo key) {

@@ -10,7 +10,7 @@ public sealed class Toolbar(Frame parentFrame) : Element(parentFrame) {
     public ToolbarItem[] items;
     public int index = 0;
 
-    public override void Draw() {
+    public override void Draw(bool push) {
         (int left, _, int width, _) = GetBounding();
 
         int count = 0;
@@ -21,17 +21,17 @@ public sealed class Toolbar(Frame parentFrame) : Element(parentFrame) {
             if (count + length > width) break;
 
             Ansi.SetFgColor(Data.TOOLBAR_COLOR);
-            Console.Write(Data.LOWER_3_8TH_BLOCK);
+            Ansi.Write(Data.LOWER_3_8TH_BLOCK);
 
             Ansi.SetFgColor(isFocused && i == index ? Data.SELECT_COLOR : Data.CONTROL_COLOR);
-            Console.Write(new String(Data.LOWER_3_8TH_BLOCK, items[i].text.Length + 2));
+            Ansi.Write(new String(Data.LOWER_3_8TH_BLOCK, items[i].text.Length + 2));
 
             count += length;
         }
 
         int r = width - count;
         Ansi.SetFgColor(Data.TOOLBAR_COLOR);
-        Console.Write(new String(Data.LOWER_3_8TH_BLOCK, r));
+        Ansi.Write(new String(Data.LOWER_3_8TH_BLOCK, r));
 
 
         count = 0;
@@ -43,16 +43,16 @@ public sealed class Toolbar(Frame parentFrame) : Element(parentFrame) {
             Ansi.SetFgColor(isFocused && i == index ? [16, 16, 16] : Data.FG_COLOR);
 
             Ansi.SetBgColor(Data.TOOLBAR_COLOR);
-            Console.Write(' ');
+            Ansi.Write(' ');
 
             Ansi.SetBgColor(isFocused && i == index ? Data.SELECT_COLOR : Data.CONTROL_COLOR);
-            Console.Write($" {items[i].text} ");
+            Ansi.Write($" {items[i].text} ");
 
             count += length;
         }
 
         Ansi.SetBgColor(Data.TOOLBAR_COLOR);
-        Console.Write(new String(' ', r));
+        Ansi.Write(new String(' ', r));
 
 
         count = 0;
@@ -63,16 +63,20 @@ public sealed class Toolbar(Frame parentFrame) : Element(parentFrame) {
             if (count + length > width) break;
 
             Ansi.SetFgColor(Data.TOOLBAR_COLOR);
-            Console.Write(Data.UPPER_1_8TH_BLOCK);
+            Ansi.Write(Data.UPPER_1_8TH_BLOCK);
 
             Ansi.SetFgColor(isFocused && i == index ? Data.SELECT_COLOR : Data.CONTROL_COLOR);
-            Console.Write(new String(Data.UPPER_1_8TH_BLOCK, items[i].text.Length + 2));
+            Ansi.Write(new String(Data.UPPER_1_8TH_BLOCK, items[i].text.Length + 2));
 
             count += length;
         }
 
         Ansi.SetFgColor(Data.TOOLBAR_COLOR);
-        Console.Write(new String(Data.UPPER_1_8TH_BLOCK, r));
+        Ansi.Write(new String(Data.UPPER_1_8TH_BLOCK, r));
+
+        if (push) {
+            Ansi.Push();
+        }
     }
 
     public override void HandleKey(ConsoleKeyInfo key) {
@@ -81,12 +85,12 @@ public sealed class Toolbar(Frame parentFrame) : Element(parentFrame) {
         switch (key.Key) {
         case ConsoleKey.LeftArrow:
             index = Math.Max(0, index - 1);
-            Draw();
+            Draw(true);
             break;
 
         case ConsoleKey.RightArrow:
             index = Math.Min(items.Length - 1, index + 1);
-            Draw();
+            Draw(true);
             break;
 
         case ConsoleKey.Enter:

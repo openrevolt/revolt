@@ -34,7 +34,7 @@ public sealed class InputDialog : Frame {
         Ansi.SetFgColor([16, 16, 16]);
         Ansi.SetBgColor(Data.PANE_COLOR);
         Ansi.SetCursorPosition(left, top++);
-        Console.Write(blank);
+        Ansi.Write(blank);
 
         if (text is not null) {
             string[] words = text.Split(' ');
@@ -42,15 +42,15 @@ public sealed class InputDialog : Frame {
 
             for (int i = 0; i < words.Length; i++) {
                 Ansi.SetCursorPosition(left + xOffset, top);
-                Console.Write(' ');
+                Ansi.Write(' ');
 
-                Console.Write(words[i]);
+                Ansi.Write(words[i]);
                 xOffset += words[i].Length + 1;
                 if (xOffset >= width) break;
             }
 
             if (xOffset < width) {
-                Console.Write(new String(' ', width - xOffset));
+                Ansi.Write(new String(' ', width - xOffset));
             }
         }
 
@@ -62,11 +62,11 @@ public sealed class InputDialog : Frame {
 
         for (int i = 0; i < 4; i++) {
             Ansi.SetCursorPosition(left, top + i);
-            Console.Write(blank);
+            Ansi.Write(blank);
         }
 
         Ansi.SetCursorPosition(left, top++);
-        Console.Write(blank);
+        Ansi.Write(blank);
 
         okButton.left = left + (width - 20) / 2;
         okButton.top = top;
@@ -76,12 +76,14 @@ public sealed class InputDialog : Frame {
 
         if (elements is null) return;
         for (int i = 0; i < elements?.Count; i++) {
-            elements[i].Draw();
+            elements[i].Draw(false);
         }
 
         if (focusedElement == valueTextbox) {
             valueTextbox.Focus();
         }
+
+        Ansi.Push();
     }
 
     public void Draw() {
@@ -127,7 +129,7 @@ public sealed class InputDialog : Frame {
         okButton.action = null;
         cancelButton.action = null;
         Renderer.ActiveDialog = null;
-        Renderer.Redraw();
         Ansi.HideCursor();
+        Renderer.Redraw();
     }
 }

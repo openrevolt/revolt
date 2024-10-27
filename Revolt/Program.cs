@@ -17,15 +17,17 @@ public class Program {
     }
 
     public static void DrawBanner() {
-        Console.WriteLine(@"  ______                _ _");
-        Console.WriteLine(@"  | ___ \              | | |");
-        Console.WriteLine(@"  | |_/ /_____   _____ | | |_");
-        Console.WriteLine(@"  |    // _ \ \ / / _ \| | __|");
-        Console.WriteLine(@"  | |\ \  __/\ V / (_) | | |_ ");
-        Console.WriteLine(@"  \_| \_\___| \_/ \___/|_|\__|");
+        Ansi.WriteLine(@"  ______                _ _");
+        Ansi.WriteLine(@"  | ___ \              | | |");
+        Ansi.WriteLine(@"  | |_/ /_____   _____ | | |_");
+        Ansi.WriteLine(@"  |    // _ \ \ / / _ \| | __|");
+        Ansi.WriteLine(@"  | |\ \  __/\ V / (_) | | |_ ");
+        Ansi.WriteLine(@"  \_| \_\___| \_/ \___/|_|\__|");
 
         Version ver = Assembly.GetExecutingAssembly().GetName()?.Version;
         string version = $"{ver?.Major ?? 0}.{ver?.Minor ?? 0}.{ver?.Build ?? 0}.{ver?.Revision ?? 0}";
-        Console.WriteLine($"{version,30}");
+        Ansi.WriteLine($"{version,30}");
+
+        Ansi.Push();
     }
 }
