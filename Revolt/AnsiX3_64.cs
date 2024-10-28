@@ -25,9 +25,24 @@ public static class Ansi {
     public static void ResetAll() =>
         builder.Append("\x1b[0m");
 
-    public static void SetFgColor(byte r, byte g, byte b) =>
-        builder.Append($"\x1b[38;2;{r};{g};{b}m");
+    public static void SetBold(bool value) =>
+        builder.Append($"\x1b[{(value ? 1 : 22)}m");
 
+    public static void SetFaint(bool value) =>
+        builder.Append($"\x1b[{(value ? 2 : 22)}m");
+
+    public static void SetItalic(bool value) =>
+        builder.Append($"\x1b[{(value ? 3 : 23)}m");
+
+    public static void SetUnderline(bool value) =>
+        builder.Append($"\x1b[{(value ? 4 : 24)}m");
+
+    public static void SetBlinking(bool value) =>
+        builder.Append($"\x1b[{(value ? 5 : 25)}m");
+
+    public static void SetFgColor(byte r, byte g, byte b) =>
+    builder.Append($"\x1b[38;2;{r};{g};{b}m");
+    
     public static void SetFgColor(byte[] rgb) =>
         builder.Append($"\x1b[38;2;{rgb[0]};{rgb[1]};{rgb[2]}m");
 

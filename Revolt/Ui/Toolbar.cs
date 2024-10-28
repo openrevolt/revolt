@@ -13,70 +13,63 @@ public sealed class Toolbar(Frame parentFrame) : Element(parentFrame) {
     public override void Draw(bool push) {
         (int left, _, int width, _) = GetBounding();
 
-        int count = 0;
-        Ansi.SetCursorPosition(left, 1);
-        Ansi.SetBgColor(Data.BG_COLOR);
+        int offset = 0;
+
         for (int i = 0; i < items.Length; i++) {
-            int length = items[i].text.Length + 3;
-            if (count + length > width) break;
-
-            Ansi.SetFgColor(Data.TOOLBAR_COLOR);
-            Ansi.Write(Data.LOWER_3_8TH_BLOCK);
-
-            Ansi.SetFgColor(isFocused && i == index ? Data.SELECT_COLOR : Data.CONTROL_COLOR);
-            Ansi.Write(new String(Data.LOWER_3_8TH_BLOCK, items[i].text.Length + 2));
-
-            count += length;
+            offset += DrawItem(i, left + offset, isFocused && i == index);
+            if (left + offset >= width) break;
+            Ansi.Push(); //fixes tearing
         }
 
-        int r = width - count;
+        Ansi.SetCursorPosition(offset + 2, 1);
         Ansi.SetFgColor(Data.TOOLBAR_COLOR);
-        Ansi.Write(new String(Data.LOWER_3_8TH_BLOCK, r));
+        Ansi.Write(new String(Data.LOWER_3_8TH_BLOCK, width - offset));
+
+        Ansi.SetCursorPosition(offset + 2, 2);
+        Ansi.SetBgColor(Data.TOOLBAR_COLOR);
+        Ansi.Write(new String(' ', width - offset));
+
+        Ansi.SetCursorPosition(offset + 2, 3);
+        Ansi.SetFgColor(Data.TOOLBAR_COLOR);
+        Ansi.SetBgColor(Data.BG_COLOR);
+        Ansi.Write(new String(Data.UPPER_1_8TH_BLOCK, width - offset));
+
+        Ansi.Push();
+    }
+
+    private int DrawItem(int i, int offset, bool isFocused) {
+        Ansi.SetCursorPosition(offset, 1);
+
+        Ansi.SetFgColor(Data.TOOLBAR_COLOR);
+        Ansi.SetBgColor(Data.BG_COLOR);
+        Ansi.Write(Data.LOWER_3_8TH_BLOCK);
+
+        Ansi.SetFgColor(isFocused && i == index ? Data.SELECT_COLOR : Data.CONTROL_COLOR);
+        Ansi.Write(new String(Data.LOWER_3_8TH_BLOCK, items[i].text.Length + 2));
 
 
-        count = 0;
-        Ansi.SetCursorPosition(left, 2);
-        for (int i = 0; i < items.Length; i++) {
-            int length = items[i].text.Length + 3;
-            if (count + length > width) break;
-
-            Ansi.SetFgColor(isFocused && i == index ? [16, 16, 16] : Data.FG_COLOR);
-
-            Ansi.SetBgColor(Data.TOOLBAR_COLOR);
-            Ansi.Write(' ');
-
-            Ansi.SetBgColor(isFocused && i == index ? Data.SELECT_COLOR : Data.CONTROL_COLOR);
-            Ansi.Write($" {items[i].text} ");
-
-            count += length;
-        }
+        Ansi.SetCursorPosition(offset, 2);
 
         Ansi.SetBgColor(Data.TOOLBAR_COLOR);
-        Ansi.Write(new String(' ', r));
+        Ansi.Write(' ');
+
+        Ansi.SetFgColor(this.isFocused && i == index ? [16, 16, 16] : Data.FG_COLOR);
+        Ansi.SetBgColor(this.isFocused && i == index ? Data.SELECT_COLOR : Data.CONTROL_COLOR);
+        Ansi.SetBold(true);
+        Ansi.Write($" {items[i].text} ");
+        Ansi.SetBold(false);
 
 
-        count = 0;
-        Ansi.SetCursorPosition(left, 3);
-        Ansi.SetBgColor(Data.BG_COLOR);
-        for (int i = 0; i < items.Length; i++) {
-            int length = items[i].text.Length + 3;
-            if (count + length > width) break;
-
-            Ansi.SetFgColor(Data.TOOLBAR_COLOR);
-            Ansi.Write(Data.UPPER_1_8TH_BLOCK);
-
-            Ansi.SetFgColor(isFocused && i == index ? Data.SELECT_COLOR : Data.CONTROL_COLOR);
-            Ansi.Write(new String(Data.UPPER_1_8TH_BLOCK, items[i].text.Length + 2));
-
-            count += length;
-        }
+        Ansi.SetCursorPosition(offset, 3);
 
         Ansi.SetFgColor(Data.TOOLBAR_COLOR);
-        Ansi.Write(new String(Data.UPPER_1_8TH_BLOCK, r));
+        Ansi.SetBgColor(Data.BG_COLOR);
+        Ansi.Write(Data.UPPER_1_8TH_BLOCK);
 
-        if (push) {
-            Ansi.Push();
-        }
+        Ansi.SetFgColor(isFocused && i == index ? Data.SELECT_COLOR : Data.CONTROL_COLOR);
+        Ansi.Write(new String(Data.UPPER_1_8TH_BLOCK, items[i].text.Length + 2));
+
+        return items[i].text.Length + 3;
     }
 
     public override void HandleKey(ConsoleKeyInfo key) {
