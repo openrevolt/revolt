@@ -4,7 +4,7 @@ namespace Revolt.Frames;
 
 public sealed class PingFrame : Ui.Frame {
     const int HISTORY_LEN = 160;
-    
+ 
     public struct PingItem {
         public string  host;
         public short   status;
@@ -87,7 +87,6 @@ public sealed class PingFrame : Ui.Frame {
         if (i >= list.items.Count) return;
 
         int yPos = y + i * 2;
-        int statusPosX = x + width - 12;
         int pingCellPosX = x + 25;
         int usableWidth = Math.Min(width - 38, HISTORY_LEN);
         int historyOffset = (rotatingIndex + HISTORY_LEN - usableWidth + 1) % HISTORY_LEN;
@@ -114,7 +113,8 @@ public sealed class PingFrame : Ui.Frame {
             Ansi.Write(Data.PING_CELL);
         }
 
-        Ansi.SetCursorPosition(statusPosX, yPos);
+        Ansi.Write(' ');
+
         Ansi.SetFgColor(RttColor(item.status));
         Ansi.Write(RttText(item.status));
 
@@ -123,7 +123,6 @@ public sealed class PingFrame : Ui.Frame {
 
     private void UpdatePingItem(int i, int x, int y, int width) {
         int yPos = y + i * 2;
-        int statusPosX = x + width - 12;
         int pingCellPosX = x + 25;
         int usableWidth = Math.Min(width - 38, HISTORY_LEN);
         int historyOffset = (rotatingIndex + HISTORY_LEN - usableWidth + 1) % HISTORY_LEN;
@@ -138,7 +137,8 @@ public sealed class PingFrame : Ui.Frame {
             Ansi.Write(Data.PING_CELL);
         }
 
-        Ansi.SetCursorPosition(statusPosX, yPos);
+        Ansi.Write(' ');
+
         Ansi.SetFgColor(RttColor(item.status));
         Ansi.Write(RttText(item.status));
 
@@ -178,6 +178,8 @@ public sealed class PingFrame : Ui.Frame {
         cancellationTokenSource = new CancellationTokenSource();
         cancellationToken = cancellationTokenSource.Token;
 
+        Tokens.dictionary.TryAdd(cancellationTokenSource, cancellationToken);
+
         while (!cancellationToken.IsCancellationRequested) {
             (int left, int top, int width, _) = list.GetBounding();
             string[] hosts = list.items.Select(o => o.host).ToArray();
@@ -201,6 +203,8 @@ public sealed class PingFrame : Ui.Frame {
             Thread.Sleep(1000);
             rotatingIndex %= HISTORY_LEN;
         }
+
+        Tokens.dictionary.TryRemove(cancellationTokenSource, out _);
     }
 
     private void ParseQuery(string query) {
@@ -278,7 +282,7 @@ public sealed class PingFrame : Ui.Frame {
 
         list.Add(new PingItem {
             host    = host,
-            status  = Icmp.UNKNOWN,
+            status  = Icmp.UNDEFINED,
             history = Enumerable.Repeat(Icmp.UNDEFINED, HISTORY_LEN).ToArray()
         });
 

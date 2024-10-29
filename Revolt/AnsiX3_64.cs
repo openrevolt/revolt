@@ -41,8 +41,8 @@ public static class Ansi {
         builder.Append($"\x1b[{(value ? 5 : 25)}m");
 
     public static void SetFgColor(byte r, byte g, byte b) =>
-    builder.Append($"\x1b[38;2;{r};{g};{b}m");
-    
+        builder.Append($"\x1b[38;2;{r};{g};{b}m");
+
     public static void SetFgColor(byte[] rgb) =>
         builder.Append($"\x1b[38;2;{rgb[0]};{rgb[1]};{rgb[2]}m");
 
