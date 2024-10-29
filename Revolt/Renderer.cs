@@ -1,23 +1,24 @@
-﻿using Revolt.Frames;
-using Revolt.Ui;
-
-namespace Revolt;
+﻿namespace Revolt;
 
 public static class Renderer {
     const int MAX_WIDTH = 240, MAX_HEIGHT = 60;
     public static int LastWidth { get; set; }
     public static int LastHeight { get; set; }
-    public static Frame ActiveFrame { get; set; }
-    public static InputDialog ActiveDialog { get; set; }
+    public static Ui.Frame ActiveFrame { get; set; }
+    public static Ui.DialogBox ActiveDialog { get; set; }
+
+    private static bool isRunning;
 
     static Renderer() {
         LastWidth = 80;
         LastHeight = 20;
-        MainMenu.singleton.Show(false);
+        Frames.MainMenu.singleton.Show(false);
     }
 
     public static void Initialize() {
         Console.OutputEncoding = System.Text.Encoding.UTF8;
+
+        isRunning = true;
 
         new Thread(ResizeLoop) {
             IsBackground = true
@@ -27,7 +28,7 @@ public static class Renderer {
     }
 
     public static void HandleKeys() {
-        while (true) {
+        while (isRunning) {
             ConsoleKeyInfo key = Console.ReadKey();
 
             if (ActiveFrame is null) continue;
@@ -44,14 +45,16 @@ public static class Renderer {
             }
 
             if (!ActiveFrame.HandleKey(key)) {
-                Exit();
-                return;
+                QuitDialog();
+                continue;
             }
         }
+
+        CleanUp();
     }
 
     public static void ResizeLoop() {
-        while (true) {
+        while (isRunning) {
             Thread.Sleep(200);
 
             int newWidth = Math.Min(Console.WindowWidth, MAX_WIDTH);
@@ -77,7 +80,20 @@ public static class Renderer {
         ActiveDialog?.Draw();
     }
 
-    private static void Exit() {
+    private static void QuitDialog() {
+        Ui.ConfirmDialog dialog = new Ui.ConfirmDialog() {
+            text = "Are you sure you want to quit?"
+        };
+
+        dialog.okButton.action = () => {
+            isRunning = false;
+        };
+
+        Renderer.ActiveDialog = dialog;
+        dialog.Draw();
+    }
+
+    private static void CleanUp() {
         foreach (CancellationTokenSource token in Tokens.dictionary.Keys) {
             token.Cancel();
         }

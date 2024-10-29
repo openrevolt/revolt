@@ -19,7 +19,7 @@ public sealed class MainMenu : Ui.Frame {
          "Packet capture",
          null,
          "Options",
-         "Exit"
+         "Quit"
         ];
     }
 
@@ -110,7 +110,7 @@ public sealed class MainMenu : Ui.Frame {
             PingFrame.singleton.Show();
             return true;
 
-         case "Exit":
+         case "Quit":
              return false;
 
         default:

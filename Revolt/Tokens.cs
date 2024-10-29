@@ -3,5 +3,5 @@
 namespace Revolt;
 
 public static class Tokens {
-    public static ConcurrentDictionary<CancellationTokenSource, CancellationToken> dictionary = new ConcurrentDictionary<CancellationTokenSource, CancellationToken>();
+    public static readonly ConcurrentDictionary<CancellationTokenSource, CancellationToken> dictionary = new ConcurrentDictionary<CancellationTokenSource, CancellationToken>();
 }

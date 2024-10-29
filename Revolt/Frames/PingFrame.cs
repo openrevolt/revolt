@@ -1,4 +1,5 @@
 ﻿using Revolt.Protocols;
+using System.Diagnostics;
 
 namespace Revolt.Frames;
 
@@ -19,9 +20,11 @@ public sealed class PingFrame : Ui.Frame {
     private CancellationTokenSource cancellationTokenSource;
     private CancellationToken cancellationToken;
 
-    private bool status = true;
-    private int rotatingIndex = 0;
     private readonly List<string> history = [];
+    private int rotatingIndex = 0;
+    private bool status = true;
+    private int timeout = 1000;
+    private int interval = 1000;
 
     static PingFrame() {
         singleton = new PingFrame();
@@ -181,10 +184,12 @@ public sealed class PingFrame : Ui.Frame {
         Tokens.dictionary.TryAdd(cancellationTokenSource, cancellationToken);
 
         while (!cancellationToken.IsCancellationRequested) {
+            long startTime = Stopwatch.GetTimestamp();
+            
             (int left, int top, int width, _) = list.GetBounding();
             string[] hosts = list.items.Select(o => o.host).ToArray();
 
-            short[] result = await Icmp.PingArrayAsync(hosts, 1000);
+            short[] result = await Icmp.PingArrayAsync(hosts, timeout);
             rotatingIndex++;
 
             for (int i = 0; i < list.items.Count && i < result.Length; i++) {
@@ -200,8 +205,15 @@ public sealed class PingFrame : Ui.Frame {
                 }
             }
 
-            Thread.Sleep(1000);
             rotatingIndex %= HISTORY_LEN;
+
+            int elapsed = Stopwatch.GetElapsedTime(startTime).Milliseconds;
+            if (elapsed < interval) {
+                try {
+                    await Task.Delay(interval - elapsed, cancellationToken);
+                }
+                catch { }
+            }
         }
 
         Tokens.dictionary.TryRemove(cancellationTokenSource, out _);

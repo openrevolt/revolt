@@ -1,19 +1,12 @@
 ﻿namespace Revolt.Ui;
 
-public sealed class InputDialog : DialogBox {
+public sealed class ConfirmDialog : DialogBox {
     public string text;
-    public Textbox valueTextbox;
 
-    public InputDialog() {
-        valueTextbox = new Textbox(this) {
-            backColor = Data.PANE_COLOR
-        };
-
-        elements.Add(valueTextbox);
-
-        defaultElement = valueTextbox;
-        valueTextbox.Focus(false);
-        focusedElement = valueTextbox;
+    public ConfirmDialog() {
+        defaultElement = okButton;
+        okButton.Focus(false);
+        focusedElement = okButton;
     }
 
     public override void Draw(int width, int height) {
@@ -45,10 +38,6 @@ public sealed class InputDialog : DialogBox {
             }
         }
 
-        valueTextbox.left = left;
-        valueTextbox.right = Renderer.LastWidth - width - left + 2;
-        valueTextbox.top = top;
-
         top++;
 
         for (int i = 0; i < 4; i++) {
@@ -70,10 +59,6 @@ public sealed class InputDialog : DialogBox {
             elements[i].Draw(false);
         }
 
-        if (focusedElement == valueTextbox) {
-            valueTextbox.Focus();
-        }
-
         Ansi.Push();
     }
 
@@ -83,28 +68,7 @@ public sealed class InputDialog : DialogBox {
     }
 
     public override bool HandleKey(ConsoleKeyInfo key) {
-        switch (key.Key) {
-        case ConsoleKey.Escape:
-            if (valueTextbox.Value.Length == 0) {
-                Close();
-            }
-            else {
-                valueTextbox.Value = String.Empty;
-            }
-            return true;
-
-        case ConsoleKey.Enter:
-            if (focusedElement == valueTextbox && okButton.action is not null) {
-                okButton.action();
-                return true;
-            }
-            else {
-                return base.HandleKey(key);
-            }
-
-        default:
-            return base.HandleKey(key);
-        }
+        return base.HandleKey(key);
     }
 
     public override void Close() {
