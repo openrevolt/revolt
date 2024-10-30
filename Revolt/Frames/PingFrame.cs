@@ -334,8 +334,12 @@ public sealed class PingFrame : Ui.Frame {
         OptionsDialog dialog = new OptionsDialog();
 
         dialog.okButton.action = () => {
-            timeout = int.Parse(dialog.timeoutTextbox.Value);
-            interval = int.Parse(dialog.intervalTextbox.Value);
+            _ = int.TryParse(dialog.timeoutTextbox.Value, out timeout);
+            _ = int.TryParse(dialog.intervalTextbox.Value, out interval);
+
+            timeout = Math.Clamp(timeout, 50, 5_000);
+            interval = Math.Clamp(interval, 50, 5_000);
+
             dialog.Close();
         };
 
@@ -351,16 +355,20 @@ public sealed class PingFrame : Ui.Frame {
 }
 
 file sealed class OptionsDialog : Ui.DialogBox {
-    public Ui.Textbox timeoutTextbox;
-    public Ui.Textbox intervalTextbox;
+    public Ui.NumberBox timeoutTextbox;
+    public Ui.NumberBox intervalTextbox;
 
     public OptionsDialog() {
-        timeoutTextbox = new Ui.Textbox(this) {
-            backColor = Data.PANE_COLOR
+        timeoutTextbox = new Ui.NumberBox(this) {
+            backColor = Data.PANE_COLOR,
+            min = 50,
+            max = 5_000
         };
 
-        intervalTextbox = new Ui.Textbox(this) {
-            backColor = Data.PANE_COLOR
+        intervalTextbox = new Ui.NumberBox(this) {
+            backColor = Data.PANE_COLOR,
+            min = 50,
+            max = 5_000
         };
 
         elements.Add(timeoutTextbox);
@@ -382,7 +390,7 @@ file sealed class OptionsDialog : Ui.DialogBox {
         Ansi.SetCursorPosition(left, top);
         Ansi.Write(blank);
 
-        WriteLabel("Timed out:", left, ++top, width);
+        WriteLabel("Timed out (ms):", left, ++top, width);
         timeoutTextbox.left = left ;
         timeoutTextbox.right = Renderer.LastWidth - width - left + 2;
         timeoutTextbox.top = top++;
@@ -393,7 +401,7 @@ file sealed class OptionsDialog : Ui.DialogBox {
         Ansi.SetCursorPosition(left, top);
         Ansi.Write(blank);
 
-        WriteLabel("Interval:", left, ++top, width);
+        WriteLabel("Interval (ms):", left, ++top, width);
         intervalTextbox.left = left;
         intervalTextbox.right = Renderer.LastWidth - width - left + 2;
         intervalTextbox.top = top++;
@@ -434,8 +442,18 @@ file sealed class OptionsDialog : Ui.DialogBox {
 
     public override bool HandleKey(ConsoleKeyInfo key) {
         switch (key.Key) {
+        case ConsoleKey.Escape:
+            Close();
+            return true;
+
         case ConsoleKey.Enter:
-            return base.HandleKey(key);
+            if ((focusedElement == timeoutTextbox || focusedElement == intervalTextbox) && okButton.action is not null) {
+                okButton.action();
+                return true;
+            }
+            else {
+                return base.HandleKey(key);
+            }
 
         default:
             return base.HandleKey(key);
