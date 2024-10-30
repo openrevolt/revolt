@@ -45,4 +45,24 @@ public class DialogBox : Frame {
         Renderer.ActiveDialog = null;
         Renderer.Redraw();
     }
+
+    public void WriteLabel(string text, int x, int y, int width) {
+        if (text is not null) {
+            string[] words = text.Split(' ');
+            int xOffset = 0;
+
+            for (int i = 0; i < words.Length; i++) {
+                Ansi.SetCursorPosition(x + xOffset, y);
+                Ansi.Write(' ');
+
+                Ansi.Write(words[i]);
+                xOffset += words[i].Length + 1;
+                if (xOffset >= width) break;
+            }
+
+            if (xOffset < width) {
+                Ansi.Write(new String(' ', width - xOffset));
+            }
+        }
+    }
 }

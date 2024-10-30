@@ -27,23 +27,7 @@ public sealed class InputDialog : DialogBox {
         Ansi.SetCursorPosition(left, top++);
         Ansi.Write(blank);
 
-        if (text is not null) {
-            string[] words = text.Split(' ');
-            int xOffset = 0;
-
-            for (int i = 0; i < words.Length; i++) {
-                Ansi.SetCursorPosition(left + xOffset, top);
-                Ansi.Write(' ');
-
-                Ansi.Write(words[i]);
-                xOffset += words[i].Length + 1;
-                if (xOffset >= width) break;
-            }
-
-            if (xOffset < width) {
-                Ansi.Write(new String(' ', width - xOffset));
-            }
-        }
+        WriteLabel(text, left, top, width);
 
         valueTextbox.left = left;
         valueTextbox.right = Renderer.LastWidth - width - left + 2;
@@ -65,7 +49,6 @@ public sealed class InputDialog : DialogBox {
         cancelButton.left = left + (width - 20) / 2 + 10;
         cancelButton.top = top;
 
-        if (elements is null) return;
         for (int i = 0; i < elements?.Count; i++) {
             elements[i].Draw(false);
         }

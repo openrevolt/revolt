@@ -20,7 +20,7 @@ public sealed class PingFrame : Ui.Frame {
     private CancellationTokenSource cancellationTokenSource;
     private CancellationToken cancellationToken;
 
-    private readonly List<string> history = [];
+    private readonly List<string> queryHistory = [];
     private int rotatingIndex = 0;
     private bool status = true;
     private int timeout = 1000;
@@ -33,7 +33,7 @@ public sealed class PingFrame : Ui.Frame {
                 new Ui.Toolbar.ToolbarItem() { text="Add",     action=AddDialog},
                 new Ui.Toolbar.ToolbarItem() { text="Pause",   action=ToggleStatus },
                 new Ui.Toolbar.ToolbarItem() { text="Clear",   action=Clear },
-                new Ui.Toolbar.ToolbarItem() { text="Options", action=Options },
+                new Ui.Toolbar.ToolbarItem() { text="Options", action=OptionsDialog },
             ]
         };
 
@@ -58,7 +58,6 @@ public sealed class PingFrame : Ui.Frame {
 
     public override bool HandleKey(ConsoleKeyInfo key) {
         switch (key.Key) {
-
         case ConsoleKey.Tab:
             if (key.Modifiers == ConsoleModifiers.Shift) {
                 FocusPrevious();
@@ -183,7 +182,7 @@ public sealed class PingFrame : Ui.Frame {
                 //list.items[i] = item;
 
                 if (Renderer.ActiveFrame == this && Renderer.ActiveDialog == null) {
-                    UpdatePingItem(i, left, top, width);
+                    UpdatePingItem(i, left, top + i * 2, width);
                 }
             }
 
@@ -297,11 +296,11 @@ public sealed class PingFrame : Ui.Frame {
         };
 
         dialog.valueTextbox.enableHistory = true;
-        dialog.valueTextbox.history = history;
+        dialog.valueTextbox.history = queryHistory;
 
         dialog.okButton.action = () => {
             if (!String.IsNullOrWhiteSpace(dialog.valueTextbox.Value)) {
-                history.Add(dialog.valueTextbox.Value.Trim());
+                queryHistory.Add(dialog.valueTextbox.Value.Trim());
             }
             ParseQuery(dialog.valueTextbox.Value.Trim());
             dialog.Close();
@@ -331,6 +330,120 @@ public sealed class PingFrame : Ui.Frame {
         toolbar.Draw(true);
     }
 
-    private void Options() { }
+    private void OptionsDialog() {
+        OptionsDialog dialog = new OptionsDialog();
 
+        dialog.okButton.action = () => {
+            timeout = int.Parse(dialog.timeoutTextbox.Value);
+            interval = int.Parse(dialog.intervalTextbox.Value);
+            dialog.Close();
+        };
+
+        Renderer.ActiveDialog = dialog;
+        dialog.Draw();
+
+        dialog.timeoutTextbox.Value = timeout.ToString();
+        dialog.intervalTextbox.Value = interval.ToString();
+
+        dialog.timeoutTextbox.Focus();
+    }
+
+}
+
+file sealed class OptionsDialog : Ui.DialogBox {
+    public Ui.Textbox timeoutTextbox;
+    public Ui.Textbox intervalTextbox;
+
+    public OptionsDialog() {
+        timeoutTextbox = new Ui.Textbox(this) {
+            backColor = Data.PANE_COLOR
+        };
+
+        intervalTextbox = new Ui.Textbox(this) {
+            backColor = Data.PANE_COLOR
+        };
+
+        elements.Add(timeoutTextbox);
+        elements.Add(intervalTextbox);
+
+        defaultElement = timeoutTextbox;
+        timeoutTextbox.Focus(false);
+        focusedElement = timeoutTextbox;
+    }
+
+    public override void Draw(int width, int height) {
+        int left = (Renderer.LastWidth - width) / 2 + 1;
+        int top = 1;
+
+        string blank = new String(' ', width);
+
+        Ansi.SetFgColor([16, 16, 16]);
+        Ansi.SetBgColor(Data.PANE_COLOR);
+        Ansi.SetCursorPosition(left, top);
+        Ansi.Write(blank);
+
+        WriteLabel("Timed out:", left, ++top, width);
+        timeoutTextbox.left = left ;
+        timeoutTextbox.right = Renderer.LastWidth - width - left + 2;
+        timeoutTextbox.top = top++;
+
+        Ansi.SetCursorPosition(left, top++);
+        Ansi.Write(blank);
+
+        Ansi.SetCursorPosition(left, top);
+        Ansi.Write(blank);
+
+        WriteLabel("Interval:", left, ++top, width);
+        intervalTextbox.left = left;
+        intervalTextbox.right = Renderer.LastWidth - width - left + 2;
+        intervalTextbox.top = top++;
+
+        Ansi.SetCursorPosition(left, top++);
+        Ansi.Write(blank);
+
+        for (int i = 0; i < 3; i++) {
+            Ansi.SetCursorPosition(left, top + i);
+            Ansi.Write(blank);
+        }
+
+        okButton.left = left + (width - 20) / 2;
+        okButton.top = top;
+
+        cancelButton.left = left + (width - 20) / 2 + 10;
+        cancelButton.top = top;
+
+        if (elements is null) return;
+        for (int i = 0; i < elements?.Count; i++) {
+            elements[i].Draw(false);
+        }
+
+        if (focusedElement == timeoutTextbox) {
+            timeoutTextbox.Focus();
+        }
+        else if (focusedElement == intervalTextbox) {
+            intervalTextbox.Focus();
+        }
+
+        Ansi.Push();
+    }
+
+    public override void Draw() {
+        int width = Math.Min(Renderer.LastWidth, 48);
+        Draw(width, 0);
+    }
+
+    public override bool HandleKey(ConsoleKeyInfo key) {
+        switch (key.Key) {
+        case ConsoleKey.Enter:
+            return base.HandleKey(key);
+
+        default:
+            return base.HandleKey(key);
+        }
+    }
+
+    public override void Close() {
+        Ansi.HideCursor();
+        base.Close();
+    }
 }
