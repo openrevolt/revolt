@@ -1,18 +1,18 @@
-﻿using Revolt.Protocols;
-using System.Diagnostics;
+﻿using System.Diagnostics;
+using Revolt.Protocols;
 
 namespace Revolt.Frames;
 
 public sealed class PingFrame : Ui.Frame {
     const int HISTORY_LEN = 160;
  
-    public struct PingItem {
+    public class PingItem {
         public string  host;
         public short   status;
         public short[] history;
     }
 
-    public static readonly PingFrame singleton;
+    public static PingFrame Instance { get; } = new PingFrame();
 
     public Ui.Toolbar toolbar;
     public Ui.ListBox<PingItem> list;
@@ -25,11 +25,6 @@ public sealed class PingFrame : Ui.Frame {
     private bool status = true;
     private int timeout = 1000;
     private int interval = 1000;
-
-    static PingFrame() {
-        singleton = new PingFrame();
-    }
-
     public PingFrame() {
         toolbar = new Ui.Toolbar(this) {
             left  = 1,
@@ -74,7 +69,7 @@ public sealed class PingFrame : Ui.Frame {
             break;
 
         case ConsoleKey.Escape:
-            MainMenu.singleton.Show();
+            MainMenu.Instance.Show();
             break;
 
         default:
@@ -88,15 +83,11 @@ public sealed class PingFrame : Ui.Frame {
     private void DrawPingItem(int i, int x, int y, int width) {
         if (list.items is null || list.items.Count == 0) return;
         if (i >= list.items.Count) return;
-
-        int yPos = y + i * 2;
-        int pingCellPosX = x + 25;
-        int usableWidth = Math.Min(width - 38, HISTORY_LEN);
-        int historyOffset = (rotatingIndex + HISTORY_LEN - usableWidth + 1) % HISTORY_LEN;
-
+        
+        int yOffset = y + i * 2;
         PingItem item = list.items[i];
 
-        Ansi.SetCursorPosition(x, yPos);
+        Ansi.SetCursorPosition(x, yOffset);
         if (i == list.index) {
             Ansi.SetFgColor(list.isFocused ? [16, 16, 16] : Data.FG_COLOR);
             Ansi.SetBgColor(list.isFocused ? Data.SELECT_COLOR : Data.INPUT_COLOR);
@@ -108,47 +99,38 @@ public sealed class PingFrame : Ui.Frame {
 
         Ansi.Write(item.host.Length > 24 ? item.host[..23] + Data.ELLIPSIS : item.host.PadRight(24));
 
-        Ansi.SetBgColor(Data.BG_COLOR);
-        Ansi.SetCursorPosition(pingCellPosX, yPos);
-
-        for (int t = 0; t < usableWidth; t++) {
-            Ansi.SetFgColor(RttColor(item.history[(historyOffset + t) % HISTORY_LEN]));
-            Ansi.Write(Data.PING_CELL);
-        }
-
-        Ansi.Write(' ');
-
-        Ansi.SetFgColor(RttColor(item.status));
-        Ansi.Write(RttText(item.status));
+        UpdateHistoryAndStatus(item, x, yOffset, width);
 
         Ansi.Push();
     }
 
     private void UpdatePingItem(int i, int x, int y, int width) {
-        int yPos = y + i * 2;
-        int pingCellPosX = x + 25;
+        PingItem item = list.items[i];
+        UpdateHistoryAndStatus(item, x, y, width);
+        Ansi.Push();
+    }
+
+    private void UpdateHistoryAndStatus(PingItem item, int x, int y, int width) {
         int usableWidth = Math.Min(width - 38, HISTORY_LEN);
         int historyOffset = (rotatingIndex + HISTORY_LEN - usableWidth + 1) % HISTORY_LEN;
 
-        PingItem item = list.items[i];
-
         Ansi.SetBgColor(Data.BG_COLOR);
-        Ansi.SetCursorPosition(pingCellPosX, yPos);
+        Ansi.SetCursorPosition(x + 25, y);
 
         for (int t = 0; t < usableWidth; t++) {
-            Ansi.SetFgColor(RttColor(item.history[(historyOffset + t) % HISTORY_LEN]));
+            Ansi.SetFgColor(DetermineRttColor(item.history[(historyOffset + t) % HISTORY_LEN]));
             Ansi.Write(Data.PING_CELL);
         }
 
         Ansi.Write(' ');
+        Ansi.SetFgColor(DetermineRttColor(item.status));
+        Ansi.Write(DetermineRttText(item.status));
 
-        Ansi.SetFgColor(RttColor(item.status));
-        Ansi.Write(RttText(item.status));
-
-        Ansi.Push();
+        Ansi.SetCursorPosition(0, y + 1);
+        Ansi.ClearLine();
     }
 
-    private static byte[] RttColor(short rtt) => rtt switch {
+    private static byte[] DetermineRttColor(short rtt) => rtt switch {
         Icmp.TIMEDOUT        => [240, 32, 32],
         Icmp.UNREACHABLE     => [240, 128, 0],
         Icmp.INVALID_ADDREDD => [192, 0, 0],
@@ -166,7 +148,7 @@ public sealed class PingFrame : Ui.Frame {
         _     => [224, 52, 192]
     };
 
-    private static string RttText(short rtt) => rtt switch {
+    private static string DetermineRttText(short rtt) => rtt switch {
         Icmp.TIMEDOUT        => "timed out   ",
         Icmp.UNREACHABLE     => "unreachable ",
         Icmp.INVALID_ADDREDD => "invalid     ",
@@ -186,11 +168,11 @@ public sealed class PingFrame : Ui.Frame {
         while (!cancellationToken.IsCancellationRequested) {
             long startTime = Stopwatch.GetTimestamp();
             
-            (int left, int top, int width, _) = list.GetBounding();
             string[] hosts = list.items.Select(o => o.host).ToArray();
-
             short[] result = await Icmp.PingArrayAsync(hosts, timeout);
             rotatingIndex++;
+
+            (int left, int top, int width, _) = list.GetBounding();
 
             for (int i = 0; i < list.items.Count && i < result.Length; i++) {
                 short status = result[i];
@@ -198,7 +180,7 @@ public sealed class PingFrame : Ui.Frame {
                 PingItem item = list.items[i];
                 item.status = status;
                 item.history[rotatingIndex % HISTORY_LEN] = status;
-                list.items[i] = item;
+                //list.items[i] = item;
 
                 if (Renderer.ActiveFrame == this && Renderer.ActiveDialog == null) {
                     UpdatePingItem(i, left, top, width);
@@ -217,6 +199,7 @@ public sealed class PingFrame : Ui.Frame {
         }
 
         Tokens.dictionary.TryRemove(cancellationTokenSource, out _);
+        cancellationTokenSource.Dispose();
     }
 
     private void ParseQuery(string query) {
@@ -249,7 +232,7 @@ public sealed class PingFrame : Ui.Frame {
                         bytes[j] = (byte)(value & 255);
                         value >>= 8;
                     }
-                    AddItem(string.Join('.', bytes.Select(b => b.ToString())));
+                    AddItem(String.Join('.', bytes.Select(b => b.ToString())));
                 }
             }
             else {
@@ -282,7 +265,7 @@ public sealed class PingFrame : Ui.Frame {
                 broadcast[i] = ipIntBytes[i] | (255 - mask[i]);
             }
 
-            ParseQuery(string.Join(".", net) + " - " + string.Join(".", broadcast));
+            ParseQuery(String.Join(".", net) + " - " + String.Join(".", broadcast));
         }
         else {
             AddItem(query);
@@ -303,10 +286,10 @@ public sealed class PingFrame : Ui.Frame {
     }
 
     private void Start() =>
-        new Thread(async () => await PingLoop()).Start();
+        Task.Run(PingLoop);
 
     private void Stop() =>
-        cancellationTokenSource.Cancel();
+        cancellationTokenSource?.Cancel();
 
     private void AddDialog() {
         Ui.InputDialog dialog = new Ui.InputDialog() {
@@ -317,7 +300,9 @@ public sealed class PingFrame : Ui.Frame {
         dialog.valueTextbox.history = history;
 
         dialog.okButton.action = () => {
-            history.Add(dialog.valueTextbox.Value.Trim());
+            if (!String.IsNullOrWhiteSpace(dialog.valueTextbox.Value)) {
+                history.Add(dialog.valueTextbox.Value.Trim());
+            }
             ParseQuery(dialog.valueTextbox.Value.Trim());
             dialog.Close();
         };

@@ -4,22 +4,19 @@ public sealed class MainMenu : Ui.Frame {
     public string[] menu;
     public int index;
 
-    public static readonly MainMenu singleton;
-    static MainMenu() {
-        singleton = new MainMenu();
-    }
+    public static MainMenu Instance { get; } = new MainMenu();
 
     public MainMenu() {
         menu = [
-         "Ping",
-         "DNS lookup",
-         "Trace route",
-         "IP discovery",
-         "Reverse proxy",
-         "Packet capture",
-         null,
-         "Options",
-         "Quit"
+            "Ping",
+            "DNS lookup",
+            "Trace route",
+            "IP discovery",
+            "Reverse proxy",
+            "Packet capture",
+            null,
+            "Options",
+            "Quit"
         ];
     }
 
@@ -49,7 +46,7 @@ public sealed class MainMenu : Ui.Frame {
 
         int length = Math.Min(width / 2, 28);
 
-        if (string.IsNullOrEmpty(menu[i])) {
+        if (String.IsNullOrEmpty(menu[i])) {
             Ansi.SetFgColor([64, 64, 64]);
             Ansi.SetBgColor(Data.BG_COLOR);
             Ansi.SetCursorPosition(3, y);
@@ -107,7 +104,7 @@ public sealed class MainMenu : Ui.Frame {
     public bool Enter() {
         switch (menu[index]) {
         case "Ping":
-            PingFrame.singleton.Show();
+            PingFrame.Instance.Show();
             return true;
 
          case "Quit":
@@ -133,7 +130,7 @@ public sealed class MainMenu : Ui.Frame {
             index = Math.Min(menu.Length - 1, index + (invert ? -1 : 1));
         }
 
-        if (string.IsNullOrEmpty(menu[index])) {
+        if (String.IsNullOrEmpty(menu[index])) {
             index = Math.Min(menu.Length - 1, index + (invert ? -1 : 1));
         }
 
@@ -147,7 +144,7 @@ public sealed class MainMenu : Ui.Frame {
         int lastIndex = index;
         index = Math.Max(0, index - 1);
 
-        if (string.IsNullOrEmpty(menu[index])) {
+        if (String.IsNullOrEmpty(menu[index])) {
             index = Math.Max(0, index - 1);
         }
 
@@ -163,7 +160,7 @@ public sealed class MainMenu : Ui.Frame {
         int lastIndex = index;
         index = Math.Min(menu.Length - 1, index + 1);
 
-        if (string.IsNullOrEmpty(menu[index])) {
+        if (String.IsNullOrEmpty(menu[index])) {
             index = Math.Min(menu.Length - 1, index + 1);
         }
 
