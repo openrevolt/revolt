@@ -38,7 +38,6 @@ public sealed class Textbox(Frame parentFrame) : Element(parentFrame) {
         Ansi.SetFgColor(isFocused ? Data.SELECT_COLOR : Data.INPUT_COLOR);
         Ansi.SetBgColor(backColor);
         Ansi.SetCursorPosition(left, top + 1);
-
         Ansi.Write(new String(Data.UPPER_1_8TH_BLOCK, usableWidth));
 
         DrawValue();

@@ -6,6 +6,13 @@ namespace Revolt.Frames;
 public sealed class PingFrame : Ui.Frame {
     const int HISTORY_LEN = 160;
  
+    enum MoveOption : int {
+        Never = 0,
+        OnRise = 1,
+        OnFall = 2,
+        OnRiseAndFall = 3,
+    }
+
     public class PingItem {
         public string  host;
         public short   status;
@@ -21,10 +28,12 @@ public sealed class PingFrame : Ui.Frame {
     private CancellationToken cancellationToken;
 
     private readonly List<string> queryHistory = [];
-    private int  rotatingIndex = 0;
-    private bool status        = true;
-    private int  timeout       = 1000;
-    private int  interval      = 1000;
+    private int         rotatingIndex = 0;
+    private bool        status        = true;
+    private int         timeout       = 1000;
+    private int         interval      = 1000;
+    private MoveOption  move          = MoveOption.Never;
+
     public PingFrame() {
         toolbar = new Ui.Toolbar(this) {
             left  = 1,
@@ -125,8 +134,8 @@ public sealed class PingFrame : Ui.Frame {
         Ansi.SetFgColor(DetermineRttColor(item.status));
         Ansi.Write(DetermineRttText(item.status));
 
-        Ansi.SetCursorPosition(0, y + 1);
-        Ansi.ClearLine();
+        //Ansi.SetCursorPosition(0, y + 1);
+        //Ansi.ClearLine();
     }
 
     private static byte[] DetermineRttColor(short rtt) => rtt switch {
@@ -337,8 +346,9 @@ public sealed class PingFrame : Ui.Frame {
             _ = int.TryParse(dialog.timeoutTextbox.Value, out timeout);
             _ = int.TryParse(dialog.intervalTextbox.Value, out interval);
 
-            timeout = Math.Clamp(timeout, 50, 10_000);
+            timeout  = Math.Clamp(timeout, 50, 10_000);
             interval = Math.Clamp(interval, 100, 30_000);
+            move     = (MoveOption)dialog.moveSelectBox.index;
 
             if (timeout > interval) {
                 timeout = interval;
@@ -348,6 +358,9 @@ public sealed class PingFrame : Ui.Frame {
         };
 
         Renderer.ActiveDialog = dialog;
+        
+        dialog.moveSelectBox.index = (int)move;
+
         dialog.Draw();
 
         dialog.timeoutTextbox.Value = timeout.ToString();
@@ -360,6 +373,7 @@ public sealed class PingFrame : Ui.Frame {
 file sealed class OptionsDialog : Ui.DialogBox {
     public Ui.NumberBox timeoutTextbox;
     public Ui.NumberBox intervalTextbox;
+    public Ui.SelectBox moveSelectBox;
 
     public OptionsDialog() {
         timeoutTextbox = new Ui.NumberBox(this) {
@@ -374,8 +388,13 @@ file sealed class OptionsDialog : Ui.DialogBox {
             max = 30_000
         };
 
+        moveSelectBox = new Ui.SelectBox(this) {
+            options = ["Never", "On rise", "On fall", "On rise and fall"],
+        };
+
         elements.Add(timeoutTextbox);
         elements.Add(intervalTextbox);
+        elements.Add(moveSelectBox);
 
         defaultElement = timeoutTextbox;
         timeoutTextbox.Focus(false);
@@ -408,6 +427,17 @@ file sealed class OptionsDialog : Ui.DialogBox {
         intervalTextbox.left = left;
         intervalTextbox.right = Renderer.LastWidth - width - left + 2;
         intervalTextbox.top = top++;
+
+        Ansi.SetCursorPosition(left, top++);
+        Ansi.Write(blank);
+
+        Ansi.SetCursorPosition(left, top);
+        Ansi.Write(blank);
+
+        WriteLabel("Move on top:", left, ++top, width);
+        moveSelectBox.left = left;
+        moveSelectBox.right = Renderer.LastWidth - width - left + 2;
+        moveSelectBox.top = top++;
 
         Ansi.SetCursorPosition(left, top++);
         Ansi.Write(blank);
@@ -450,7 +480,7 @@ file sealed class OptionsDialog : Ui.DialogBox {
             return true;
 
         case ConsoleKey.Enter:
-            if ((focusedElement == timeoutTextbox || focusedElement == intervalTextbox) && okButton.action is not null) {
+            if ((focusedElement == timeoutTextbox || focusedElement == intervalTextbox || focusedElement == moveSelectBox) && okButton.action is not null) {
                 okButton.action();
                 return true;
             }
