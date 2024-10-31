@@ -13,6 +13,10 @@ public sealed class ListBox<T>(Frame parentFrame) : Element(parentFrame) {
         for (int i = 0; i < height; i++) {
             drawItemHandler(i, left, top, width);
         }
+
+        if (push) {
+            Ansi.Push();
+        }
     }
 
     public override void HandleKey(ConsoleKeyInfo key) {

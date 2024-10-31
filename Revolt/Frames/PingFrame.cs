@@ -21,10 +21,10 @@ public sealed class PingFrame : Ui.Frame {
     private CancellationToken cancellationToken;
 
     private readonly List<string> queryHistory = [];
-    private int rotatingIndex = 0;
-    private bool status = true;
-    private int timeout = 1000;
-    private int interval = 1000;
+    private int  rotatingIndex = 0;
+    private bool status        = true;
+    private int  timeout       = 1000;
+    private int  interval      = 1000;
     public PingFrame() {
         toolbar = new Ui.Toolbar(this) {
             left  = 1,
@@ -83,8 +83,8 @@ public sealed class PingFrame : Ui.Frame {
         if (list.items is null || list.items.Count == 0) return;
         if (i >= list.items.Count) return;
         
-        int yOffset = y + i * 2;
         PingItem item = list.items[i];
+        int yOffset = y + i * 2;
 
         Ansi.SetCursorPosition(x, yOffset);
         if (i == list.index) {
@@ -179,7 +179,6 @@ public sealed class PingFrame : Ui.Frame {
                 PingItem item = list.items[i];
                 item.status = status;
                 item.history[rotatingIndex % HISTORY_LEN] = status;
-                //list.items[i] = item;
 
                 if (Renderer.ActiveFrame == this && Renderer.ActiveDialog == null) {
                     UpdatePingItem(i, left, top + i * 2, width);
@@ -312,7 +311,8 @@ public sealed class PingFrame : Ui.Frame {
 
     private void Clear() {
         list.items.Clear();
-        list.Draw(true);
+        //list.Draw(true);
+        Renderer.Redraw();
     }
 
     private void ToggleStatus() {
@@ -337,8 +337,12 @@ public sealed class PingFrame : Ui.Frame {
             _ = int.TryParse(dialog.timeoutTextbox.Value, out timeout);
             _ = int.TryParse(dialog.intervalTextbox.Value, out interval);
 
-            timeout = Math.Clamp(timeout, 50, 5_000);
-            interval = Math.Clamp(interval, 50, 5_000);
+            timeout = Math.Clamp(timeout, 50, 10_000);
+            interval = Math.Clamp(interval, 100, 30_000);
+
+            if (timeout > interval) {
+                timeout = interval;
+            }
 
             dialog.Close();
         };
@@ -351,7 +355,6 @@ public sealed class PingFrame : Ui.Frame {
 
         dialog.timeoutTextbox.Focus();
     }
-
 }
 
 file sealed class OptionsDialog : Ui.DialogBox {
@@ -362,13 +365,13 @@ file sealed class OptionsDialog : Ui.DialogBox {
         timeoutTextbox = new Ui.NumberBox(this) {
             backColor = Data.PANE_COLOR,
             min = 50,
-            max = 5_000
+            max = 10_000
         };
 
         intervalTextbox = new Ui.NumberBox(this) {
             backColor = Data.PANE_COLOR,
-            min = 50,
-            max = 5_000
+            min = 100,
+            max = 30_000
         };
 
         elements.Add(timeoutTextbox);
