@@ -16,13 +16,20 @@ public sealed class SelectBox(Frame parentFrame) : Element(parentFrame) {
         Ansi.SetBgColor(backColor);
         Ansi.SetCursorPosition(left, top);
 
+        if (index == 0) {
+            Ansi.SetFgColor([128, 128, 128]);
+        }
         Ansi.Write(' ');
         Ansi.Write(Data.LEFT_TRIANGLE);
         Ansi.Write(' ');
 
+        Ansi.SetFgColor(foreColor);
         Ansi.Write(selected);
         Ansi.Write(new string(' ', Math.Max(usableWidth - selected.Length - 6, 0)));
 
+        if (index == options.Length - 1) {
+            Ansi.SetFgColor([128, 128, 128]);
+        }
         Ansi.Write(' ');
         Ansi.Write(Data.RIGHT_TRIANGLE);
         Ansi.Write(' ');

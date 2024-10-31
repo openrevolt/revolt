@@ -1,4 +1,5 @@
-﻿using System.Threading;
+﻿using System.ComponentModel;
+using System.Threading;
 
 namespace Revolt.Ui;
 
@@ -246,6 +247,7 @@ public sealed class NumberBox(Frame parentFrame) : Element(parentFrame) {
         }
         else {
             _value = min.ToString();
+            index = _value.Length;
         }
 
         this.DrawValue();
