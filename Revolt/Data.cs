@@ -23,8 +23,8 @@ public static class Data {
     public const char LOWER_7_8TH_BLOCK = '\u2587';
     public const char LOWER_8_8TH_BLOCK = '\u2588';
 
-    public const char LEFT_TRIANGLE  = '\u25C4';
-    public const char RIGHT_TRIANGLE = '\u25B6';
+    public const char LEFT_TRIANGLE  = '\u25C2';
+    public const char RIGHT_TRIANGLE = '\u25B8';
 
     public const char LEFT_HALF_CIRCLE     = '\u25D6';
     public const char RIGHT_HALF_CIRCLE    = '\u25D7';

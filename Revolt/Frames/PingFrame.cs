@@ -318,11 +318,8 @@ public sealed class PingFrame : Ui.Frame {
         dialog.Draw();
     }
 
-    private void Clear() {
-        list.items.Clear();
-        //list.Draw(true);
-        Renderer.Redraw();
-    }
+    private void Clear() =>
+        list.Clear();
 
     private void ToggleStatus() {
         status = !status;

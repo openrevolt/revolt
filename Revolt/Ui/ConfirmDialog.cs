@@ -20,23 +20,7 @@ public sealed class ConfirmDialog : DialogBox {
         Ansi.SetCursorPosition(left, top++);
         Ansi.Write(blank);
 
-        if (text is not null) {
-            string[] words = text.Split(' ');
-            int xOffset = 0;
-
-            for (int i = 0; i < words.Length; i++) {
-                Ansi.SetCursorPosition(left + xOffset, top);
-                Ansi.Write(' ');
-
-                Ansi.Write(words[i]);
-                xOffset += words[i].Length + 1;
-                if (xOffset >= width) break;
-            }
-
-            if (xOffset < width) {
-                Ansi.Write(new String(' ', width - xOffset));
-            }
-        }
+        WriteLabel(text, left, top, width, true);
 
         top++;
 

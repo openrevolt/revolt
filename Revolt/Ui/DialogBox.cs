@@ -1,4 +1,6 @@
-﻿namespace Revolt.Ui;
+﻿using System.Text;
+
+namespace Revolt.Ui;
 
 public class DialogBox : Frame {
     public Button okButton;
@@ -46,23 +48,36 @@ public class DialogBox : Frame {
         Renderer.Redraw();
     }
 
-    public void WriteLabel(string text, int x, int y, int width) {
-        if (text is not null) {
-            string[] words = text.Split(' ');
-            int xOffset = 0;
+    public void WriteLabel(string text, int x, int y, int width, bool alignCenter = false) {
+        if (text is null) {
+            return;
+        }
 
-            for (int i = 0; i < words.Length; i++) {
-                Ansi.SetCursorPosition(x + xOffset, y);
-                Ansi.Write(' ');
+        StringBuilder builder = new StringBuilder();
+        string[] words = text.Split(' ');
+        int xOffset = 0;
 
-                Ansi.Write(words[i]);
-                xOffset += words[i].Length + 1;
-                if (xOffset >= width) break;
+        for (int i = 0; i < words.Length; i++) {
+            builder.Append(' ');
+            builder.Append(words[i]);
+            xOffset += words[i].Length + 1;
+            if (xOffset >= width)break;
+        }
+
+        Ansi.SetCursorPosition(x, y);
+
+        if (xOffset < width) {
+            if (alignCenter) {
+                string padding = new String(' ', (width - xOffset) / 2);
+                Ansi.Write(padding);
+                Ansi.Write(builder.ToString());
+                Ansi.Write(new String(' ', width - padding.Length - builder.Length));
             }
-
-            if (xOffset < width) {
+            else {
+                Ansi.Write(builder.ToString());
                 Ansi.Write(new String(' ', width - xOffset));
             }
         }
+
     }
 }

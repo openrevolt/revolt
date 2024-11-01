@@ -50,6 +50,11 @@ public sealed class ListBox<T>(Frame parentFrame) : Element(parentFrame) {
     public void Remove(T item) =>
         items.Remove(item);
 
+    public void Clear() {
+        items.Clear();
+        Renderer.Redraw(true);
+    }
+
     public override void Focus(bool draw = true) {
         base.Focus(draw);
 
