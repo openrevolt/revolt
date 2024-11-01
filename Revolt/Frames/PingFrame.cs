@@ -108,14 +108,11 @@ public sealed class PingFrame : Ui.Frame {
         Ansi.Write(item.host.Length > 24 ? item.host[..23] + Data.ELLIPSIS : item.host.PadRight(24));
 
         UpdateHistoryAndStatus(item, x, yOffset, width);
-
-        Ansi.Push();
     }
 
     private void UpdatePingItem(int i, int x, int y, int width) {
         PingItem item = list.items[i];
         UpdateHistoryAndStatus(item, x, y, width);
-        Ansi.Push();
     }
 
     private void UpdateHistoryAndStatus(PingItem item, int x, int y, int width) {
@@ -193,6 +190,8 @@ public sealed class PingFrame : Ui.Frame {
                     UpdatePingItem(i, left, top + i * 2, width);
                 }
             }
+
+            Ansi.Push();
 
             rotatingIndex %= HISTORY_LEN;
 

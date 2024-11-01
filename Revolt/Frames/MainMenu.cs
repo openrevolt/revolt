@@ -38,6 +38,8 @@ public sealed class MainMenu : Ui.Frame {
         for (int i = 0; i < menu.Length; i++) {
             DrawItem(i, width, height);
         }
+
+        Ansi.Push();
     }
 
     public void DrawItem(int i, int width, int height) {
@@ -72,7 +74,6 @@ public sealed class MainMenu : Ui.Frame {
         }
 
         Ansi.Write(item);
-        Ansi.Push();
     }
 
     public override bool HandleKey(ConsoleKeyInfo key) {
@@ -136,6 +137,7 @@ public sealed class MainMenu : Ui.Frame {
 
         DrawItem(lastIndex, Renderer.LastWidth, Renderer.LastHeight);
         DrawItem(index, Renderer.LastWidth, Renderer.LastHeight);
+        Ansi.Push();
     }
 
     public void SelectPrevious() {
@@ -152,6 +154,7 @@ public sealed class MainMenu : Ui.Frame {
 
         DrawItem(lastIndex, Renderer.LastWidth, Renderer.LastHeight);
         DrawItem(index, Renderer.LastWidth, Renderer.LastHeight);
+        Ansi.Push();
     }
 
     public void SelectNext() {
@@ -168,5 +171,6 @@ public sealed class MainMenu : Ui.Frame {
 
         DrawItem(lastIndex, Renderer.LastWidth, Renderer.LastHeight);
         DrawItem(index, Renderer.LastWidth, Renderer.LastHeight);
+        Ansi.Push();
     }
 }

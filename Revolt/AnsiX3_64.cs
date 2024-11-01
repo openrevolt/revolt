@@ -5,13 +5,17 @@ namespace Revolt;
 
 public static class Ansi {
     private static readonly ConcurrentQueue<string> queue = new ConcurrentQueue<string>();
+    private static readonly object mutex = new object();
 
     public static void Push() {
-        StringBuilder builder = new StringBuilder();
-        while (queue.TryDequeue(out string result)) {
-            builder.Append(result);
+        lock (mutex) {
+            StringBuilder builder = new StringBuilder();
+            while (queue.TryDequeue(out string result)) {
+                builder.Append(result);
+            }
+            Console.Write(builder.ToString());
         }
-        Console.Write(builder.ToString());
+
         queue.Clear();
     }
 
