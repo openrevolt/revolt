@@ -1,7 +1,4 @@
-﻿using System.ComponentModel;
-using System.Threading;
-
-namespace Revolt.Ui;
+﻿namespace Revolt.Ui;
 
 public sealed class NumberBox(Frame parentFrame) : Element(parentFrame) {
     const int scrollInterval = 16;
