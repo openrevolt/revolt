@@ -367,18 +367,18 @@ public sealed class PingFrame : Ui.Frame {
 }
 
 file sealed class OptionsDialog : Ui.DialogBox {
-    public Ui.NumberBox timeoutTextbox;
-    public Ui.NumberBox intervalTextbox;
+    public Ui.IntegerBox timeoutTextbox;
+    public Ui.IntegerBox intervalTextbox;
     public Ui.SelectBox moveSelectBox;
 
     public OptionsDialog() {
-        timeoutTextbox = new Ui.NumberBox(this) {
+        timeoutTextbox = new Ui.IntegerBox(this) {
             backColor = Data.PANE_COLOR,
             min = 50,
             max = 10_000
         };
 
-        intervalTextbox = new Ui.NumberBox(this) {
+        intervalTextbox = new Ui.IntegerBox(this) {
             backColor = Data.PANE_COLOR,
             min = 100,
             max = 30_000

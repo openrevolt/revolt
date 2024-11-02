@@ -1,6 +1,6 @@
 ﻿namespace Revolt.Ui;
 
-public sealed class NumberBox(Frame parentFrame) : Element(parentFrame) {
+public sealed class IntegerBox(Frame parentFrame) : Element(parentFrame) {
     const int scrollInterval = 16;
 
     public byte[] backColor = Data.BG_COLOR;
@@ -246,8 +246,8 @@ public sealed class NumberBox(Frame parentFrame) : Element(parentFrame) {
             _value = min.ToString();
             index = _value.Length;
         }
-
         this.DrawValue();
+
         Ansi.HideCursor();
         Ansi.Push();
     }

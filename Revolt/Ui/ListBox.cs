@@ -70,6 +70,7 @@ public sealed class ListBox<T>(Frame parentFrame) : Element(parentFrame) {
 
     public override void Blur(bool draw = true) {
         base.Blur(draw);
+
         if (index > -1) {
             (int left, int top, int width, _) = GetBounding();
             drawItemHandler(index, left, top, width);

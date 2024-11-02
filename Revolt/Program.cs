@@ -27,7 +27,5 @@ public class Program {
         Version ver = Assembly.GetExecutingAssembly().GetName()?.Version;
         string version = $"{ver?.Major ?? 0}.{ver?.Minor ?? 0}.{ver?.Build ?? 0}.{ver?.Revision ?? 0}";
         Ansi.WriteLine($"{version,30}");
-
-        Ansi.Push();
     }
 }

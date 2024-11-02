@@ -52,14 +52,4 @@ public sealed class SelectBox(Frame parentFrame) : Element(parentFrame) {
             break;
         }
     }
-
-    public override void Focus(bool draw = true) {
-        base.Focus(draw);
-        Ansi.Push();
-    }
-
-    public override void Blur(bool draw = true) {
-        base.Blur(draw);
-        Ansi.Push();
-    }
 }
