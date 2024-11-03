@@ -7,10 +7,10 @@ public sealed class PingFrame : Ui.Frame {
     const int HISTORY_LEN = 160;
  
     enum MoveOption : int {
-        Never = 0,
-        OnRise = 1,
-        OnFall = 2,
-        OnRiseAndFall = 3,
+        Never         = 0,
+        OnRise        = 1,
+        OnFall        = 2,
+        OnRiseAndFall = 3
     }
 
     public class PingItem {
@@ -28,11 +28,11 @@ public sealed class PingFrame : Ui.Frame {
     private CancellationToken cancellationToken;
 
     private readonly List<string> queryHistory = [];
-    private int         rotatingIndex = 0;
-    private bool        status        = true;
-    private int         timeout       = 1000;
-    private int         interval      = 1000;
-    private MoveOption  move          = MoveOption.Never;
+    private int        rotatingIndex = 0;
+    private bool       status        = true;
+    private int        timeout       = 1000;
+    private int        interval      = 1000;
+    private MoveOption move          = MoveOption.Never;
 
     public PingFrame() {
         toolbar = new Ui.Toolbar(this) {
@@ -47,10 +47,11 @@ public sealed class PingFrame : Ui.Frame {
         };
 
         list = new Ui.ListBox<PingItem>(this) {
-            left   = 1,
-            right  = 1,
-            top    = 3,
-            bottom = 1,
+            left            = 1,
+            right           = 1,
+            top             = 3,
+            bottom          = 1,
+            itemHeight      = 2,
             drawItemHandler = DrawPingItem
         };
 
@@ -80,6 +81,14 @@ public sealed class PingFrame : Ui.Frame {
             MainMenu.Instance.Show();
             break;
 
+        case ConsoleKey.Insert:
+            AddDialog();
+            break;
+
+        case ConsoleKey.Delete:
+            list.RemoveSelected();
+            break;
+
         default:
             focusedElement.HandleKey(key);
             break;
@@ -92,10 +101,12 @@ public sealed class PingFrame : Ui.Frame {
         if (list.items is null || list.items.Count == 0) return;
         if (i >= list.items.Count) return;
         
-        PingItem item = list.items[i];
-        int yOffset = y + i * 2;
+        int adjustedY = y + i * 2 - list.scrollOffset * list.itemHeight;
+        if (adjustedY < y || adjustedY > Renderer.LastHeight) return;
 
-        Ansi.SetCursorPosition(x, yOffset);
+        PingItem item = list.items[i];
+
+        Ansi.SetCursorPosition(x, adjustedY);
         if (i == list.index) {
             Ansi.SetFgColor(list.isFocused ? [16, 16, 16] : Data.FG_COLOR);
             Ansi.SetBgColor(list.isFocused ? Data.SELECT_COLOR : Data.INPUT_COLOR);
@@ -107,7 +118,7 @@ public sealed class PingFrame : Ui.Frame {
 
         Ansi.Write(item.host.Length > 24 ? item.host[..23] + Data.ELLIPSIS : item.host.PadRight(24));
 
-        UpdateHistoryAndStatus(item, x, yOffset, width);
+        UpdateHistoryAndStatus(item, x, adjustedY, width);
     }
 
     private void UpdatePingItem(int i, int x, int y, int width) {
@@ -177,7 +188,7 @@ public sealed class PingFrame : Ui.Frame {
             short[] result = await Icmp.PingArrayAsync(hosts, timeout);
             rotatingIndex++;
 
-            (int left, int top, int width, _) = list.GetBounding();
+            (int left, int top, int width, int height) = list.GetBounding();
 
             for (int i = 0; i < list.items.Count && i < result.Length; i++) {
                 short status = result[i];
@@ -186,9 +197,14 @@ public sealed class PingFrame : Ui.Frame {
                 item.status = status;
                 item.history[rotatingIndex % HISTORY_LEN] = status;
 
-                if (Renderer.ActiveFrame == this && Renderer.ActiveDialog == null) {
-                    UpdatePingItem(i, left, top + i * 2, width);
-                }
+                if (Renderer.ActiveDialog is not null) continue;
+                if (Renderer.ActiveFrame != this) continue;
+
+                int adjustedY = top + i * 2 - list.scrollOffset * list.itemHeight;
+                if (adjustedY < top) continue;
+                if (adjustedY > top + height) continue;
+
+                UpdatePingItem(i, left, adjustedY, width);
             }
 
             Ansi.Push();
@@ -248,6 +264,7 @@ public sealed class PingFrame : Ui.Frame {
         else if (query.Contains('/')) {
             string[] parts = query.Split('/');
             if (parts.Length != 2 || !int.TryParse(parts[1].Trim(), out int cidr)) return;
+            cidr = Math.Clamp(cidr, 16, 31);
 
             string ip = parts[0].Trim();
             string[] ipBytes = ip.Split('.');

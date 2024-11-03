@@ -49,9 +49,7 @@ public class DialogBox : Frame {
     }
 
     public void WriteLabel(string text, int x, int y, int width, bool alignCenter = false) {
-        if (text is null) {
-            return;
-        }
+        if (text is null) return;
 
         StringBuilder builder = new StringBuilder();
         string[] words = text.Split(' ');
@@ -61,7 +59,7 @@ public class DialogBox : Frame {
             builder.Append(' ');
             builder.Append(words[i]);
             xOffset += words[i].Length + 1;
-            if (xOffset >= width)break;
+            if (xOffset >= width) break;
         }
 
         Ansi.SetCursorPosition(x, y);

@@ -51,9 +51,8 @@ public sealed class ConfirmDialog : DialogBox {
         Draw(width, 0);
     }
 
-    public override bool HandleKey(ConsoleKeyInfo key) {
-        return base.HandleKey(key);
-    }
+    public override bool HandleKey(ConsoleKeyInfo key) =>
+    base.HandleKey(key);
 
     public override void Close() {
         Ansi.HideCursor();

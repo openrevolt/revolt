@@ -62,7 +62,7 @@ public static class Renderer {
 
             if (LastWidth == newWidth && LastHeight == newHeight) continue;
 
-            if (newWidth <= 0 || newHeight <= 0) continue;
+            if (newWidth <= 1 || newHeight <= 1) continue;
 
             LastWidth = Math.Min(Console.WindowWidth, MAX_WIDTH);
             LastHeight = Math.Min(Console.WindowHeight, MAX_HEIGHT);

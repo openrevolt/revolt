@@ -8,6 +8,8 @@ public static class Ansi {
     private static readonly object mutex = new object();
 
     public static void Push() {
+        if (queue.IsEmpty) return;
+
         lock (mutex) {
             StringBuilder builder = new StringBuilder();
             while (queue.TryDequeue(out string result)) {
@@ -15,68 +17,76 @@ public static class Ansi {
             }
             Console.Write(builder.ToString());
         }
-
-        queue.Clear();
     }
 
     public static void Write(char text) =>
-        queue.Enqueue(text.ToString());
+    queue.Enqueue(text.ToString());
 
     public static void Write(string text) =>
-        queue.Enqueue(text);
+    queue.Enqueue(text);
 
     public static void WriteLine(string text) =>
-        queue.Enqueue($"{text}\n");
+    queue.Enqueue($"{text}{Environment.NewLine}");
 
     public static void ClearScreen() =>
-        queue.Enqueue("\x1b[2J");
+    queue.Enqueue("\x1b[2J");
 
     public static void ClearLine() =>
-        queue.Enqueue("\x1b[2K");
+    queue.Enqueue("\x1b[2K");
 
     public static void ResetAll() =>
-        queue.Enqueue("\x1b[0m");
+    queue.Enqueue("\x1b[0m");
 
     public static void SetBold(bool value) =>
-        queue.Enqueue($"\x1b[{(value ? 1 : 22)}m");
+    queue.Enqueue($"\x1b[{(value ? 1 : 22)}m");
 
     public static void SetFaint(bool value) =>
-        queue.Enqueue($"\x1b[{(value ? 2 : 22)}m");
+    queue.Enqueue($"\x1b[{(value ? 2 : 22)}m");
 
     public static void SetItalic(bool value) =>
-        queue.Enqueue($"\x1b[{(value ? 3 : 23)}m");
+    queue.Enqueue($"\x1b[{(value ? 3 : 23)}m");
 
     public static void SetUnderline(bool value) =>
-        queue.Enqueue($"\x1b[{(value ? 4 : 24)}m");
+    queue.Enqueue($"\x1b[{(value ? 4 : 24)}m");
 
     public static void SetBlinking(bool value) =>
-        queue.Enqueue($"\x1b[{(value ? 5 : 25)}m");
+    queue.Enqueue($"\x1b[{(value ? 5 : 25)}m");
 
     public static void SetFgColor(byte r, byte g, byte b) =>
-        queue.Enqueue($"\x1b[38;2;{r};{g};{b}m");
+    queue.Enqueue($"\x1b[38;2;{r};{g};{b}m");
 
     public static void SetFgColor(byte[] rgb) =>
-        queue.Enqueue($"\x1b[38;2;{rgb[0]};{rgb[1]};{rgb[2]}m");
+    queue.Enqueue($"\x1b[38;2;{rgb[0]};{rgb[1]};{rgb[2]}m");
 
     public static void SetBgColor(byte r, byte g, byte b) =>
-        queue.Enqueue($"\x1b[48;2;{r};{g};{b}m");
+    queue.Enqueue($"\x1b[48;2;{r};{g};{b}m");
 
     public static void SetBgColor(byte[] rgb) =>
-        queue.Enqueue($"\x1b[48;2;{rgb[0]};{rgb[1]};{rgb[2]}m");
+    queue.Enqueue($"\x1b[48;2;{rgb[0]};{rgb[1]};{rgb[2]}m");
 
     public static void SetBlinkOn() =>
-        queue.Enqueue("\x1b[6m");
+    queue.Enqueue("\x1b[6m");
 
     public static void SetBlinkOff() =>
-        queue.Enqueue("\x1b[25m");
+    queue.Enqueue("\x1b[25m");
 
     public static void HideCursor() =>
-        queue.Enqueue("\x1b[?25l");
+    queue.Enqueue("\x1b[?25l");
 
     public static void ShowCursor() =>
-        queue.Enqueue("\x1b[?25h");
+    queue.Enqueue("\x1b[?25h");
 
     public static void SetCursorPosition(int x, int y) =>
-        queue.Enqueue($"\x1b[{y};{x}H");
+    queue.Enqueue($"\x1b[{y};{x}H");
+
+    public static void ResetScrollRegion() => queue.Enqueue("\x1b[r");
+
+    public static void SetScrollRegion(int y0, int y1) => queue.Enqueue($"\x1b[{y0};{y1}r");
+
+    public static void ScrollUp() => queue.Enqueue("\x1b[S");
+    public static void ScrollUp(int n) => queue.Enqueue($"\x1b[{n}S");
+
+    public static void ScrollDown() => queue.Enqueue("\x1b[T");
+    public static void ScrollDown(int n) => queue.Enqueue($"\x1b[{n}T");
 
 }
