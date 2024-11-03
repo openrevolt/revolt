@@ -57,6 +57,20 @@ public sealed class ListBox<T>(Frame parentFrame) : Element(parentFrame) {
             index = Math.Clamp(index + (height / itemHeight) - 1, 0, items.Count - 1);
             Draw(true);
             break;
+
+        case ConsoleKey.Home:
+            if (items.Count > 0) {
+                index = 0;
+                Draw(true);
+            }
+            break;
+
+        case ConsoleKey.End:
+            if (items.Count > 0) {
+                index = items.Count - 1;
+                Draw(true);
+            }
+            break;
         }
     }
 
