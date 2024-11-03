@@ -35,42 +35,54 @@ public sealed class ListBox<T>(Frame parentFrame) : Element(parentFrame) {
     public override void HandleKey(ConsoleKeyInfo key) {
         if (items is null || items.Count == 0) return;
 
-        (_, _, _, int height) = GetBounding();
+        (int left, int top, int width, int height) = GetBounding();
+        int lastIndex = index;
 
         switch (key.Key) {
         case ConsoleKey.UpArrow:
             index = Math.Max(0, index - 1);
-            Draw(true); //TODO: draw only last and new index
             break;
 
         case ConsoleKey.DownArrow:
             index = Math.Min(items.Count - 1, index + 1);
-            Draw(true); //TODO: draw only last and new index
             break;
 
         case ConsoleKey.PageUp:
             index = Math.Clamp(index - (height / itemHeight) + 1, 0, items.Count - 1);
-            Draw(true);
             break;
 
         case ConsoleKey.PageDown:
             index = Math.Clamp(index + (height / itemHeight) - 1, 0, items.Count - 1);
-            Draw(true);
             break;
 
         case ConsoleKey.Home:
             if (items.Count > 0) {
                 index = 0;
+            }
+            if (index != lastIndex) {
                 Draw(true);
             }
-            break;
+            return;
 
         case ConsoleKey.End:
             if (items.Count > 0) {
                 index = items.Count - 1;
+            }
+            if (index != lastIndex) {
                 Draw(true);
             }
-            break;
+            return;
+        
+        default:
+            return;
+        }
+
+        if (index != lastIndex) {
+            Draw(true);
+            //TODO: optimize
+            //drawItemHandler(lastIndex, left, top, width);
+            //drawItemHandler(index, left, top, width);
+            //Ansi.Push();
         }
     }
 
