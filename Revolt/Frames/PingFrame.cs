@@ -133,7 +133,7 @@ public sealed class PingFrame : Ui.Frame {
         Ansi.SetBgColor(Data.BG_COLOR);
         Ansi.SetCursorPosition(x + 25, y);
 
-        byte[] lastColor = DetermineRttColor(Icmp.UNKNOWN);
+        byte[] lastColor = [0, 0, 0];
 
         for (int t = 0; t < usableWidth; t++) {
             byte[] color = DetermineRttColor(item.history[(historyOffset + t) % HISTORY_LEN]);
@@ -208,7 +208,7 @@ public sealed class PingFrame : Ui.Frame {
 
                 int adjustedY = top + i * 2 - list.scrollOffset * list.itemHeight;
                 if (adjustedY < top) continue;
-                if (adjustedY > top + height) continue;
+                if (adjustedY > top + height - 1) continue;
 
                 UpdatePingItem(i, left, adjustedY, width);
             }
