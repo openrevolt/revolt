@@ -13,11 +13,6 @@ public sealed class PingFrame : Ui.Frame {
         OnRiseAndFall = 3
     }
 
-    public class PingItem {
-        public string  host;
-        public short   status;
-        public short[] history;
-    }
 
     public static PingFrame Instance { get; } = new PingFrame();
 
@@ -155,7 +150,7 @@ public sealed class PingFrame : Ui.Frame {
     private static byte[] DetermineRttColor(short rtt) => rtt switch {
         Icmp.TIMEDOUT        => [240, 32, 32],
         Icmp.UNREACHABLE     => [240, 128, 0],
-        Icmp.INVALID_ADDREDD => [192, 0, 0],
+        Icmp.INVALID_ADDRESS => [192, 0, 0],
         Icmp.GENERAL_FAILURE => [192, 0, 0],
         Icmp.ERROR           => [192, 0, 0],
         Icmp.UNKNOWN         => [192, 0, 0],
@@ -173,7 +168,7 @@ public sealed class PingFrame : Ui.Frame {
     private static string DetermineRttText(short rtt) => rtt switch {
         Icmp.TIMEDOUT        => "timed out   ",
         Icmp.UNREACHABLE     => "unreachable ",
-        Icmp.INVALID_ADDREDD => "invalid     ",
+        Icmp.INVALID_ADDRESS => "invalid     ",
         Icmp.GENERAL_FAILURE => "failure     ",
         Icmp.ERROR           => "error       ",
         Icmp.UNKNOWN         => "unknown     ",
@@ -190,8 +185,8 @@ public sealed class PingFrame : Ui.Frame {
         while (!cancellationToken.IsCancellationRequested) {
             long startTime = Stopwatch.GetTimestamp();
             
-            string[] hosts = list.items.Select(o => o.host).ToArray();
-            short[] result = await Icmp.PingArrayAsync(hosts, timeout);
+            //string[] hosts = list.items.Select(o => o.host).ToArray();
+            short[] result = await Icmp.PingArrayAsync(list.items, timeout);
             rotatingIndex++;
 
             (int left, int top, int width, int height) = list.GetBounding();
@@ -310,7 +305,8 @@ public sealed class PingFrame : Ui.Frame {
             list.items.Add(new PingItem {
                 host    = host,
                 status  = Icmp.UNDEFINED,
-                history = Enumerable.Repeat(Icmp.UNDEFINED, HISTORY_LEN).ToArray()
+                history = Enumerable.Repeat(Icmp.UNDEFINED, HISTORY_LEN).ToArray(),
+                ping    = new()
             });
         }
         else {
