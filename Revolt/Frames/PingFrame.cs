@@ -133,9 +133,15 @@ public sealed class PingFrame : Ui.Frame {
         Ansi.SetBgColor(Data.BG_COLOR);
         Ansi.SetCursorPosition(x + 25, y);
 
+        byte[] lastColor = DetermineRttColor(Icmp.UNKNOWN);
+
         for (int t = 0; t < usableWidth; t++) {
-            Ansi.SetFgColor(DetermineRttColor(item.history[(historyOffset + t) % HISTORY_LEN]));
+            byte[] color = DetermineRttColor(item.history[(historyOffset + t) % HISTORY_LEN]);
+            if (color[0] != lastColor[0] || color[1] != lastColor[1] || color[2] != lastColor[2]) {
+                Ansi.SetFgColor(color);
+            }
             Ansi.Write(Data.PING_CELL);
+            lastColor = color;
         }
 
         Ansi.Write(' ');
@@ -298,11 +304,21 @@ public sealed class PingFrame : Ui.Frame {
     private void AddItem(string host) {
         if (String.IsNullOrEmpty(host)) return;
 
-        list.Add(new PingItem {
-            host    = host,
-            status  = Icmp.UNDEFINED,
-            history = Enumerable.Repeat(Icmp.UNDEFINED, HISTORY_LEN).ToArray()
-        });
+        PingItem item = list.items.Find(o => o.host.Equals(host, StringComparison.OrdinalIgnoreCase));
+
+        if (item is null) {
+            list.items.Add(new PingItem {
+                host    = host,
+                status  = Icmp.UNDEFINED,
+                history = Enumerable.Repeat(Icmp.UNDEFINED, HISTORY_LEN).ToArray()
+            });
+        }
+        else {
+            list.items.Remove(item);
+            list.items.Add(item);
+        }
+
+        list.index = list.items.Count - 1;
 
         (int left, int top, int width, _) = list.GetBounding();
         list.drawItemHandler(list.items.Count - 1, left, top, width);
