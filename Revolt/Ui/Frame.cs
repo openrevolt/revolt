@@ -8,7 +8,7 @@ public abstract class Frame {
     public virtual void Show(bool draw = true) {
         Renderer.ActiveFrame = this;
 
-        if (defaultElement is not null) {
+        if (defaultElement is not null && focusedElement is null) {
             focusedElement = defaultElement;
             focusedElement.Focus(false);
         }
