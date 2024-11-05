@@ -1,13 +1,18 @@
 ﻿using System.Net.NetworkInformation;
 
 namespace Revolt.Protocols;
-public class PingItem : IDisposable {
+
+public sealed class PingItem : IDisposable {
     public string  host;
     public short   status;
     public short[] history;
     public Ping    ping;
 
-    public void Dispose() => ping?.Dispose();
+    public void Dispose() {
+        ping?.Dispose();
+        history = null;
+        GC.SuppressFinalize(this);
+    }
 }
 
 public static class Icmp {

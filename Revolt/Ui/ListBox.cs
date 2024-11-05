@@ -1,4 +1,6 @@
-﻿namespace Revolt.Ui;
+﻿using System.Data.Common;
+
+namespace Revolt.Ui;
 
 public sealed class ListBox<T>(Frame parentFrame) : Element(parentFrame) {
     public List<T> items    = [];
@@ -13,7 +15,30 @@ public sealed class ListBox<T>(Frame parentFrame) : Element(parentFrame) {
         (int left, int top, int width, int height) = GetBounding();
         int visibleItems = height / itemHeight;
 
-        if (height >= items.Count * itemHeight) {
+        CalculateScrollOffset(height);
+
+        for (int i = scrollOffset; i < Math.Min(scrollOffset + visibleItems, items.Count); i++) {
+            drawItemHandler(i, left, top, width);
+        }
+
+        if (items.Count * itemHeight < height - 1) {
+            string blank = new String(' ', width);
+            Ansi.SetBgColor(Data.BG_COLOR);
+            for (int i = items.Count * itemHeight; i < height - 1; i++) {
+                Ansi.SetCursorPosition(left, top + i);
+                Ansi.Write(blank);
+            }
+        }
+
+        if (push) {
+            Ansi.Push();
+        }
+    }
+
+    private void CalculateScrollOffset(int height) {
+        int visibleItems = height / itemHeight;
+
+        if (items.Count <= visibleItems) {
             scrollOffset = 0;
         }
         else if (index < scrollOffset) {
@@ -23,13 +48,8 @@ public sealed class ListBox<T>(Frame parentFrame) : Element(parentFrame) {
             scrollOffset = index - visibleItems + 1;
         }
 
-        for (int i = scrollOffset; i < Math.Min(scrollOffset + visibleItems, items.Count); i++) {
-            drawItemHandler(i, left, top, width);
-        }
-
-        if (push) {
-            Ansi.Push();
-        }
+        int maxScrollOffset = Math.Max(0, items.Count - visibleItems);
+        scrollOffset = Math.Min(scrollOffset, maxScrollOffset);
     }
 
     public override void HandleKey(ConsoleKeyInfo key) {
@@ -37,6 +57,7 @@ public sealed class ListBox<T>(Frame parentFrame) : Element(parentFrame) {
 
         (int left, int top, int width, int height) = GetBounding();
         int lastIndex = index;
+        int lastScrollOffset = scrollOffset;
 
         switch (key.Key) {
         case ConsoleKey.UpArrow:
@@ -49,11 +70,13 @@ public sealed class ListBox<T>(Frame parentFrame) : Element(parentFrame) {
 
         case ConsoleKey.PageUp:
             index = Math.Clamp(index - (height / itemHeight) + 1, 0, items.Count - 1);
-            break;
+            Draw(true);
+            return;
 
         case ConsoleKey.PageDown:
             index = Math.Clamp(index + (height / itemHeight) - 1, 0, items.Count - 1);
-            break;
+            Draw(true);
+            return;
 
         case ConsoleKey.Home:
             if (items.Count > 0) {
@@ -77,12 +100,32 @@ public sealed class ListBox<T>(Frame parentFrame) : Element(parentFrame) {
             return;
         }
 
-        if (index != lastIndex) {
-            Draw(true);
-            //TODO: optimize
-            //drawItemHandler(lastIndex, left, top, width);
-            //drawItemHandler(index, left, top, width);
-            //Ansi.Push();
+        if (index == lastIndex) {
+            return;
+        }
+
+        CalculateScrollOffset(height);
+
+        if (scrollOffset == lastScrollOffset) {
+            drawItemHandler(lastIndex, left, top, width);
+            drawItemHandler(index, left, top, width);
+            Ansi.Push();
+        }
+        else if (scrollOffset != lastScrollOffset) {
+            int delta = scrollOffset - lastScrollOffset;
+
+            Ansi.SetScrollRegion(top, top + height - 1);
+
+            if (delta < 0) {
+                Ansi.ScrollDown(itemHeight);
+            }
+            else if (delta > 0) {
+                Ansi.ScrollUp(itemHeight);
+            }
+
+            drawItemHandler(lastIndex, left, top, width);
+            drawItemHandler(index, left, top, width);
+            Ansi.Push();
         }
     }
 
@@ -99,18 +142,25 @@ public sealed class ListBox<T>(Frame parentFrame) : Element(parentFrame) {
         index = Math.Clamp(index, 0, items.Count - 1);
     }
 
-    public void RemoveSelected() {
-        if (index < 0) return;
-        if (index >= items.Count) return;
+    public T RemoveSelected() {
+        if (items.Count == 0)     return default;
+        if (index < 0)            return default;
+        if (index >= items.Count) return default;
+       
+        T item = items[index];
         items.RemoveAt(index);
-        index = Math.Clamp(index, 0, items.Count - 1);
+
+        index = items.Count == 0 ? -1 : Math.Clamp(index, 0, items.Count - 1);
+
         Draw(true);
+
+        return item;
     }
 
     public void Clear() {
         items.Clear();
         index = -1;
-        Renderer.Redraw(true);
+        Draw(true);
     }
 
     public override void Focus(bool draw = true) {

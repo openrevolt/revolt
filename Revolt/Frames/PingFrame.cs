@@ -13,7 +13,6 @@ public sealed class PingFrame : Ui.Frame {
         OnRiseAndFall = 3
     }
 
-
     public static PingFrame Instance { get; } = new PingFrame();
 
     public Ui.Toolbar toolbar;
@@ -81,7 +80,7 @@ public sealed class PingFrame : Ui.Frame {
             break;
 
         case ConsoleKey.Delete:
-            list.RemoveSelected();
+            list.RemoveSelected()?.Dispose();
             break;
 
         default:
@@ -92,17 +91,17 @@ public sealed class PingFrame : Ui.Frame {
         return true;
     }
 
-    private void DrawPingItem(int i, int x, int y, int width) {
+    private void DrawPingItem(int index, int x, int y, int width) {
         if (list.items is null || list.items.Count == 0) return;
-        if (i >= list.items.Count) return;
+        if (index >= list.items.Count) return;
         
-        int adjustedY = y + i * 2 - list.scrollOffset * list.itemHeight;
+        int adjustedY = y + index * 2 - list.scrollOffset * list.itemHeight;
         if (adjustedY < y || adjustedY > Renderer.LastHeight) return;
 
-        PingItem item = list.items[i];
+        PingItem item = list.items[index];
 
         Ansi.SetCursorPosition(x, adjustedY);
-        if (i == list.index) {
+        if (index == list.index) {
             Ansi.SetFgColor(list.isFocused ? [16, 16, 16] : Data.FG_COLOR);
             Ansi.SetBgColor(list.isFocused ? Data.SELECT_COLOR : Data.INPUT_COLOR);
         }
@@ -116,8 +115,8 @@ public sealed class PingFrame : Ui.Frame {
         UpdateHistoryAndStatus(item, x, adjustedY, width);
     }
 
-    private void UpdatePingItem(int i, int x, int y, int width) {
-        PingItem item = list.items[i];
+    private void UpdatePingItem(int index, int x, int y, int width) {
+        PingItem item = list.items[index];
         UpdateHistoryAndStatus(item, x, y, width);
     }
 
@@ -346,8 +345,12 @@ public sealed class PingFrame : Ui.Frame {
         dialog.Draw();
     }
 
-    private void Clear() =>
+    private void Clear() {
+        foreach (PingItem item in list.items) {
+            item.Dispose();
+        }
         list.Clear();
+    }
 
     private void ToggleStatus() {
         status = !status;
