@@ -235,28 +235,32 @@ public sealed class PingFrame : Ui.Frame {
                 list.items[i].history[ringIndex % HISTORY_LEN] = status;
 
                 bool shouldMoveToTop = lastStatus != Icmp.UNDEFINED && move switch {
+                    MoveOption.OnRiseAndFall => lastStatus < 0 != status < 0,
                     MoveOption.OnRise        => lastStatus < 0  && status >= 0,
                     MoveOption.OnFall        => lastStatus >= 0 && status < 0,
-                    MoveOption.OnRiseAndFall => lastStatus < 0 != status < 0,
                     _ => false
                 };
 
                 if (shouldMoveToTop) {
                     PingItem item = list.items[i];
                     list.items.RemoveAt(i);
-                    list.items.Insert(moveCounter++, item);
+                    list.items.Insert(moveCounter, item);
                 }
 
                 if (Renderer.ActiveDialog is not null) continue;
                 if (Renderer.ActiveFrame != this) continue;
 
-                if (shouldMoveToTop && moveCounter >= list.scrollOffset) { //redraw if in viewport;
-                    int movedAdjustedY = top + i * 2 - list.scrollOffset * list.itemHeight;
+                if (shouldMoveToTop && moveCounter >= list.scrollOffset) { //redraw if in viewport
+                    int movedAdjustedY = top + moveCounter * 2 - list.scrollOffset * list.itemHeight;
 
                     if (movedAdjustedY >= top && movedAdjustedY <= top + height - 1) {
-                        DrawItemLabel(list.items[i], i, movedAdjustedY);
-                        UpdatePingItem(i, left, movedAdjustedY, width);
+                        DrawItemLabel(list.items[moveCounter], moveCounter, movedAdjustedY);
+                        UpdatePingItem(moveCounter, left, movedAdjustedY, width);
                     }
+                }
+
+                if (shouldMoveToTop) {
+                    moveCounter++;
                 }
 
                 int adjustedY = top + i * 2 - list.scrollOffset * list.itemHeight;

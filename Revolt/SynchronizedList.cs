@@ -1,6 +1,4 @@
-﻿using System.Collections;
-
-namespace Revolt;
+﻿namespace System.Collections.Generic;
 
 public sealed class SynchronizedList<T> : IList<T> where T : notnull {
     private readonly List<T> _list = [];
@@ -90,7 +88,6 @@ public sealed class SynchronizedList<T> : IList<T> where T : notnull {
     }
 
     public IEnumerator<T> GetEnumerator() {
-        // Snapshot copy to allow safe enumeration without locking
         List<T> snapshot;
         lock (_mutex) {
             snapshot = new List<T>(_list);
@@ -107,6 +104,5 @@ public sealed class SynchronizedList<T> : IList<T> where T : notnull {
             return new List<T>(_list);
         }
     }
-
 }
 
