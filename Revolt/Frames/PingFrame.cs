@@ -23,10 +23,10 @@ public sealed class PingFrame : Ui.Frame {
 
     private readonly List<string> queryHistory = [];
     private int        ringIndex = 0;
-    private bool       status        = true;
-    private int        timeout       = 1000;
-    private int        interval      = 1000;
-    private MoveOption move          = MoveOption.Never;
+    private bool       status    = true;
+    private int        timeout   = 1000;
+    private int        interval  = 1000;
+    private MoveOption move      = MoveOption.Never;
 
     public PingFrame() {
         toolbar = new Ui.Toolbar(this) {
@@ -41,12 +41,13 @@ public sealed class PingFrame : Ui.Frame {
         };
 
         list = new Ui.ListBox<PingItem>(this) {
-            left            = 1,
-            right           = 1,
-            top             = 3,
-            bottom          = 1,
-            itemHeight      = 2,
-            drawItemHandler = DrawPingItem
+            left              = 1,
+            right             = 1,
+            top               = 3,
+            bottom            = 1,
+            itemHeight        = 2,
+            drawItemHandler   = DrawPingItem,
+            drawStatusHandler = DrawStatus
         };
 
         elements.Add(toolbar);
@@ -146,13 +147,50 @@ public sealed class PingFrame : Ui.Frame {
         Ansi.Write(DetermineRttText(item.status));
     }
 
+    private void DrawStatus() {
+        int total = list.items.Count;
+        int unrechable = list.items.Count(o=> o.status < 0);
+
+        Ansi.SetCursorPosition(2, Renderer.LastHeight);
+
+        Ansi.SetFgColor([128, 224, 48]);
+        Ansi.SetBgColor(Data.BG_COLOR);
+        Ansi.Write(Data.LEFT_HALF_CIRCLE);
+
+        Ansi.SetFgColor([16, 16, 16]);
+        Ansi.SetBgColor([128, 224, 48]);
+        Ansi.Write((total - unrechable).ToString());
+
+        if (unrechable > 0) {
+            Ansi.SetFgColor([240, 32, 32]);
+            Ansi.Write('\uE0BA');
+
+            Ansi.SetFgColor([16, 16, 16]);
+            Ansi.SetBgColor([240, 32, 32]);
+            Ansi.Write(unrechable.ToString());
+        }
+
+        Ansi.SetFgColor(Data.FG_COLOR);
+        Ansi.Write('\uE0BA');
+
+        Ansi.SetFgColor([16, 16, 16]);
+        Ansi.SetBgColor(Data.FG_COLOR);
+        Ansi.Write(total.ToString());
+
+        Ansi.SetFgColor(Data.FG_COLOR);
+        Ansi.SetBgColor(Data.BG_COLOR);
+        Ansi.Write(Data.RIGHT_HALF_CIRCLE);
+
+        Ansi.Write(new String(' ', 8));
+    }
+
     private static byte[] DetermineRttColor(short rtt) => rtt switch {
         Icmp.TIMEDOUT        => [240, 32, 32],
         Icmp.UNREACHABLE     => [240, 128, 0],
-        Icmp.INVALID_ADDRESS => [192, 0, 0],
-        Icmp.GENERAL_FAILURE => [192, 0, 0],
-        Icmp.ERROR           => [192, 0, 0],
-        Icmp.UNKNOWN         => [192, 0, 0],
+        Icmp.INVALID_ADDRESS => [176, 0, 0],
+        Icmp.GENERAL_FAILURE => [176, 0, 0],
+        Icmp.ERROR           => [176, 0, 0],
+        Icmp.UNKNOWN         => [176, 0, 0],
         Icmp.UNDEFINED       => Data.CONTROL_COLOR,
         < 5   => [128, 224, 48],
         < 10  => [48, 224, 128],
@@ -231,7 +269,11 @@ public sealed class PingFrame : Ui.Frame {
                 UpdatePingItem(i, left, adjustedY, width);
             }
 
-            Ansi.Push();
+            if (Renderer.ActiveFrame == this && Renderer.ActiveDialog is null) {
+                DrawStatus();
+                Ansi.Push();
+            }
+
             ringIndex %= HISTORY_LEN;
 
             int elapsed = Stopwatch.GetElapsedTime(startTime).Milliseconds;
@@ -369,10 +411,33 @@ public sealed class PingFrame : Ui.Frame {
     }
 
     private void Clear() {
-        foreach (PingItem item in list.items) {
-            item?.Dispose();
-        }
-        list.Clear();
+        ClearDialog dialog = new ClearDialog();
+
+        dialog.okButton.action = () => {
+            switch (dialog.clearSelectBox.index) {
+            case 0: //clear all
+                foreach (PingItem item in list.items) {
+                    item?.Dispose();
+                }
+                list.Clear();
+                break;
+
+            case 1: //remove rechable
+                list.items.RemoveAll(r => r.history.Any(o => o > -1));
+                list.Draw(true);
+                break;
+
+            case 2://remove unrechable
+                list.items.RemoveAll(r => r.history.All(o => o < 0));
+                list.Draw(true);
+                break;
+            }
+
+            dialog.Close();
+        };
+
+        Renderer.ActiveDialog = dialog;
+        dialog.Draw();
     }
 
     private void ToggleStatus() {
@@ -421,6 +486,97 @@ public sealed class PingFrame : Ui.Frame {
     }
 }
 
+file sealed class ClearDialog : Ui.DialogBox {
+    public Ui.SelectBox clearSelectBox;
+
+    public ClearDialog() {
+        clearSelectBox = new Ui.SelectBox(this) {
+            options = ["Clear all", "Remove rechable", "Remove unrechable"],
+        };
+
+        elements.Add(clearSelectBox);
+
+        defaultElement = clearSelectBox;
+        clearSelectBox.Focus(false);
+        focusedElement = clearSelectBox;
+    }
+
+    public override void Draw(int width, int height) {
+        int left = (Renderer.LastWidth - width) / 2 + 1;
+        int top = 1;
+
+        string blank = new String(' ', width);
+
+        Ansi.SetFgColor([16, 16, 16]);
+        Ansi.SetBgColor(Data.PANE_COLOR);
+
+        Ansi.SetCursorPosition(left, top);
+        Ansi.Write(blank);
+
+        Ansi.SetCursorPosition(left, top);
+        Ansi.Write(blank);
+
+        clearSelectBox.left = left;
+        clearSelectBox.right = Renderer.LastWidth - width - left + 2;
+        clearSelectBox.top = top++;
+
+        Ansi.SetCursorPosition(left, top++);
+        Ansi.Write(blank);
+
+        for (int i = 0; i < 3; i++) {
+            Ansi.SetCursorPosition(left, top + i);
+            Ansi.Write(blank);
+        }
+
+        okButton.left = left + (width - 20) / 2;
+        okButton.top = top;
+
+        cancelButton.left = left + (width - 20) / 2 + 10;
+        cancelButton.top = top;
+
+        if (elements is null) return;
+        for (int i = 0; i < elements?.Count; i++) {
+            elements[i].Draw(false);
+        }
+
+        if (focusedElement == clearSelectBox) {
+            clearSelectBox.Focus();
+        }
+
+        Ansi.Push();
+    }
+
+    public override void Draw() {
+        int width = Math.Min(Renderer.LastWidth, 48);
+        Draw(width, 0);
+    }
+
+    public override bool HandleKey(ConsoleKeyInfo key) {
+        switch (key.Key) {
+        case ConsoleKey.Escape:
+            Close();
+            return true;
+
+        case ConsoleKey.Enter:
+            if (focusedElement == clearSelectBox) {
+                okButton.action();
+                return true;
+            }
+            else {
+                return base.HandleKey(key);
+            }
+
+        default:
+            return base.HandleKey(key);
+        }
+    }
+
+    public override void Close() {
+        Ansi.HideCursor();
+        base.Close();
+    }
+}
+
 file sealed class OptionsDialog : Ui.DialogBox {
     public Ui.IntegerBox timeoutTextbox;
     public Ui.IntegerBox intervalTextbox;
@@ -465,7 +621,7 @@ file sealed class OptionsDialog : Ui.DialogBox {
         Ansi.Write(blank);
 
         WriteLabel("Timed out (ms):", left, ++top, width);
-        timeoutTextbox.left = left ;
+        timeoutTextbox.left = left;
         timeoutTextbox.right = Renderer.LastWidth - width - left + 2;
         timeoutTextbox.top = top++;
 
@@ -505,7 +661,8 @@ file sealed class OptionsDialog : Ui.DialogBox {
         cancelButton.left = left + (width - 20) / 2 + 10;
         cancelButton.top = top;
 
-        if (elements is null) return;
+        if (elements is null)
+            return;
         for (int i = 0; i < elements?.Count; i++) {
             elements[i].Draw(false);
         }
@@ -532,7 +689,7 @@ file sealed class OptionsDialog : Ui.DialogBox {
             return true;
 
         case ConsoleKey.Enter:
-            if ((focusedElement == timeoutTextbox || focusedElement == intervalTextbox || focusedElement == moveSelectBox) && okButton.action is not null) {
+            if (focusedElement == timeoutTextbox || focusedElement == intervalTextbox || focusedElement == moveSelectBox) {
                 okButton.action();
                 return true;
             }

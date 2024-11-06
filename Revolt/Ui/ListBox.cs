@@ -1,15 +1,15 @@
-﻿using System.Data.Common;
-
-namespace Revolt.Ui;
+﻿namespace Revolt.Ui;
 
 public sealed class ListBox<T>(Frame parentFrame) : Element(parentFrame) {
-    public List<T> items    = [];
+    public SynchronizedList<T> items = [];
     public int itemHeight   = 1;
     public int index        = -1;
     public int scrollOffset = 0;
 
     public delegate void DrawItemDelegate(int i, int x, int y, int width);
     public DrawItemDelegate drawItemHandler;
+
+    public Action drawStatusHandler;
 
     public override void Draw(bool push) {
         (int left, int top, int width, int height) = GetBounding();
@@ -28,6 +28,10 @@ public sealed class ListBox<T>(Frame parentFrame) : Element(parentFrame) {
                 Ansi.SetCursorPosition(left, top + i);
                 Ansi.Write(blank);
             }
+        }
+
+        if (drawStatusHandler is not null) {
+            drawStatusHandler();
         }
 
         if (push) {
