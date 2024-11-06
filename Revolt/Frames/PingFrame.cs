@@ -22,7 +22,7 @@ public sealed class PingFrame : Ui.Frame {
     private CancellationToken cancellationToken;
 
     private readonly List<string> queryHistory = [];
-    private int        rotatingIndex = 0;
+    private int        ringIndex = 0;
     private bool       status        = true;
     private int        timeout       = 1000;
     private int        interval      = 1000;
@@ -94,13 +94,18 @@ public sealed class PingFrame : Ui.Frame {
     private void DrawPingItem(int index, int x, int y, int width) {
         if (list.items is null || list.items.Count == 0) return;
         if (index >= list.items.Count) return;
-        
+
         int adjustedY = y + index * 2 - list.scrollOffset * list.itemHeight;
         if (adjustedY < y || adjustedY > Renderer.LastHeight) return;
 
         PingItem item = list.items[index];
 
-        Ansi.SetCursorPosition(x, adjustedY);
+        DrawItemLabel(item, index, adjustedY);
+        UpdateHistoryAndStatus(item, x, adjustedY, width);
+    }
+
+    private void DrawItemLabel(PingItem item, int index, int y) {
+
         if (index == list.index) {
             Ansi.SetFgColor(list.isFocused ? [16, 16, 16] : Data.FG_COLOR);
             Ansi.SetBgColor(list.isFocused ? Data.SELECT_COLOR : Data.INPUT_COLOR);
@@ -110,9 +115,8 @@ public sealed class PingFrame : Ui.Frame {
             Ansi.SetBgColor(Data.BG_COLOR);
         }
 
+        Ansi.SetCursorPosition(2, y);
         Ansi.Write(item.host.Length > 24 ? item.host[..23] + Data.ELLIPSIS : item.host.PadRight(24));
-
-        UpdateHistoryAndStatus(item, x, adjustedY, width);
     }
 
     private void UpdatePingItem(int index, int x, int y, int width) {
@@ -122,28 +126,24 @@ public sealed class PingFrame : Ui.Frame {
 
     private void UpdateHistoryAndStatus(PingItem item, int x, int y, int width) {
         int usableWidth = Math.Min(width - 38, HISTORY_LEN);
-        int historyOffset = (rotatingIndex + HISTORY_LEN - usableWidth + 1) % HISTORY_LEN;
+        int historyOffset = (ringIndex + HISTORY_LEN - usableWidth + 1) % HISTORY_LEN;
 
         Ansi.SetBgColor(Data.BG_COLOR);
         Ansi.SetCursorPosition(x + 25, y);
 
-        byte[] lastColor = [0, 0, 0];
-
+        byte[] lastColor = new byte[3];
         for (int t = 0; t < usableWidth; t++) {
             byte[] color = DetermineRttColor(item.history[(historyOffset + t) % HISTORY_LEN]);
-            if (color[0] != lastColor[0] || color[1] != lastColor[1] || color[2] != lastColor[2]) {
+            if (!color.SequenceEqual(lastColor)) {
                 Ansi.SetFgColor(color);
+                Array.Copy(color, lastColor, 3);
             }
             Ansi.Write(Data.PING_CELL);
-            lastColor = color;
         }
 
         Ansi.Write(' ');
         Ansi.SetFgColor(DetermineRttColor(item.status));
         Ansi.Write(DetermineRttText(item.status));
-
-        //Ansi.SetCursorPosition(0, y + 1);
-        //Ansi.ClearLine();
     }
 
     private static byte[] DetermineRttColor(short rtt) => rtt switch {
@@ -183,40 +183,63 @@ public sealed class PingFrame : Ui.Frame {
 
         while (!cancellationToken.IsCancellationRequested) {
             long startTime = Stopwatch.GetTimestamp();
-            
-            //string[] hosts = list.items.Select(o => o.host).ToArray();
             short[] result = await Icmp.PingArrayAsync(list.items, timeout);
-            rotatingIndex++;
+            ringIndex++;
 
+            int moveCounter = 0;
             (int left, int top, int width, int height) = list.GetBounding();
 
             for (int i = 0; i < list.items.Count && i < result.Length; i++) {
                 short status = result[i];
+                short lastStatus = list.items[i].status;
 
-                PingItem item = list.items[i];
-                item.status = status;
-                item.history[rotatingIndex % HISTORY_LEN] = status;
+                list.items[i].status = status;
+                list.items[i].history[ringIndex % HISTORY_LEN] = status;
+
+                bool shouldMoveToTop = lastStatus != Icmp.UNDEFINED && move switch {
+                    MoveOption.OnRise        => lastStatus < 0  && status >= 0,
+                    MoveOption.OnFall        => lastStatus >= 0 && status < 0,
+                    MoveOption.OnRiseAndFall => lastStatus < 0 != status < 0,
+                    _ => false
+                };
+
+                if (shouldMoveToTop) {
+                    PingItem item = list.items[i];
+                    list.items.RemoveAt(i);
+                    list.items.Insert(moveCounter++, item);
+                }
 
                 if (Renderer.ActiveDialog is not null) continue;
                 if (Renderer.ActiveFrame != this) continue;
+
+                if (shouldMoveToTop && moveCounter >= list.scrollOffset) { //redraw if in viewport;
+                    int movedAdjustedY = top + i * 2 - list.scrollOffset * list.itemHeight;
+
+                    if (movedAdjustedY >= top && movedAdjustedY <= top + height - 1) {
+                        DrawItemLabel(list.items[i], i, movedAdjustedY);
+                        UpdatePingItem(i, left, movedAdjustedY, width);
+                    }
+                }
 
                 int adjustedY = top + i * 2 - list.scrollOffset * list.itemHeight;
                 if (adjustedY < top) continue;
                 if (adjustedY > top + height - 1) continue;
 
+                if (ringIndex > 0) {
+                    DrawItemLabel(list.items[i], i, adjustedY);
+                }
                 UpdatePingItem(i, left, adjustedY, width);
             }
 
             Ansi.Push();
-
-            rotatingIndex %= HISTORY_LEN;
+            ringIndex %= HISTORY_LEN;
 
             int elapsed = Stopwatch.GetElapsedTime(startTime).Milliseconds;
             if (elapsed < interval) {
                 try {
                     await Task.Delay(interval - elapsed, cancellationToken);
                 }
-                catch { }
+                catch (TaskCanceledException) { }
             }
         }
 
@@ -347,7 +370,7 @@ public sealed class PingFrame : Ui.Frame {
 
     private void Clear() {
         foreach (PingItem item in list.items) {
-            item.Dispose();
+            item?.Dispose();
         }
         list.Clear();
     }
@@ -437,6 +460,7 @@ file sealed class OptionsDialog : Ui.DialogBox {
 
         Ansi.SetFgColor([16, 16, 16]);
         Ansi.SetBgColor(Data.PANE_COLOR);
+
         Ansi.SetCursorPosition(left, top);
         Ansi.Write(blank);
 

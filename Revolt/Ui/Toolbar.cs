@@ -87,6 +87,7 @@ public sealed class Toolbar(Frame parentFrame) : Element(parentFrame) {
             break;
 
         case ConsoleKey.Enter:
+        case ConsoleKey.Spacebar:
             items[index].action();
             break;
         }
