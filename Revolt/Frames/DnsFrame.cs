@@ -102,7 +102,13 @@ public sealed class DnsFrame : Ui.Frame {
     private void AddDialog() {
         AddDialog dialog = new AddDialog();
 
+        dialog.nameTextbox.enableHistory = true;
+        dialog.nameTextbox.history = queryHistory;
+
         dialog.okButton.action = () => {
+            if (!String.IsNullOrWhiteSpace(dialog.nameTextbox.Value)) {
+                queryHistory.Add(dialog.nameTextbox.Value.Trim());
+            }
             type = Dns.types[dialog.typeSelectBox.index];
             AddItem(dialog.nameTextbox.Value);
             dialog.Close();
