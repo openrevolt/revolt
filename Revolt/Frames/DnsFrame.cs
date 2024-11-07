@@ -1,4 +1,6 @@
-﻿namespace Revolt.Frames;
+﻿using Revolt.Protocols;
+
+namespace Revolt.Frames;
 
 public sealed class DnsFrame : Ui.Frame {
 
@@ -177,18 +179,7 @@ file sealed class OptionsDialog : Ui.DialogBox {
         };
 
         typeSelectBox = new Ui.SelectBox(this) {
-            options = [
-                "A - IPv4 Address",
-                "AAAA - IPv6 Address",
-                "NS - Name Server",
-                "CNAME - Canonical Name",
-                "SOA - Start Of Authority", 
-                "PTR - Pointer",
-                "MX - Mail Exchange",
-                "TXT - Text",
-                "SRV - Service",
-                "ANY - All types known",
-            ],
+            options = Dns.typeFullNames
         };
 
         transportSelectBox = new Ui.SelectBox(this) {
@@ -247,7 +238,7 @@ file sealed class OptionsDialog : Ui.DialogBox {
 
         WriteLabel("Record type:", left, ++top, width);
         typeSelectBox.left = left + 16;
-        typeSelectBox.right = Renderer.LastWidth - width - left + 2;
+        typeSelectBox.right = Renderer.LastWidth - width - left + 10;
         typeSelectBox.top = top++ - 1;
 
         Ansi.SetCursorPosition(left, top);
@@ -304,6 +295,38 @@ file sealed class OptionsDialog : Ui.DialogBox {
 
         cancelButton.left = left + (width - 20) / 2 + 10;
         cancelButton.top = top;
+
+        typeSelectBox.afterChange = () => {
+            byte[] typeColor = Dns.typesColors[typeSelectBox.index];
+            
+            string text = Dns.types[typeSelectBox.index];
+            string padding = new String(' ', (5 - text.Length) / 2);
+
+            Ansi.SetCursorPosition(left + width -8, 6);
+
+            Ansi.SetFgColor(typeColor);
+            Ansi.SetBgColor(Data.PANE_COLOR);
+            Ansi.Write(Data.LEFT_HALF_CIRCLE);
+
+            Ansi.SetFgColor([16, 16, 16]);
+            Ansi.SetBgColor(typeColor);
+            Ansi.Write(padding);
+            Ansi.Write(text);
+            Ansi.Write(padding);
+
+            Ansi.SetFgColor(typeColor);
+            Ansi.SetBgColor(Data.PANE_COLOR);
+            Ansi.Write(Data.RIGHT_HALF_CIRCLE);
+
+            if (text.Length % 2 == 0) {
+                Ansi.Write(' ');
+            }
+            //Ansi.Write(new String(' ', 6 - Dns.types[typeSelectBox.index].Length));
+
+            Ansi.Push();
+        };
+
+        typeSelectBox.afterChange();
 
         if (elements is null) return;
 

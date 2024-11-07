@@ -23,12 +23,51 @@ public static class Dns {
         NSEC  = 47,
         ANY   = 255
     }
+
     public enum Class : byte {
         IN = 1, //Internet
         CS = 2, //CSNET -Obsolete
         CH = 3, //Chaos -Obsolete
         HS = 4  //Hesiod
     }
+
+    public static readonly string[] types = [
+        "A",
+        "AAAA",
+        "NS",
+        "CNAME",
+        "SOA",
+        "PTR",
+        "MX",
+        "TXT",
+        "SRV",
+        "ANY"
+    ];
+
+    public static readonly string[] typeFullNames = [
+        "IPv4 Address",
+        "IPv6 Address",
+        "Name Server",
+        "Canonical Name",
+        "Start Of Author.",
+        "Pointer",
+        "Mail Exchange",
+        "Text",
+        "Service",
+        "All types known"
+    ];
+    public static readonly byte[][] typesColors = [
+        [236, 91, 19],
+        [236, 200, 19],
+        [164, 236, 19],
+        [19, 236, 91],
+        [43, 173, 238],
+        [81, 109, 251],
+        [137, 81, 251],
+        [205, 43, 238],
+        [236, 19, 164],
+        [255, 255, 255]
+    ];
 
     public static void Resolve(
         String name,

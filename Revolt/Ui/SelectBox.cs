@@ -3,7 +3,8 @@
 public sealed class SelectBox(Frame parentFrame) : Element(parentFrame) {
     public string[] options;
     public int index = 0;
-
+    public Action afterChange;
+    
     public override void Draw(bool push) {
         (int left, int top, int width, _) = GetBounding();
         int usableWidth = Math.Max(width, 6);
@@ -40,6 +41,8 @@ public sealed class SelectBox(Frame parentFrame) : Element(parentFrame) {
     }
 
     public override void HandleKey(ConsoleKeyInfo key) {
+        int lastIndex = index;
+
         switch (key.Key) {
         case ConsoleKey.LeftArrow:
             index = Math.Max(index - 1, 0);
@@ -50,6 +53,10 @@ public sealed class SelectBox(Frame parentFrame) : Element(parentFrame) {
             index = Math.Min(index + 1, options.Length - 1);
             Draw(true);
             break;
+        }
+
+        if (index != lastIndex && afterChange is not null) {
+            afterChange();
         }
     }
 }
