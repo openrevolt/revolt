@@ -53,9 +53,11 @@ public sealed class Textbox(Frame parentFrame) : Element(parentFrame) {
         Ansi.SetCursorPosition(left, top);
 
         if (!String.IsNullOrEmpty(placeholder) && _value.Length == 0) {
-            Ansi.SetFgColor([64, 64, 64]);
+            Ansi.SetFgColor([128, 128, 128]);
+            //Ansi.SetFaint(true);
             Ansi.Write(placeholder);
             Ansi.Write(new String(' ', usableWidth - placeholder.Length));
+            //Ansi.SetFaint(false);
             Ansi.SetCursorPosition(left + index, top);
             Ansi.Push();
             return;

@@ -155,7 +155,7 @@ public sealed class PingFrame : Ui.Frame {
 
         Ansi.SetFgColor([128, 224, 48]);
         Ansi.SetBgColor(Data.BG_COLOR);
-        Ansi.Write(Data.LEFT_HALF_CIRCLE);
+        Ansi.Write(Data.RIGHT_LOW_TRIANGLE);
 
         Ansi.SetFgColor([16, 16, 16]);
         Ansi.SetBgColor([128, 224, 48]);
@@ -163,7 +163,7 @@ public sealed class PingFrame : Ui.Frame {
 
         if (unrechable > 0) {
             Ansi.SetFgColor([240, 32, 32]);
-            Ansi.Write('\uE0BA');
+            Ansi.Write(Data.RIGHT_LOW_TRIANGLE);
 
             Ansi.SetFgColor([16, 16, 16]);
             Ansi.SetBgColor([240, 32, 32]);
@@ -171,7 +171,7 @@ public sealed class PingFrame : Ui.Frame {
         }
 
         Ansi.SetFgColor(Data.FG_COLOR);
-        Ansi.Write('\uE0BA');
+        Ansi.Write(Data.RIGHT_LOW_TRIANGLE);
 
         Ansi.SetFgColor([16, 16, 16]);
         Ansi.SetBgColor(Data.FG_COLOR);
@@ -179,7 +179,7 @@ public sealed class PingFrame : Ui.Frame {
 
         Ansi.SetFgColor(Data.FG_COLOR);
         Ansi.SetBgColor(Data.BG_COLOR);
-        Ansi.Write(Data.RIGHT_HALF_CIRCLE);
+        Ansi.Write(Data.LEFT_HIGH_TRIANGLE);
 
         Ansi.Write(new String(' ', 8));
     }

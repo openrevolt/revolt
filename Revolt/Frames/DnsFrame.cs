@@ -2,12 +2,8 @@
 
 public sealed class DnsFrame : Ui.Frame {
 
-    public class DnsItem : IDisposable {
+    public struct DnsItem {
         //string name;
-
-        public void Dispose() {
-            throw new NotImplementedException();
-        }
     }
 
     public static DnsFrame Instance { get; } = new DnsFrame();
@@ -15,12 +11,9 @@ public sealed class DnsFrame : Ui.Frame {
     public Ui.Toolbar toolbar;
     public Ui.ListBox<DnsItem> list;
 
-    //private CancellationTokenSource cancellationTokenSource;
-    //private CancellationToken cancellationToken;
-
     private readonly List<string> queryHistory = [];
     private string   server   = null;
-    private int      timeout  = 1000;
+    private int      timeout  = 2000;
     private bool     standard      = false;
     private bool     inverseLookup = false;
     private bool     serverStatus  = false;
@@ -75,7 +68,7 @@ public sealed class DnsFrame : Ui.Frame {
             break;
 
         case ConsoleKey.Delete:
-            list.RemoveSelected()?.Dispose();
+            list.RemoveSelected();
             break;
 
         default:
@@ -95,6 +88,7 @@ public sealed class DnsFrame : Ui.Frame {
 
         DnsItem item = list.items[index];
 
+        //TODO:
     }
     
     private void AddItem(string host) {
@@ -123,9 +117,6 @@ public sealed class DnsFrame : Ui.Frame {
     }
 
     private void Clear() {
-        foreach (DnsItem item in list.items) {
-            item?.Dispose();
-        }
         list.Clear();
     }
 
