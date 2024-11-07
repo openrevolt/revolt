@@ -30,32 +30,35 @@ public static class Dns {
         CH = 3, //Chaos -Obsolete
         HS = 4  //Hesiod
     }
-
-    public static readonly string[] types = [
-        "A",
-        "AAAA",
-        "NS",
-        "CNAME",
-        "SOA",
-        "PTR",
-        "MX",
-        "TXT",
-        "SRV",
-        "ANY"
-    ];
+    
+    public static readonly string[] typeStrings = ["A", "AAAA", "NS", "CNAME", "SOA", "PTR", "MX", "TXT", "SRV", "ANY"];
 
     public static readonly string[] typeFullNames = [
         "IPv4 Address",
         "IPv6 Address",
         "Name Server",
         "Canonical Name",
-        "Start Of Author.",
+        "Start Of Authority",
         "Pointer",
         "Mail Exchange",
         "Text",
         "Service",
         "All types known"
     ];
+
+    public static readonly RecordType[] types = [
+        RecordType.A,
+        RecordType.AAAA,
+        RecordType.NS,
+        RecordType.CNAME,
+        RecordType.SOA,
+        RecordType.PTR,
+        RecordType.MX,
+        RecordType.TXT,
+        RecordType.SRV,
+        RecordType.ANY
+    ];
+
     public static readonly byte[][] typesColors = [
         [236, 91, 19],
         [236, 200, 19],

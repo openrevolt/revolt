@@ -14,6 +14,7 @@ public sealed class DnsFrame : Ui.Frame {
     public Ui.ListBox<DnsItem> list;
 
     private readonly List<string> queryHistory = [];
+    private Dns.RecordType type = Dns.RecordType.A;
     private string   server   = null;
     private int      timeout  = 2000;
     private bool     standard      = false;
@@ -99,23 +100,19 @@ public sealed class DnsFrame : Ui.Frame {
     }
 
     private void AddDialog() {
-        Ui.InputDialog dialog = new Ui.InputDialog() {
-            text = "Enter name:",
-        };
-
-        dialog.valueTextbox.enableHistory = true;
-        dialog.valueTextbox.history = queryHistory;
+        AddDialog dialog = new AddDialog();
 
         dialog.okButton.action = () => {
-            if (!String.IsNullOrWhiteSpace(dialog.valueTextbox.Value)) {
-                queryHistory.Add(dialog.valueTextbox.Value.Trim());
-            }
-            AddItem(dialog.valueTextbox.Value.Trim());
+            type = Dns.types[dialog.typeSelectBox.index];
+            AddItem(dialog.nameTextbox.Value);
             dialog.Close();
         };
 
         Renderer.ActiveDialog = dialog;
         dialog.Draw();
+
+        dialog.typeSelectBox.index = Array.IndexOf(Dns.types, type);
+        dialog.nameTextbox.Focus();
     }
 
     private void Clear() {
@@ -154,10 +151,149 @@ public sealed class DnsFrame : Ui.Frame {
     }
 }
 
+file sealed class AddDialog : Ui.DialogBox {
+    public Ui.Textbox nameTextbox;
+    public Ui.SelectBox typeSelectBox;
+
+    public AddDialog() {
+        nameTextbox = new Ui.Textbox(this) {
+            backColor = Data.PANE_COLOR,
+        };
+
+        typeSelectBox = new Ui.SelectBox(this) {
+            options = Dns.typeFullNames
+        };
+
+        elements.Add(nameTextbox);
+        elements.Add(typeSelectBox);
+
+        defaultElement = nameTextbox;
+        nameTextbox.Focus(false);
+        focusedElement = nameTextbox;
+    }
+
+    public override void Draw(int width, int height) {
+        int left = (Renderer.LastWidth - width) / 2 + 1;
+        int top = 1;
+
+        string blank = new String(' ', width);
+
+        Ansi.SetFgColor([16, 16, 16]);
+        Ansi.SetBgColor(Data.PANE_COLOR);
+
+        Ansi.SetCursorPosition(left, top);
+        Ansi.Write(blank);
+
+        WriteLabel("Name:", left, ++top, width);
+        nameTextbox.left = left;
+        nameTextbox.right = Renderer.LastWidth - width - left + 2;
+        nameTextbox.top = top++;
+
+        Ansi.SetCursorPosition(left, top++);
+        Ansi.Write(blank);
+        Ansi.SetCursorPosition(left, top);
+        Ansi.Write(blank);
+
+        WriteLabel("Record type:", left, ++top, width);
+        typeSelectBox.left = left;
+        typeSelectBox.right = Renderer.LastWidth - width - left + 10;
+        typeSelectBox.top = top++;
+
+        Ansi.SetCursorPosition(left, top++);
+        Ansi.Write(blank);
+        Ansi.SetCursorPosition(left, top);
+        Ansi.Write(blank);
+
+        for (int i = 0; i < 3; i++) {
+            Ansi.SetCursorPosition(left, top + i);
+            Ansi.Write(blank);
+        }
+
+        okButton.left = left + (width - 20) / 2;
+        okButton.top = top;
+
+        cancelButton.left = left + (width - 20) / 2 + 10;
+        cancelButton.top = top;
+
+        typeSelectBox.afterChange = () => {
+            byte[] typeColor = Dns.typesColors[typeSelectBox.index];
+
+            string text = Dns.typeStrings[typeSelectBox.index];
+            string padding = new String(' ', (5 - text.Length) / 2);
+
+            Ansi.SetCursorPosition(left + width - 8, 6);
+
+            Ansi.SetFgColor(typeColor);
+            Ansi.SetBgColor(Data.PANE_COLOR);
+            Ansi.Write(Data.LEFT_HALF_CIRCLE);
+
+            Ansi.SetFgColor([16, 16, 16]);
+            Ansi.SetBgColor(typeColor);
+            Ansi.Write(padding);
+            Ansi.Write(text);
+            Ansi.Write(padding);
+
+            Ansi.SetFgColor(typeColor);
+            Ansi.SetBgColor(Data.PANE_COLOR);
+            Ansi.Write(Data.RIGHT_HALF_CIRCLE);
+
+            if (text.Length % 2 == 0) {
+                Ansi.Write(' ');
+            }
+
+            Ansi.Push();
+        };
+
+        typeSelectBox.afterChange();
+
+        if (elements is null) return;
+
+        for (int i = 0; i < elements?.Count; i++) {
+            elements[i].Draw(false);
+        }
+
+        if (focusedElement == nameTextbox) {
+            nameTextbox.Focus();
+        }
+
+        Ansi.Push();
+    }
+
+    public override void Draw() {
+        int width = Math.Min(Renderer.LastWidth, 48);
+        Draw(width, 0);
+    }
+
+    public override bool HandleKey(ConsoleKeyInfo key) {
+        switch (key.Key) {
+        case ConsoleKey.Escape:
+            Close();
+            return true;
+
+        case ConsoleKey.Enter:
+            if (focusedElement == nameTextbox
+                || focusedElement == typeSelectBox) {
+                okButton.action();
+                return true;
+            }
+            else {
+                return base.HandleKey(key);
+            }
+
+        default:
+            return base.HandleKey(key);
+        }
+    }
+
+    public override void Close() {
+        Ansi.HideCursor();
+        base.Close();
+    }
+}
+
 file sealed class OptionsDialog : Ui.DialogBox {
     public Ui.Textbox serverTextbox;
     public Ui.IntegerBox timeoutTextbox;
-    public Ui.SelectBox typeSelectBox;
     public Ui.SelectBox transportSelectBox;
 
     public Ui.Toggle standardToggle;
@@ -178,10 +314,6 @@ file sealed class OptionsDialog : Ui.DialogBox {
             max = 5_000
         };
 
-        typeSelectBox = new Ui.SelectBox(this) {
-            options = Dns.typeFullNames
-        };
-
         transportSelectBox = new Ui.SelectBox(this) {
             options = ["Auto", "UDP", "TCP", "TCP over TLS", "HTTPS"],
         };
@@ -195,7 +327,6 @@ file sealed class OptionsDialog : Ui.DialogBox {
 
     elements.Add(serverTextbox);
         elements.Add(timeoutTextbox);
-        elements.Add(typeSelectBox);
         elements.Add(transportSelectBox);
         elements.Add(standardToggle);
         elements.Add(inverseLookupToggle);
@@ -232,14 +363,6 @@ file sealed class OptionsDialog : Ui.DialogBox {
         timeoutTextbox.left = left + 16;
         timeoutTextbox.right = Renderer.LastWidth - width - left + 2;
         timeoutTextbox.top = top++ - 1;
-
-        Ansi.SetCursorPosition(left, top);
-        Ansi.Write(blank);
-
-        WriteLabel("Record type:", left, ++top, width);
-        typeSelectBox.left = left + 16;
-        typeSelectBox.right = Renderer.LastWidth - width - left + 10;
-        typeSelectBox.top = top++ - 1;
 
         Ansi.SetCursorPosition(left, top);
         Ansi.Write(blank);
@@ -296,38 +419,6 @@ file sealed class OptionsDialog : Ui.DialogBox {
         cancelButton.left = left + (width - 20) / 2 + 10;
         cancelButton.top = top;
 
-        typeSelectBox.afterChange = () => {
-            byte[] typeColor = Dns.typesColors[typeSelectBox.index];
-            
-            string text = Dns.types[typeSelectBox.index];
-            string padding = new String(' ', (5 - text.Length) / 2);
-
-            Ansi.SetCursorPosition(left + width -8, 6);
-
-            Ansi.SetFgColor(typeColor);
-            Ansi.SetBgColor(Data.PANE_COLOR);
-            Ansi.Write(Data.LEFT_HALF_CIRCLE);
-
-            Ansi.SetFgColor([16, 16, 16]);
-            Ansi.SetBgColor(typeColor);
-            Ansi.Write(padding);
-            Ansi.Write(text);
-            Ansi.Write(padding);
-
-            Ansi.SetFgColor(typeColor);
-            Ansi.SetBgColor(Data.PANE_COLOR);
-            Ansi.Write(Data.RIGHT_HALF_CIRCLE);
-
-            if (text.Length % 2 == 0) {
-                Ansi.Write(' ');
-            }
-            //Ansi.Write(new String(' ', 6 - Dns.types[typeSelectBox.index].Length));
-
-            Ansi.Push();
-        };
-
-        typeSelectBox.afterChange();
-
         if (elements is null) return;
 
         for (int i = 0; i < elements?.Count; i++) {
@@ -355,7 +446,6 @@ file sealed class OptionsDialog : Ui.DialogBox {
         case ConsoleKey.Enter:
             if (focusedElement == serverTextbox
                 || focusedElement == timeoutTextbox
-                || focusedElement == typeSelectBox
                 || focusedElement == transportSelectBox) {
                 okButton.action();
                 return true;
