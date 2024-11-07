@@ -108,7 +108,11 @@ public sealed class MainMenu : Ui.Frame {
             PingFrame.Instance.Show();
             return true;
 
-         case "Quit":
+        case "DNS lookup":
+            DnsFrame.Instance.Show();
+            return true;
+
+        case "Quit":
              return false;
 
         default:

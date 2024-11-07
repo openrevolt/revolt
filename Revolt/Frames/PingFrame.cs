@@ -590,13 +590,13 @@ file sealed class OptionsDialog : Ui.DialogBox {
         timeoutTextbox = new Ui.IntegerBox(this) {
             backColor = Data.PANE_COLOR,
             min = 50,
-            max = 10_000
+            max = 5_000
         };
 
         intervalTextbox = new Ui.IntegerBox(this) {
             backColor = Data.PANE_COLOR,
             min = 100,
-            max = 30_000
+            max = 10_000
         };
 
         moveSelectBox = new Ui.SelectBox(this) {
@@ -625,34 +625,25 @@ file sealed class OptionsDialog : Ui.DialogBox {
         Ansi.Write(blank);
 
         WriteLabel("Timed out (ms):", left, ++top, width);
-        timeoutTextbox.left = left;
+        timeoutTextbox.left = left + 16;
         timeoutTextbox.right = Renderer.LastWidth - width - left + 2;
-        timeoutTextbox.top = top++;
-
-        Ansi.SetCursorPosition(left, top++);
-        Ansi.Write(blank);
+        timeoutTextbox.top = top++ - 1;
 
         Ansi.SetCursorPosition(left, top);
         Ansi.Write(blank);
 
         WriteLabel("Interval (ms):", left, ++top, width);
-        intervalTextbox.left = left;
+        intervalTextbox.left = left + 16;
         intervalTextbox.right = Renderer.LastWidth - width - left + 2;
-        intervalTextbox.top = top++;
-
-        Ansi.SetCursorPosition(left, top++);
-        Ansi.Write(blank);
+        intervalTextbox.top = top++ - 1;
 
         Ansi.SetCursorPosition(left, top);
         Ansi.Write(blank);
 
         WriteLabel("Move on top:", left, ++top, width);
-        moveSelectBox.left = left;
+        moveSelectBox.left = left + 16;
         moveSelectBox.right = Renderer.LastWidth - width - left + 2;
-        moveSelectBox.top = top++;
-
-        Ansi.SetCursorPosition(left, top++);
-        Ansi.Write(blank);
+        moveSelectBox.top = top++ - 1;
 
         for (int i = 0; i < 3; i++) {
             Ansi.SetCursorPosition(left, top + i);
@@ -665,8 +656,8 @@ file sealed class OptionsDialog : Ui.DialogBox {
         cancelButton.left = left + (width - 20) / 2 + 10;
         cancelButton.top = top;
 
-        if (elements is null)
-            return;
+        if (elements is null) return;
+
         for (int i = 0; i < elements?.Count; i++) {
             elements[i].Draw(false);
         }

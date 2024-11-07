@@ -26,6 +26,9 @@ public static class Data {
     public const char LEFT_TRIANGLE  = '\u25C2';
     public const char RIGHT_TRIANGLE = '\u25B8';
 
+    public const char FULL_CIRCLE  = '\u2B24';
+    public const char EMPTY_CIRCLE = '\u2B55';
+
     public const char LEFT_HALF_CIRCLE     = '\uE0B6';
     public const char RIGHT_HALF_CIRCLE    = '\uE0B4';
 

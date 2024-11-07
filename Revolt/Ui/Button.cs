@@ -3,6 +3,7 @@
 public sealed class Button(Frame parentFrame, string text) : Element(parentFrame) {
     public string text = text;
     public Action action;
+
     public override void Draw(bool push) {
         (int left, int top, _, _) = GetBounding();
 
