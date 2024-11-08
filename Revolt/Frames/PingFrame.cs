@@ -106,7 +106,6 @@ public sealed class PingFrame : Ui.Frame {
     }
 
     private void DrawItemLabel(PingItem item, int index, int y) {
-
         if (index == list.index) {
             Ansi.SetFgColor(list.isFocused ? [16, 16, 16] : Data.FG_COLOR);
             Ansi.SetBgColor(list.isFocused ? Data.SELECT_COLOR : Data.INPUT_COLOR);
@@ -149,7 +148,7 @@ public sealed class PingFrame : Ui.Frame {
 
     private void DrawStatus() {
         int total = list.items.Count;
-        int unrechable = list.items.Count(o=> o.status < 0);
+        int unreachable = list.items.Count(o=> o.status < 0);
 
         Ansi.SetCursorPosition(2, Renderer.LastHeight);
 
@@ -159,15 +158,15 @@ public sealed class PingFrame : Ui.Frame {
 
         Ansi.SetFgColor([16, 16, 16]);
         Ansi.SetBgColor([128, 224, 48]);
-        Ansi.Write((total - unrechable).ToString());
+        Ansi.Write((total - unreachable).ToString());
 
-        if (unrechable > 0) {
+        if (unreachable > 0) {
             Ansi.SetFgColor([240, 32, 32]);
             Ansi.Write(Data.RIGHT_LOW_TRIANGLE);
 
             Ansi.SetFgColor([16, 16, 16]);
             Ansi.SetBgColor([240, 32, 32]);
-            Ansi.Write(unrechable.ToString());
+            Ansi.Write(unreachable.ToString());
         }
 
         Ansi.SetFgColor(Data.FG_COLOR);
@@ -222,6 +221,9 @@ public sealed class PingFrame : Ui.Frame {
         while (!cancellationToken.IsCancellationRequested) {
             long startTime = Stopwatch.GetTimestamp();
             short[] result = await Icmp.PingArrayAsync(list.items, timeout);
+
+            if (list.items.Count != result.Length) continue;
+
             ringIndex++;
 
             int moveCounter = 0;
@@ -426,12 +428,12 @@ public sealed class PingFrame : Ui.Frame {
                 list.Clear();
                 break;
 
-            case 1: //remove rechable
+            case 1: //remove reachable
                 list.items.RemoveAll(r => r.history.Any(o => o > -1));
                 list.Draw(true);
                 break;
 
-            case 2://remove unrechable
+            case 2://remove unreachable
                 list.items.RemoveAll(r => r.history.All(o => o < 0));
                 list.Draw(true);
                 break;
@@ -495,7 +497,7 @@ file sealed class ClearDialog : Ui.DialogBox {
 
     public ClearDialog() {
         clearSelectBox = new Ui.SelectBox(this) {
-            options = ["Clear all", "Remove rechable", "Remove unrechable"],
+            options = ["Clear all", "Remove reachable", "Remove unreachable"],
         };
 
         elements.Add(clearSelectBox);
