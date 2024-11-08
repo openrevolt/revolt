@@ -102,13 +102,13 @@ public sealed class PingFrame : Ui.Frame {
         PingItem item = list.items[index];
 
         DrawItemLabel(item, index, adjustedY);
-        UpdateHistoryAndStatus(item, x, adjustedY, width);
+        UpdateHistoryAndStatus(item, index, x, adjustedY, width);
     }
 
     private void DrawItemLabel(PingItem item, int index, int y) {
         if (index == list.index) {
             Ansi.SetFgColor(list.isFocused ? [16, 16, 16] : Data.FG_COLOR);
-            Ansi.SetBgColor(list.isFocused ? Data.SELECT_COLOR : Data.INPUT_COLOR);
+            Ansi.SetBgColor(list.isFocused ? Data.SELECT_COLOR : Data.SELECT_COLOR_LIGHT);
         }
         else {
             Ansi.SetFgColor(Data.FG_COLOR);
@@ -121,15 +121,17 @@ public sealed class PingFrame : Ui.Frame {
 
     private void UpdatePingItem(int index, int x, int y, int width) {
         PingItem item = list.items[index];
-        UpdateHistoryAndStatus(item, x, y, width);
+        UpdateHistoryAndStatus(item, index, x, y, width);
     }
 
-    private void UpdateHistoryAndStatus(PingItem item, int x, int y, int width) {
+    private void UpdateHistoryAndStatus(PingItem item, int index, int x, int y, int width) {
         int usableWidth = Math.Min(width - 38, HISTORY_LEN);
         int historyOffset = (ringIndex + HISTORY_LEN - usableWidth + 1) % HISTORY_LEN;
 
-        Ansi.SetBgColor(Data.BG_COLOR);
-        Ansi.SetCursorPosition(x + 25, y);
+        Ansi.SetBgColor(index == list.index ? Data.SELECT_COLOR_LIGHT : Data.BG_COLOR);
+
+        Ansi.SetCursorPosition(x + 24, y);
+        Ansi.Write(' ');
 
         byte[] lastColor = new byte[3];
         for (int t = 0; t < usableWidth; t++) {
@@ -144,6 +146,8 @@ public sealed class PingFrame : Ui.Frame {
         Ansi.Write(' ');
         Ansi.SetFgColor(DetermineRttColor(item.status));
         Ansi.Write(DetermineRttText(item.status));
+
+        Ansi.SetBgColor(Data.BG_COLOR);
     }
 
     private void DrawStatus() {

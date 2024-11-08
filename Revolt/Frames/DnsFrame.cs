@@ -91,15 +91,17 @@ public sealed class DnsFrame : Ui.Frame {
         if (list.items is null || list.items.Count == 0) return;
         if (index >= list.items.Count) return;
 
+        bool isSelected = index == list.index;
+
         int adjustedY = y + index - list.scrollOffset * list.itemHeight;
         if (adjustedY < y || adjustedY > Renderer.LastHeight) return;
 
         DnsItem item = list.items[index];
 
         byte[] foreColor, backColor;
-        if (index == list.index) {
+        if (isSelected) {
             foreColor = list.isFocused ? [16, 16, 16] : Data.FG_COLOR;
-            backColor = list.isFocused ? Data.SELECT_COLOR : Data.INPUT_COLOR;
+            backColor = list.isFocused ? Data.SELECT_COLOR : Data.SELECT_COLOR_LIGHT;
         }
         else {
             foreColor = Data.FG_COLOR;
@@ -129,15 +131,15 @@ public sealed class DnsFrame : Ui.Frame {
         Ansi.SetFgColor(foreColor);
         Ansi.Write(item.questionString.Length > 32 ? item.questionString[..31] + Data.ELLIPSIS : item.questionString.PadRight(32));
 
-        Ansi.SetCursorPosition(36, adjustedY);
+        Ansi.SetFgColor(backColor);
+        Ansi.SetBgColor(isSelected ? Data.SELECT_COLOR_LIGHT : Data.BG_COLOR);
+        Ansi.Write(isSelected ? Data.BIG_RIGHT_TRIANGLE : ' ');
 
         if (item.answerType >= 0) {
-            //Ansi.SetBgColor(backColor);
-            //Ansi.SetFgColor(foreColor);
             Ansi.Write(new String(' ', Math.Max(6 - Dns.typeStrings[item.answerType].Length, 0)));
 
             Ansi.SetFgColor(item.answerColor);
-            Ansi.SetBgColor(backColor);
+            Ansi.SetBgColor(isSelected ? Data.SELECT_COLOR_LIGHT : Data.BG_COLOR);
             Ansi.Write(Data.LEFT_HALF_CIRCLE);
 
             Ansi.SetFgColor([16, 16, 16]);
@@ -145,13 +147,20 @@ public sealed class DnsFrame : Ui.Frame {
             Ansi.Write(Dns.typeStrings[item.questionType]);
 
             Ansi.SetFgColor(item.answerColor);
-            Ansi.SetBgColor(backColor);
+            Ansi.SetBgColor(isSelected ? Data.SELECT_COLOR_LIGHT : Data.BG_COLOR);
             Ansi.Write(Data.RIGHT_HALF_CIRCLE);
             Ansi.Write(' ');
         }
 
-        Ansi.SetFgColor(item.answerType < 0 ? [176, 0, 0] : foreColor);
+        Ansi.SetFgColor(item.answerType < 0 ? [176, 0, 0] : Data.FG_COLOR);
         Ansi.Write(item.answerString.Length > 40 ? item.answerString[..39] + Data.ELLIPSIS : item.answerString.PadRight(40));
+        
+        if (item.answerType >= 0) {
+            Ansi.Write(new String(' ', 4));
+            Ansi.Write(item.ttl.ToString());
+        }
+
+        Ansi.SetBgColor(Data.BG_COLOR);
     }
 
     private void AddItem(string question, Dns.RecordType questionType, Dns.Answer answer) {
@@ -197,6 +206,7 @@ public sealed class DnsFrame : Ui.Frame {
         }
 
         list.items.Add(item);
+        list.index = list.items.Count - 1;
 
         (int left, int top, int width, _) = list.GetBounding();
         list.drawItemHandler(list.items.Count - 1, left, top, width);

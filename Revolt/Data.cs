@@ -1,13 +1,14 @@
 ﻿namespace Revolt;
 
 public static class Data {
-    public static readonly byte[] FG_COLOR      = [192, 192, 192];
-    public static readonly byte[] BG_COLOR      = [24, 24, 24];
-    public static readonly byte[] TOOLBAR_COLOR = [64, 64, 64];
-    public static readonly byte[] CONTROL_COLOR = [72, 72, 72];
-    public static readonly byte[] INPUT_COLOR   = [96, 96, 96];
-    public static readonly byte[] PANE_COLOR    = [160, 160, 160];
-    public static readonly byte[] SELECT_COLOR  = [255, 192, 0];
+    public static readonly byte[] FG_COLOR           = [192, 192, 192];
+    public static readonly byte[] BG_COLOR           = [24, 24, 24];
+    public static readonly byte[] TOOLBAR_COLOR      = [64, 64, 64];
+    public static readonly byte[] CONTROL_COLOR      = [72, 72, 72];
+    public static readonly byte[] INPUT_COLOR        = [96, 96, 96];
+    public static readonly byte[] PANE_COLOR         = [160, 160, 160];
+    public static readonly byte[] SELECT_COLOR       = [255, 192, 0];
+    public static readonly byte[] SELECT_COLOR_LIGHT = [48, 48, 48];
 
     public const char ELLIPSIS = '\u2026';
 
@@ -36,6 +37,9 @@ public static class Data {
     public const char RIGHT_LOW_TRIANGLE  = '\uE0BA';
     public const char LEFT_HIGH_TRIANGLE   = '\uE0BC';
     public const char RIGHT_HIGH_TRIANGLE = '\uE0BE';
+    
+    public const char BIG_RIGHT_TRIANGLE = '\uE0B0';
+    public const char BIG_LEFT_TRIANGLE = '\uE0B2';
 
     public const char LINE_H = '\u2500';
 
