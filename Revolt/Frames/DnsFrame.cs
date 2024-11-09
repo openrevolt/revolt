@@ -91,14 +91,21 @@ public sealed class DnsFrame : Ui.Frame {
         if (list.items is null || list.items.Count == 0) return;
         if (index >= list.items.Count) return;
 
-        bool isSelected = index == list.index;
-
         int adjustedY = y + index - list.scrollOffset * list.itemHeight;
         if (adjustedY < y || adjustedY > Renderer.LastHeight) return;
 
-        DnsItem item = list.items[index];
+        int questionWidth = Math.Min(width / 3, 40);
+        int ttlWidth      = 10;
+        int answerWidth   = Math.Max(width - questionWidth - ttlWidth, 0);
 
+        Ansi.SetCursorPosition(2, adjustedY);
+
+        DnsItem item = list.items[index];
+        bool isSelected = index == list.index;
         byte[] foreColor, backColor;
+
+        string questionTypeString = Dns.typeStrings[item.questionType];
+
         if (isSelected) {
             foreColor = list.isFocused ? [16, 16, 16] : Data.FG_COLOR;
             backColor = list.isFocused ? Data.SELECT_COLOR : Data.SELECT_COLOR_LIGHT;
@@ -108,11 +115,9 @@ public sealed class DnsFrame : Ui.Frame {
             backColor = Data.BG_COLOR;
         }
 
-        Ansi.SetCursorPosition(2, adjustedY);
-
         Ansi.SetBgColor(backColor);
         Ansi.SetFgColor(foreColor);
-        Ansi.Write(new String(' ', Math.Max(6 - Dns.typeStrings[item.questionType].Length, 0)));
+        Ansi.Write(new String(' ', Math.Max(6 - questionTypeString.Length, 0)));
 
         Ansi.SetFgColor(item.questionColor);
         Ansi.SetBgColor(backColor);
@@ -120,7 +125,7 @@ public sealed class DnsFrame : Ui.Frame {
 
         Ansi.SetFgColor([16, 16, 16]);
         Ansi.SetBgColor(item.questionColor);
-        Ansi.Write(Dns.typeStrings[item.questionType]);
+        Ansi.Write(questionTypeString);
 
         Ansi.SetFgColor(item.questionColor);
         Ansi.SetBgColor(backColor);
@@ -128,15 +133,20 @@ public sealed class DnsFrame : Ui.Frame {
 
         Ansi.Write(' ');
 
+        int adjustedQuestionWidth = Math.Max(questionWidth - 9, 0);
+        int adjustedAnswerWidth = Math.Max(answerWidth - 10, 0);
+
         Ansi.SetFgColor(foreColor);
-        Ansi.Write(item.questionString.Length > 32 ? item.questionString[..31] + Data.ELLIPSIS : item.questionString.PadRight(32));
+        Ansi.Write(item.questionString.Length > adjustedQuestionWidth ? item.questionString[..(adjustedQuestionWidth-1)] + Data.ELLIPSIS : item.questionString.PadRight(adjustedQuestionWidth));
 
         Ansi.SetFgColor(backColor);
         Ansi.SetBgColor(isSelected ? Data.SELECT_COLOR_LIGHT : Data.BG_COLOR);
         Ansi.Write(isSelected ? Data.BIG_RIGHT_TRIANGLE : ' ');
 
         if (item.answerType >= 0) {
-            Ansi.Write(new String(' ', Math.Max(6 - Dns.typeStrings[item.answerType].Length, 0)));
+            string answerTypeString = Dns.typeStrings[item.answerType];
+
+            Ansi.Write(new String(' ', Math.Max(6 - answerTypeString.Length, 0)));
 
             Ansi.SetFgColor(item.answerColor);
             Ansi.SetBgColor(isSelected ? Data.SELECT_COLOR_LIGHT : Data.BG_COLOR);
@@ -144,20 +154,28 @@ public sealed class DnsFrame : Ui.Frame {
 
             Ansi.SetFgColor([16, 16, 16]);
             Ansi.SetBgColor(item.answerColor);
-            Ansi.Write(Dns.typeStrings[item.questionType]);
+            Ansi.Write(answerTypeString);
 
             Ansi.SetFgColor(item.answerColor);
             Ansi.SetBgColor(isSelected ? Data.SELECT_COLOR_LIGHT : Data.BG_COLOR);
             Ansi.Write(Data.RIGHT_HALF_CIRCLE);
             Ansi.Write(' ');
         }
+        else {
+            Ansi.Write(new String(' ', 12));
+        }
 
+        Ansi.SetCursorPosition(questionWidth + 12, adjustedY);
         Ansi.SetFgColor(item.answerType < 0 ? [176, 0, 0] : Data.FG_COLOR);
-        Ansi.Write(item.answerString.Length > 40 ? item.answerString[..39] + Data.ELLIPSIS : item.answerString.PadRight(40));
+        Ansi.Write(item.answerString.Length > adjustedAnswerWidth ? item.answerString[..(adjustedAnswerWidth-1)] + Data.ELLIPSIS : item.answerString.PadRight(adjustedAnswerWidth));
         
         if (item.answerType >= 0) {
-            Ansi.Write(new String(' ', 4));
-            Ansi.Write(item.ttl.ToString());
+            string ttlString = item.ttl.ToString();
+            Ansi.Write(ttlString);
+            Ansi.Write(new String(' ', ttlWidth - ttlString.Length));
+        }
+        else {
+            Ansi.Write(new String(' ', 10));
         }
 
         Ansi.SetBgColor(Data.BG_COLOR);
@@ -167,40 +185,30 @@ public sealed class DnsFrame : Ui.Frame {
         DnsItem item;
 
         if (answer.error > 0) {
-            string errorMessage = answer.error switch {
-                0 => "no error",
-                1 => "query format error",
-                2 => "server failure",
-                3 => "no such name",
-                4 => "function not implemented",
-                5 => "refused",
-                6 => "name should not exist",
-                7 => "RRset should not exist",
-                8 => "server not authoritative for the zone",
-                9 => "name not in zone",
-                254 => "invalid response",
-                _ => "unknown error"
-            };
+            string errorMessage = Dns.errorMessages.TryGetValue(answer.error, out var err) ? err : "unknown error";
+            int questionTypeIndex = Array.IndexOf(Dns.types, questionType);
 
             item = new DnsItem() {
                 questionString = question,
-                questionType  = Array.IndexOf(Dns.types, questionType),
-                questionColor = Dns.typesColors[Array.IndexOf(Dns.types, questionType)],
+                questionType  = questionTypeIndex,
+                questionColor = Dns.typesColors[questionTypeIndex],
                 answerString  = errorMessage,
                 answerType    = -1,
                 answerColor   = [255, 255, 255],
                 ttl           = 0,
             };
-
         }
         else {
+            int questionTypeIndex = Array.IndexOf(Dns.types, questionType);
+            int answerTypeIndex = Array.IndexOf(Dns.types, type);
+
             item = new DnsItem() {
                 questionString = question,
-                questionType   = Array.IndexOf(Dns.types, questionType),
-                questionColor  = Dns.typesColors[Array.IndexOf(Dns.types, questionType)],
+                questionType   = questionTypeIndex,
+                questionColor  = Dns.typesColors[questionTypeIndex],
                 answerString   = answer.answerString,
-                answerType     = Array.IndexOf(Dns.types, type),
-                answerColor    = Dns.typesColors[Array.IndexOf(Dns.types, type)],
+                answerType     = answerTypeIndex,
+                answerColor    = Dns.typesColors[answerTypeIndex],
                 ttl            = answer.ttl,
             };
         }
@@ -464,8 +472,7 @@ file sealed class OptionsDialog : Ui.DialogBox {
         truncatedToggle     = new Ui.Toggle(this, "Truncated");
         recursiveToggle     = new Ui.Toggle(this, "Recursive");
 
-
-    elements.Add(serverTextbox);
+        elements.Add(serverTextbox);
         elements.Add(timeoutTextbox);
         elements.Add(transportSelectBox);
         elements.Add(standardToggle);

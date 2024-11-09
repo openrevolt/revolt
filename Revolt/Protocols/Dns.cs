@@ -49,6 +49,20 @@ public static class Dns {
         public byte error;
     }
 
+    public static readonly Dictionary<int, string> errorMessages = new() {
+        { 0, "no error" },
+        { 1, "query format error" },
+        { 2, "server failure" },
+        { 3, "no such name" },
+        { 4, "function not implemented" },
+        { 5, "refused" },
+        { 6, "name should not exist" },
+        { 7, "RRset should not exist" },
+        { 8, "server not authoritative for the zone" },
+        { 9, "name not in zone" },
+        { 254, "invalid response" }
+    };
+
     public static readonly string[] typeStrings = ["A", "AAAA", "NS", "CNAME", "SOA", "PTR", "MX", "TXT", "SRV", "ANY"];
 
     public static readonly string[] typeFullNames = [
