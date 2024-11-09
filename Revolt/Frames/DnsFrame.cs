@@ -45,7 +45,6 @@ public sealed class DnsFrame : Ui.Frame {
             right             = 1,
             top               = 3,
             bottom            = 1,
-            itemHeight        = 1,
             drawItemHandler   = DrawDnsItem
         };
 
@@ -287,8 +286,8 @@ public sealed class DnsFrame : Ui.Frame {
 
         dialog.Draw();
 
-        dialog.serverTextbox.Value = server ?? String.Empty;
-        dialog.timeoutTextbox.Value = timeout.ToString();
+        dialog.serverTextbox.Value       = server ?? String.Empty;
+        dialog.timeoutTextbox.Value      = timeout.ToString();
         dialog.standardToggle.Value      = isStandard;
         dialog.inverseLookupToggle.Value = isInverse;
         dialog.serverStatusToggle.Value  = showServerStatus;

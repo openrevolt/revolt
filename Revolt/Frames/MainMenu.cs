@@ -53,7 +53,7 @@ public sealed class MainMenu : Ui.Frame {
             Ansi.SetBgColor(Data.BG_COLOR);
             Ansi.SetCursorPosition(3, y);
 
-            Ansi.Write(new String(Data.LINE_H, length));
+            Ansi.Write(new String('-', length));
             return;
         }
 
@@ -110,6 +110,10 @@ public sealed class MainMenu : Ui.Frame {
 
         case "DNS lookup":
             DnsFrame.Instance.Show();
+            return true;
+
+        case "Trace route":
+            TraceRouteFrame.Instance.Show();
             return true;
 
         case "Quit":

@@ -1,4 +1,6 @@
-﻿namespace Revolt.Ui;
+﻿using System.Text;
+
+namespace Revolt.Ui;
 
 public abstract class Frame {
     protected List<Element> elements = [];
@@ -19,10 +21,9 @@ public abstract class Frame {
     }
 
     public virtual void Draw(int width, int height) {
-        int top = 0;
-
         string blank = new string(' ', width);
 
+        int top = 0;
         Ansi.SetBgColor(Data.BG_COLOR);
         for (int y = top; y <= height; y++) {
             if (y > Console.WindowHeight) break;
@@ -80,6 +81,36 @@ public abstract class Frame {
         index = (index + 1) % elements.Count;
         focusedElement = elements[index];
         focusedElement.Focus();
+    }
+
+    public void WriteLabel(string text, int x, int y, int width, bool alignCenter = false) {
+        if (text is null) return;
+
+        StringBuilder builder = new StringBuilder();
+        string[] words = text.Split(' ');
+        int xOffset = 0;
+
+        for (int i = 0; i < words.Length; i++) {
+            builder.Append(' ');
+            builder.Append(words[i]);
+            xOffset += words[i].Length + 1;
+            if (xOffset >= width) break;
+        }
+
+        Ansi.SetCursorPosition(x, y);
+
+        if (xOffset < width) {
+            if (alignCenter) {
+                string padding = new String(' ', (width - xOffset) / 2);
+                Ansi.Write(padding);
+                Ansi.Write(builder.ToString());
+                Ansi.Write(new String(' ', width - padding.Length - builder.Length));
+            }
+            else {
+                Ansi.Write(builder.ToString());
+                Ansi.Write(new String(' ', width - xOffset));
+            }
+        }
     }
 
     public abstract bool HandleKey(ConsoleKeyInfo key);

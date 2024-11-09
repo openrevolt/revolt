@@ -24,6 +24,10 @@ public static class Data {
     public const char LOWER_7_8TH_BLOCK = '\u2587';
     public const char LOWER_8_8TH_BLOCK = '\u2588';
 
+    //public const char SHADE_LIGHT = '\u2591';
+    //public const char SHADE_MID   = '\u2592';
+    //public const char SHADE_HARD  = '\u2593';
+
     public const char LEFT_TRIANGLE  = '\u25C2';
     public const char RIGHT_TRIANGLE = '\u25B8';
 
@@ -35,7 +39,7 @@ public static class Data {
 
     public const char LEFT_LOW_TRIANGLE   = '\uE0B8';
     public const char RIGHT_LOW_TRIANGLE  = '\uE0BA';
-    public const char LEFT_HIGH_TRIANGLE   = '\uE0BC';
+    public const char LEFT_HIGH_TRIANGLE  = '\uE0BC';
     public const char RIGHT_HIGH_TRIANGLE = '\uE0BE';
     
     public const char BIG_RIGHT_TRIANGLE = '\uE0B0';
