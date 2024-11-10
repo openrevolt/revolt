@@ -248,12 +248,11 @@ public sealed class DnsFrame : Ui.Frame {
             dialog.Close();
         };
 
-        Renderer.ActiveDialog = dialog;
         dialog.typeSelectBox.index = Array.IndexOf(Dns.types, type);
         
-        dialog.Draw();
-        
-        dialog.nameTextbox.Focus();
+
+
+        dialog.Show();
     }
 
     private void Clear() {
@@ -278,14 +277,10 @@ public sealed class DnsFrame : Ui.Frame {
             dialog.Close();
         };
 
-        Renderer.ActiveDialog = dialog;
-
+        dialog.Show();
 
         dialog.transportSelectBox.index = (int)transport;
 
-        dialog.Draw();
-
-        dialog.serverTextbox.Value       = server ?? String.Empty;
         dialog.timeoutTextbox.Value      = timeout.ToString();
         dialog.standardToggle.Value      = isStandard;
         dialog.inverseLookupToggle.Value = isInverse;
@@ -293,7 +288,7 @@ public sealed class DnsFrame : Ui.Frame {
         dialog.truncatedToggle.Value     = isTruncated;
         dialog.recursiveToggle.Value     = isRecursive;
 
-        dialog.serverTextbox.Focus();
+        dialog.serverTextbox.Value = server ?? String.Empty;
     }
 }
 
@@ -314,8 +309,6 @@ file sealed class AddDialog : Ui.DialogBox {
         elements.Add(typeSelectBox);
 
         defaultElement = nameTextbox;
-        nameTextbox.Focus(false);
-        focusedElement = nameTextbox;
     }
 
     public override void Draw(int width, int height) {
@@ -480,8 +473,6 @@ file sealed class OptionsDialog : Ui.DialogBox {
         elements.Add(recursiveToggle);
 
         defaultElement = serverTextbox;
-        serverTextbox.Focus(false);
-        focusedElement = serverTextbox;
     }
 
     public override void Draw(int width, int height) {

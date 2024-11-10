@@ -5,8 +5,6 @@ public sealed class ConfirmDialog : DialogBox {
 
     public ConfirmDialog() {
         defaultElement = okButton;
-        okButton.Focus(false);
-        focusedElement = okButton;
     }
 
     public override void Draw(int width, int height) {

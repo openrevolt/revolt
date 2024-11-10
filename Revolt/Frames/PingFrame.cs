@@ -418,8 +418,7 @@ public sealed class PingFrame : Ui.Frame {
             dialog.Close();
         };
 
-        Renderer.ActiveDialog = dialog;
-        dialog.Draw();
+        dialog.Show(true);
     }
 
     private void Clear() {
@@ -448,8 +447,7 @@ public sealed class PingFrame : Ui.Frame {
             dialog.Close();
         };
 
-        Renderer.ActiveDialog = dialog;
-        dialog.Draw();
+        dialog.Show(true);
     }
 
     private void ToggleStatus() {
@@ -485,16 +483,12 @@ public sealed class PingFrame : Ui.Frame {
             dialog.Close();
         };
 
-        Renderer.ActiveDialog = dialog;
-        
         dialog.moveSelectBox.index = (int)move;
 
-        dialog.Draw();
+        dialog.Show(true);
 
-        dialog.timeoutTextbox.Value = timeout.ToString();
         dialog.intervalTextbox.Value = interval.ToString();
-
-        dialog.timeoutTextbox.Focus();
+        dialog.timeoutTextbox.Value = timeout.ToString();
     }
 }
 
@@ -509,8 +503,6 @@ file sealed class ClearDialog : Ui.DialogBox {
         elements.Add(clearSelectBox);
 
         defaultElement = clearSelectBox;
-        clearSelectBox.Focus(false);
-        focusedElement = clearSelectBox;
     }
 
     public override void Draw(int width, int height) {
@@ -616,8 +608,6 @@ file sealed class OptionsDialog : Ui.DialogBox {
         elements.Add(moveSelectBox);
 
         defaultElement = timeoutTextbox;
-        timeoutTextbox.Focus(false);
-        focusedElement = timeoutTextbox;
     }
 
     public override void Draw(int width, int height) {

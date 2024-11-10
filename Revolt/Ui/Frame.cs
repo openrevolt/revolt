@@ -83,7 +83,7 @@ public abstract class Frame {
         focusedElement.Focus();
     }
 
-    public void WriteLabel(string text, int x, int y, int width, bool alignCenter = false) {
+    public static void WriteLabel(string text, int x, int y, int width, bool alignCenter = false) {
         if (text is null) return;
 
         StringBuilder builder = new StringBuilder();

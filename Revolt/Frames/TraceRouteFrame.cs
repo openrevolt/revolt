@@ -17,7 +17,7 @@ public sealed class TraceRouteFrame : Ui.Frame {
 
     public TraceRouteFrame() {
         toolbar = new Ui.Toolbar(this) {
-            left = 1,
+            left  = 1,
             right = 1,
             items = [
                 new Ui.Toolbar.ToolbarItem() { text="Clear", action=Clear },
@@ -25,15 +25,15 @@ public sealed class TraceRouteFrame : Ui.Frame {
         };
 
         textbox = new Ui.Textbox(this) {
-            top = 4,
-            left = 16,
+            top   = 4,
+            left  = 16,
             right = 16,
         };
 
         list = new Ui.ListBox<TraceItem>(this) {
-            left = 16,
-            right = 16,
-            top = 8,
+            left   = 16,
+            right  = 16,
+            top    = 8,
             bottom = 1,
             drawItemHandler = DrawTraceItem
         };

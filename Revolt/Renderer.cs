@@ -89,8 +89,7 @@ public static class Renderer {
             isRunning = false;
         };
 
-        Renderer.ActiveDialog = dialog;
-        dialog.Draw();
+        dialog.Show();
     }
 
     private static void CleanUp() {

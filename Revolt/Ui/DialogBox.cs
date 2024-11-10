@@ -39,6 +39,20 @@ public class DialogBox : Frame {
         return true;
     }
 
+    public override void Show(bool draw = true) {
+        Renderer.ActiveDialog = this;
+
+        if (defaultElement is not null) {
+            focusedElement = defaultElement;
+        }
+
+        if (draw) {
+            Draw();
+        }
+
+        defaultElement?.Focus(true);
+    }
+
     public virtual void Close() {
         okButton.action = null;
         cancelButton.action = null;
