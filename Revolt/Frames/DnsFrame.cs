@@ -214,8 +214,8 @@ public sealed class DnsFrame : Ui.Frame {
 
         list.Add(item);
 
-        (int left, int top, int width, _) = list.GetBounding();
-        list.drawItemHandler(list.items.Count - 1, left, top, width);
+        //(int left, int top, int width, _) = list.GetBounding();
+        //list.drawItemHandler(list.items.Count - 1, left, top, width);
     }
 
     private void AddDialog() {

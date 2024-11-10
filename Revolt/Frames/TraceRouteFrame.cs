@@ -33,7 +33,7 @@ public sealed class TraceRouteFrame : Ui.Frame {
         list = new Ui.ListBox<TraceItem>(this) {
             left = 16,
             right = 16,
-            top = 9,
+            top = 8,
             bottom = 1,
             drawItemHandler = DrawTraceItem
         };
@@ -91,7 +91,7 @@ public sealed class TraceRouteFrame : Ui.Frame {
         if (index >= list.items.Count) return;
 
         int adjustedY = y + index - list.scrollOffset * list.itemHeight;
-        if (adjustedY < y || adjustedY > Renderer.LastHeight) return;
+        if (adjustedY < y || adjustedY >= Renderer.LastHeight) return;
 
         TraceItem item = list.items[index];
 
@@ -108,14 +108,37 @@ public sealed class TraceRouteFrame : Ui.Frame {
 
         Ansi.SetCursorPosition(x, adjustedY);
         Ansi.Write((index + 1).ToString().PadLeft(3));
+
+        Ansi.SetBgColor(Data.SELECT_COLOR_LIGHT);
+
+        if (index == list.index) {
+            Ansi.SetFgColor(list.isFocused ? Data.SELECT_COLOR : Data.SELECT_COLOR_LIGHT);
+            Ansi.Write(Data.BIG_RIGHT_TRIANGLE);
+        }
+        else {
+            Ansi.SetBgColor(Data.BG_COLOR);
+            Ansi.Write(' ');
+        }
+
+        Ansi.SetFgColor(Data.FG_COLOR);
+        Ansi.SetBgColor(index == list.index ? Data.SELECT_COLOR_LIGHT : Data.BG_COLOR);
+
         Ansi.Write(' ');
 
-        Ansi.Write(item.host.PadRight(16));
+        int hostWidth = Math.Max(width - 14, 1);
+
+        Ansi.Write(item.host.Length > hostWidth ? item.host[..(hostWidth - 1)] + Data.ELLIPSIS : item.host.PadRight(hostWidth));
+
         Ansi.Write(' ');
 
         if (item.rtt >= 0) {
-            Ansi.Write($"{item.rtt}ms");
+            Ansi.Write($"{item.rtt}ms".PadLeft(8));
         }
+        else {
+            Ansi.Write(new String(' ', 8));
+        }
+
+        Ansi.SetBgColor(Data.BG_COLOR);
     }
 
     private static void DrawProgressBar(int width, int progress, int totalSteps) {
@@ -224,11 +247,17 @@ public sealed class TraceRouteFrame : Ui.Frame {
                 break;
             }
 
+            int lastIndex = list.index;
+
             list.Add(new TraceItem {
                 host   = host,
                 status = status,
                 rtt    = rtt
             });
+
+            if (lastIndex > -1) {
+                list.drawItemHandler(lastIndex, left, top, width);
+            }
 
             list.drawItemHandler(list.items.Count - 1, left, top, width);
         }

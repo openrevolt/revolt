@@ -116,7 +116,11 @@ public sealed class PingFrame : Ui.Frame {
         }
 
         Ansi.SetCursorPosition(2, y);
-        Ansi.Write(item.host.Length > 24 ? item.host[..23] + Data.ELLIPSIS : item.host.PadRight(24));
+        Ansi.Write(item.host.Length > 23 ? item.host[..22] + Data.ELLIPSIS : item.host.PadRight(23));
+
+        Ansi.SetFgColor(index == list.index && list.isFocused ? Data.SELECT_COLOR : Data.SELECT_COLOR_LIGHT);
+        Ansi.SetBgColor(index == list.index ? Data.SELECT_COLOR_LIGHT : Data.BG_COLOR);
+        Ansi.Write(index == list.index && list.isFocused ? Data.BIG_RIGHT_TRIANGLE : ' ');
     }
 
     private void UpdatePingItem(int index, int x, int y, int width) {
@@ -388,8 +392,8 @@ public sealed class PingFrame : Ui.Frame {
             list.Add(item);
         }
 
-        (int left, int top, int width, _) = list.GetBounding();
-        list.drawItemHandler(list.items.Count - 1, left, top, width);
+        //(int left, int top, int width, _) = list.GetBounding();
+        //list.drawItemHandler(list.items.Count - 1, left, top, width);
     }
 
     private void Start() =>
