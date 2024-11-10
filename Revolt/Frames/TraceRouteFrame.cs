@@ -1,39 +1,45 @@
-﻿namespace Revolt.Frames;
+﻿using System.Net.NetworkInformation;
+
+namespace Revolt.Frames;
 
 public sealed class TraceRouteFrame : Ui.Frame {
-    public struct TrItem {
-        public string hop;
-        public int rrt;
+    public struct TraceItem {
+        public string host;
+        public bool status;
+        public int rtt;
     }
 
     public static TraceRouteFrame Instance { get; } = new TraceRouteFrame();
 
     public Ui.Toolbar toolbar;
     public Ui.Textbox textbox;
-    public Ui.ListBox<TrItem> list;
+    public Ui.ListBox<TraceItem> list;
 
     public TraceRouteFrame() {
         toolbar = new Ui.Toolbar(this) {
             left = 1,
             right = 1,
             items = [
-                new Ui.Toolbar.ToolbarItem() { text="Clear",   action=Clear },
+                new Ui.Toolbar.ToolbarItem() { text="Clear", action=Clear },
             ]
         };
 
         textbox = new Ui.Textbox(this) {
             top = 4,
             left = 16,
-            right = 16
+            right = 16,
         };
 
-        list = new Ui.ListBox<TrItem>(this) {
-            left = 1,
-            right = 1,
+        list = new Ui.ListBox<TraceItem>(this) {
+            left = 16,
+            right = 16,
             top = 9,
             bottom = 1,
-            drawItemHandler = DrawTrItem
+            drawItemHandler = DrawTraceItem
         };
+
+        textbox.enableHistory = true;
+        textbox.history = [];
 
         elements.Add(toolbar);
         elements.Add(textbox);
@@ -64,25 +70,69 @@ public sealed class TraceRouteFrame : Ui.Frame {
         textbox.left = padding;
         textbox.right = padding;
 
+        list.left = padding;
+        list.right = padding;
+
         Ansi.SetFgColor(Data.FG_COLOR);
         Ansi.SetBgColor(Data.BG_COLOR);
         WriteLabel("Target:", padding, 4, width - padding);
 
-        Ansi.SetCursorPosition(0, 7);
-        Ansi.SetBgColor(Data.BG_COLOR);
-        Ansi.Write(new String(' ', (width - 30) / 2));
-
-        Ansi.SetBgColor(Data.SELECT_COLOR_LIGHT);
-        Ansi.Write(new String(' ', 30));
-
-        Ansi.SetBgColor(Data.BG_COLOR);
-        Ansi.Write(new String(' ', (width - 30) / 2));
+        //DrawProgressBar(width, 0, 1);
 
         for (int i = 0; i < elements.Count; i++) {
             elements[i].Draw(false);
         }
 
         Ansi.Push();
+    }
+
+    private void DrawTraceItem(int index, int x, int y, int width) {
+        if (list.items is null || list.items.Count == 0) return;
+        if (index >= list.items.Count) return;
+
+        int adjustedY = y + index - list.scrollOffset * list.itemHeight;
+        if (adjustedY < y || adjustedY > Renderer.LastHeight) return;
+
+        TraceItem item = list.items[index];
+
+        Ansi.SetCursorPosition(2, adjustedY);
+
+        if (index == list.index) {
+            Ansi.SetFgColor(list.isFocused ? [16, 16, 16] : Data.FG_COLOR);
+            Ansi.SetBgColor(list.isFocused ? Data.SELECT_COLOR : Data.SELECT_COLOR_LIGHT);
+        }
+        else {
+            Ansi.SetFgColor(Data.FG_COLOR);
+            Ansi.SetBgColor(Data.BG_COLOR);
+        }
+
+        Ansi.SetCursorPosition(x, adjustedY);
+        Ansi.Write((index + 1).ToString().PadLeft(3));
+        Ansi.Write(' ');
+
+        Ansi.Write(item.host.PadRight(16));
+        Ansi.Write(' ');
+
+        if (item.rtt >= 0) {
+            Ansi.Write($"{item.rtt}ms");
+        }
+    }
+
+    private static void DrawProgressBar(int width, int progress, int totalSteps) {
+        Ansi.SetCursorPosition(0, 7);
+        Ansi.SetBgColor(Data.BG_COLOR);
+        Ansi.Write(new String(' ', (width - 30) / 2));
+
+        int v = 30 * progress / totalSteps;
+
+        Ansi.SetBgColor(Data.SELECT_COLOR);
+        Ansi.Write(new String(' ', v));
+
+        Ansi.SetBgColor(Data.SELECT_COLOR_LIGHT);
+        Ansi.Write(new String(' ', 30 - v));
+
+        Ansi.SetBgColor(Data.BG_COLOR);
+        Ansi.Write(new String(' ', (width - 30) / 2));
     }
 
     public override bool HandleKey(ConsoleKeyInfo key) {
@@ -102,9 +152,12 @@ public sealed class TraceRouteFrame : Ui.Frame {
 
         case ConsoleKey.Enter:
             if (focusedElement == textbox) {
-                Trace(textbox.Value);
+                string value = textbox.Value.Trim();
                 textbox.Value = String.Empty;
+                if (String.IsNullOrEmpty(value)) break;
                 list.Clear();
+                textbox.history.Add(value);
+                Trace(value);
             }
             break;
 
@@ -116,24 +169,73 @@ public sealed class TraceRouteFrame : Ui.Frame {
         return true;
     }
 
-    private void DrawTrItem(int index, int x, int y, int width) {
-        if (list.items is null || list.items.Count == 0) return;
-        if (index >= list.items.Count) return;
-
-        int adjustedY = y + index - list.scrollOffset * list.itemHeight;
-        if (adjustedY < y || adjustedY > Renderer.LastHeight) return;
-
-        Ansi.SetCursorPosition(2, adjustedY);
-        Ansi.Write("Malakia");
-
-        Ansi.Push();
-    }
-
     private void Clear() {
         list.Clear();
     }
 
-    private void Trace(string host) {
+    private void Trace(string target) {
+        const int timeout = 1_000; // 1-second timeout for each ping
+        const int maxHops = 30;
 
+        (int left, int top, int width, _) = list.GetBounding();
+
+        DrawProgressBar(Renderer.LastWidth, 0, maxHops);
+        Ansi.Push();
+
+        string lastAddress = String.Empty;
+        using Ping ping = new Ping();
+        for (int ttl = 1; ttl <= maxHops; ttl++) {
+            DrawProgressBar(Renderer.LastWidth, ttl, maxHops);
+            Ansi.Push();
+
+            string host;
+            bool status;
+            int rtt;
+
+            try {
+                PingReply reply = ping.Send(target, timeout, Protocols.Icmp.ICMP_PAYLOAD, new PingOptions(ttl, true));
+                if (reply is null) break;
+
+                status = reply.Status == IPStatus.TtlExpired || reply.Status == IPStatus.Success;
+
+                if (reply.Status == IPStatus.Success || reply.Status == IPStatus.TtlExpired) {
+                    if (lastAddress == reply.Address.ToString()) {
+                        break;
+                    }
+                    else {
+                        lastAddress = reply.Address.ToString();
+                    }
+
+                    host = reply.Address?.ToString() ?? "unknown";
+                    rtt = status ? (int)reply.RoundtripTime : -1;
+                }
+                else if (reply.Status == IPStatus.TimedOut) {
+                    host = "timed out";
+                    rtt = -1;
+                }
+                else {
+                    break;
+                }
+            }
+            catch (Exception) {
+                host = "timed out";
+                status = false;
+                rtt = -1;
+                break;
+            }
+
+            list.Add(new TraceItem {
+                host   = host,
+                status = status,
+                rtt    = rtt
+            });
+
+            list.drawItemHandler(list.items.Count - 1, left, top, width);
+        }
+
+        DrawProgressBar(Renderer.LastWidth, maxHops, maxHops);
+        Ansi.Push();
+
+        textbox.Focus(true);
     }
 }

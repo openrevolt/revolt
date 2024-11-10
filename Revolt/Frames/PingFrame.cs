@@ -376,7 +376,7 @@ public sealed class PingFrame : Ui.Frame {
         PingItem item = list.items.Find(o => o.host.Equals(host, StringComparison.OrdinalIgnoreCase));
 
         if (item is null) {
-            list.items.Add(new PingItem {
+            list.Add(new PingItem {
                 host    = host,
                 status  = Icmp.UNDEFINED,
                 history = Enumerable.Repeat(Icmp.UNDEFINED, HISTORY_LEN).ToArray(),
@@ -385,10 +385,8 @@ public sealed class PingFrame : Ui.Frame {
         }
         else {
             list.items.Remove(item);
-            list.items.Add(item);
+            list.Add(item);
         }
-
-        list.index = list.items.Count - 1;
 
         (int left, int top, int width, _) = list.GetBounding();
         list.drawItemHandler(list.items.Count - 1, left, top, width);
