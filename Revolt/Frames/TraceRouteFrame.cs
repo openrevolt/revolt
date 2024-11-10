@@ -182,6 +182,9 @@ public sealed class TraceRouteFrame : Ui.Frame {
                 textbox.history.Add(value);
                 Trace(value);
             }
+            else {
+                focusedElement?.HandleKey(key);
+            }
             break;
 
         default:
@@ -197,7 +200,7 @@ public sealed class TraceRouteFrame : Ui.Frame {
     }
 
     private void Trace(string target) {
-        const int timeout = 1_000; // 1-second timeout for each ping
+        const int timeout = 1_000;
         const int maxHops = 30;
 
         (int left, int top, int width, _) = list.GetBounding();
