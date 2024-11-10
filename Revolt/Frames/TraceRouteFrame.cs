@@ -4,9 +4,10 @@ namespace Revolt.Frames;
 
 public sealed class TraceRouteFrame : Ui.Frame {
     public struct TraceItem {
-        public string host;
         public bool status;
-        public int rtt;
+        public string host;
+        public string domain;
+        //public int rtt;
     }
 
     public static TraceRouteFrame Instance { get; } = new TraceRouteFrame();
@@ -77,8 +78,6 @@ public sealed class TraceRouteFrame : Ui.Frame {
         Ansi.SetBgColor(Data.BG_COLOR);
         WriteLabel("Target:", padding, 4, width - padding);
 
-        //DrawProgressBar(width, 0, 1);
-
         for (int i = 0; i < elements.Count; i++) {
             elements[i].Draw(false);
         }
@@ -125,37 +124,16 @@ public sealed class TraceRouteFrame : Ui.Frame {
 
         Ansi.Write(' ');
 
-        int hostWidth = Math.Max(width - 14, 1);
+        int hostWidth   = 24;
+        int domainWidth = Math.Max(width - hostWidth - 6, 1);
 
         Ansi.Write(item.host.Length > hostWidth ? item.host[..(hostWidth - 1)] + Data.ELLIPSIS : item.host.PadRight(hostWidth));
 
         Ansi.Write(' ');
 
-        if (item.rtt >= 0) {
-            Ansi.Write($"{item.rtt}ms".PadLeft(8));
-        }
-        else {
-            Ansi.Write(new String(' ', 8));
-        }
+        Ansi.Write(item.domain.Length > domainWidth ? item.domain[..(domainWidth - 1)] + Data.ELLIPSIS : item.domain.PadRight(domainWidth));
 
         Ansi.SetBgColor(Data.BG_COLOR);
-    }
-
-    private static void DrawProgressBar(int width, int progress, int totalSteps) {
-        Ansi.SetCursorPosition(0, 7);
-        Ansi.SetBgColor(Data.BG_COLOR);
-        Ansi.Write(new String(' ', (width - 30) / 2));
-
-        int v = 30 * progress / totalSteps;
-
-        Ansi.SetBgColor(Data.SELECT_COLOR);
-        Ansi.Write(new String(' ', v));
-
-        Ansi.SetBgColor(Data.SELECT_COLOR_LIGHT);
-        Ansi.Write(new String(' ', 30 - v));
-
-        Ansi.SetBgColor(Data.BG_COLOR);
-        Ansi.Write(new String(' ', (width - 30) / 2));
     }
 
     public override bool HandleKey(ConsoleKeyInfo key) {
@@ -176,11 +154,14 @@ public sealed class TraceRouteFrame : Ui.Frame {
         case ConsoleKey.Enter:
             if (focusedElement == textbox) {
                 string value = textbox.Value.Trim();
-                textbox.Value = String.Empty;
+                //textbox.Value = String.Empty;
                 if (String.IsNullOrEmpty(value)) break;
                 list.Clear();
                 textbox.history.Add(value);
+
+                SetStatus("Tracing route");
                 Trace(value);
+                SetStatus(null);
             }
             else {
                 focusedElement?.HandleKey(key);
@@ -195,6 +176,26 @@ public sealed class TraceRouteFrame : Ui.Frame {
         return true;
     }
 
+    private void SetStatus(string status) {
+        (int _, int _, int width, int _) = list.GetBounding();
+        int padding = width < 64 ? 1 : 16;
+
+        Ansi.SetCursorPosition(padding + 1, 7);
+        Ansi.SetFgColor(Data.FG_COLOR);
+        Ansi.SetBgColor(Data.BG_COLOR);
+
+        if (status is null) {
+            Ansi.Write(new String(' ', width - 1));
+        }
+        else {
+            Ansi.SetBlinkOn();
+            Ansi.Write(status);
+            Ansi.SetBlinkOff();
+        }
+
+        Ansi.Push();
+    }
+
     private void Clear() {
         list.Clear();
     }
@@ -205,57 +206,56 @@ public sealed class TraceRouteFrame : Ui.Frame {
 
         (int left, int top, int width, _) = list.GetBounding();
 
-        DrawProgressBar(Renderer.LastWidth, 0, maxHops);
-        Ansi.Push();
-
         string lastAddress = String.Empty;
         using Ping ping = new Ping();
         for (int ttl = 1; ttl <= maxHops; ttl++) {
-            DrawProgressBar(Renderer.LastWidth, ttl, maxHops);
-            Ansi.Push();
 
-            string host;
             bool status;
-            int rtt;
+            string host;
+            string domain;
 
             try {
                 PingReply reply = ping.Send(target, timeout, Protocols.Icmp.ICMP_PAYLOAD, new PingOptions(ttl, true));
                 if (reply is null) break;
 
                 status = reply.Status == IPStatus.TtlExpired || reply.Status == IPStatus.Success;
+                host   = reply.Address?.ToString() ?? "unknown";
+                domain = String.Empty;
+                //rtt    = status ? (int)reply.RoundtripTime : -1;
 
                 if (reply.Status == IPStatus.Success || reply.Status == IPStatus.TtlExpired) {
+                    try {
+                        domain = System.Net.Dns.GetHostEntryAsync(host).GetAwaiter().GetResult().HostName;
+                    }
+                    catch { }
+
                     if (lastAddress == reply.Address.ToString()) {
                         break;
                     }
                     else {
                         lastAddress = reply.Address.ToString();
                     }
-
-                    host = reply.Address?.ToString() ?? "unknown";
-                    rtt = status ? (int)reply.RoundtripTime : -1;
                 }
                 else if (reply.Status == IPStatus.TimedOut) {
                     host = "timed out";
-                    rtt = -1;
                 }
                 else {
                     break;
                 }
             }
             catch (Exception) {
-                host = "timed out";
                 status = false;
-                rtt = -1;
+                host   = "timed out";
+                domain = String.Empty;
                 break;
             }
 
             int lastIndex = list.index;
 
             list.Add(new TraceItem {
-                host   = host,
                 status = status,
-                rtt    = rtt
+                host   = host,
+                domain = domain,
             });
 
             if (lastIndex > -1) {
@@ -264,9 +264,6 @@ public sealed class TraceRouteFrame : Ui.Frame {
 
             list.drawItemHandler(list.items.Count - 1, left, top, width);
         }
-
-        DrawProgressBar(Renderer.LastWidth, maxHops, maxHops);
-        Ansi.Push();
 
         textbox.Focus(true);
     }
