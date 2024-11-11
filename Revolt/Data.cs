@@ -34,13 +34,12 @@ public static class Data {
     public const char FULL_CIRCLE  = '\u2B24';
     public const char EMPTY_CIRCLE = '\u2B55';
 
-    public const char LEFT_HALF_CIRCLE    = '\uE0B6';
-    public const char RIGHT_HALF_CIRCLE   = '\uE0B4';
-
-    public const char LEFT_LOW_TRIANGLE   = '\uE0B8';
-    public const char RIGHT_LOW_TRIANGLE  = '\uE0BA';
-    public const char LEFT_HIGH_TRIANGLE  = '\uE0BC';
-    public const char RIGHT_HIGH_TRIANGLE = '\uE0BE';
+    //public const char LEFT_HALF_CIRCLE    = '\uE0B6';
+    //public const char RIGHT_HALF_CIRCLE   = '\uE0B4';
+    //public const char LEFT_LOW_TRIANGLE   = '\uE0B8';
+    //public const char RIGHT_LOW_TRIANGLE  = '\uE0BA';
+    //public const char LEFT_HIGH_TRIANGLE  = '\uE0BC';
+    //public const char RIGHT_HIGH_TRIANGLE = '\uE0BE';
     
     public const char BIG_RIGHT_TRIANGLE = '\uE0B0';
     public const char BIG_LEFT_TRIANGLE = '\uE0B2';

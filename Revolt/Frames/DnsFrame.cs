@@ -118,18 +118,12 @@ public sealed class DnsFrame : Ui.Frame {
         Ansi.SetFgColor(foreColor);
         Ansi.Write(new String(' ', Math.Max(6 - questionTypeString.Length, 0)));
 
-        Ansi.SetFgColor(item.questionColor);
-        Ansi.SetBgColor(backColor);
-        Ansi.Write(Data.LEFT_HALF_CIRCLE);
-
         Ansi.SetFgColor([16, 16, 16]);
         Ansi.SetBgColor(item.questionColor);
-        Ansi.Write(questionTypeString);
+        Ansi.Write($" {questionTypeString} ");
 
-        Ansi.SetFgColor(item.questionColor);
+
         Ansi.SetBgColor(backColor);
-        Ansi.Write(Data.RIGHT_HALF_CIRCLE);
-
         Ansi.Write(' ');
 
         int adjustedQuestionWidth = Math.Max(questionWidth - 9, 0);
@@ -147,17 +141,12 @@ public sealed class DnsFrame : Ui.Frame {
 
             Ansi.Write(new String(' ', Math.Max(6 - answerTypeString.Length, 0)));
 
-            Ansi.SetFgColor(item.answerColor);
-            Ansi.SetBgColor(isSelected ? Data.SELECT_COLOR_LIGHT : Data.BG_COLOR);
-            Ansi.Write(Data.LEFT_HALF_CIRCLE);
-
             Ansi.SetFgColor([16, 16, 16]);
             Ansi.SetBgColor(item.answerColor);
-            Ansi.Write(answerTypeString);
+            Ansi.Write($" {answerTypeString} ");
 
-            Ansi.SetFgColor(item.answerColor);
+
             Ansi.SetBgColor(isSelected ? Data.SELECT_COLOR_LIGHT : Data.BG_COLOR);
-            Ansi.Write(Data.RIGHT_HALF_CIRCLE);
             Ansi.Write(' ');
         }
         else {
@@ -358,13 +347,9 @@ file sealed class AddDialog : Ui.DialogBox {
             byte[] typeColor = Dns.typesColors[typeSelectBox.index];
 
             string text = Dns.typeStrings[typeSelectBox.index];
-            string padding = new String(' ', (5 - text.Length) / 2);
+            string padding = new String(' ', (7 - text.Length) / 2);
 
             Ansi.SetCursorPosition(left + width - 8, 6);
-
-            Ansi.SetFgColor(typeColor);
-            Ansi.SetBgColor(Data.PANE_COLOR);
-            Ansi.Write(Data.LEFT_HALF_CIRCLE);
 
             Ansi.SetFgColor([16, 16, 16]);
             Ansi.SetBgColor(typeColor);
@@ -372,10 +357,7 @@ file sealed class AddDialog : Ui.DialogBox {
             Ansi.Write(text);
             Ansi.Write(padding);
 
-            Ansi.SetFgColor(typeColor);
             Ansi.SetBgColor(Data.PANE_COLOR);
-            Ansi.Write(Data.RIGHT_HALF_CIRCLE);
-
             if (text.Length % 2 == 0) {
                 Ansi.Write(' ');
             }

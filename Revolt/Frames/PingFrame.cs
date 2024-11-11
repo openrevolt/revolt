@@ -160,34 +160,23 @@ public sealed class PingFrame : Ui.Frame {
 
         Ansi.SetCursorPosition(2, Renderer.LastHeight);
 
-        Ansi.SetFgColor([128, 224, 48]);
-        Ansi.SetBgColor(Data.BG_COLOR);
-        Ansi.Write(Data.RIGHT_LOW_TRIANGLE);
-
         Ansi.SetFgColor([16, 16, 16]);
         Ansi.SetBgColor([128, 224, 48]);
-        Ansi.Write((total - unreachable).ToString());
+        Ansi.Write($" {total - unreachable} ");
 
         if (unreachable > 0) {
-            Ansi.SetFgColor([240, 32, 32]);
-            Ansi.Write(Data.RIGHT_LOW_TRIANGLE);
 
             Ansi.SetFgColor([16, 16, 16]);
             Ansi.SetBgColor([240, 32, 32]);
-            Ansi.Write(unreachable.ToString());
+            Ansi.Write($" {unreachable} ");
         }
-
-        Ansi.SetFgColor(Data.FG_COLOR);
-        Ansi.Write(Data.RIGHT_LOW_TRIANGLE);
 
         Ansi.SetFgColor([16, 16, 16]);
         Ansi.SetBgColor(Data.FG_COLOR);
-        Ansi.Write(total.ToString());
+        Ansi.Write($" {total} ");
 
         Ansi.SetFgColor(Data.FG_COLOR);
         Ansi.SetBgColor(Data.BG_COLOR);
-        Ansi.Write(Data.LEFT_HIGH_TRIANGLE);
-
         Ansi.Write(new String(' ', 8));
     }
 

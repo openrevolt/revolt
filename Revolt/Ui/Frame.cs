@@ -18,6 +18,8 @@ public abstract class Frame {
         if (draw) {
             Renderer.Redraw();
         }
+
+        defaultElement?.Focus(true);
     }
 
     public virtual void Draw(int width, int height) {

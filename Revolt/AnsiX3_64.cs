@@ -49,9 +49,6 @@ public static class Ansi {
     public static void SetUnderline(bool value) =>
     queue.Enqueue($"\x1b[{(value ? 4 : 24)}m");
 
-    public static void SetBlinking(bool value) =>
-    queue.Enqueue($"\x1b[{(value ? 5 : 25)}m");
-
     public static void SetFgColor(byte r, byte g, byte b) =>
     queue.Enqueue($"\x1b[38;2;{r};{g};{b}m");
 
@@ -65,6 +62,9 @@ public static class Ansi {
     queue.Enqueue($"\x1b[48;2;{rgb[0]};{rgb[1]};{rgb[2]}m");
 
     public static void SetBlinkOn() =>
+    queue.Enqueue("\x1b[5m");
+
+    public static void SetRapidBlinkOn() =>
     queue.Enqueue("\x1b[6m");
 
     public static void SetBlinkOff() =>

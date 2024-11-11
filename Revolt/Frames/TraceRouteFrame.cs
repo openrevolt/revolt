@@ -131,6 +131,7 @@ public sealed class TraceRouteFrame : Ui.Frame {
 
         Ansi.Write(' ');
 
+        Ansi.SetFgColor(Data.INPUT_COLOR);
         Ansi.Write(item.domain.Length > domainWidth ? item.domain[..(domainWidth - 1)] + Data.ELLIPSIS : item.domain.PadRight(domainWidth));
 
         Ansi.SetBgColor(Data.BG_COLOR);
@@ -153,15 +154,19 @@ public sealed class TraceRouteFrame : Ui.Frame {
 
         case ConsoleKey.Enter:
             if (focusedElement == textbox) {
-                string value = textbox.Value.Trim();
                 //textbox.Value = String.Empty;
+                string value = textbox.Value.Trim();
                 if (String.IsNullOrEmpty(value)) break;
+
+                textbox.Blur(true);
                 list.Clear();
                 textbox.history.Add(value);
 
                 SetStatus("Tracing route");
                 Trace(value);
                 SetStatus(null);
+                
+                textbox.Focus(true);
             }
             else {
                 focusedElement?.HandleKey(key);
@@ -188,7 +193,7 @@ public sealed class TraceRouteFrame : Ui.Frame {
             Ansi.Write(new String(' ', width - 1));
         }
         else {
-            Ansi.SetBlinkOn();
+            Ansi.SetRapidBlinkOn();
             Ansi.Write(status);
             Ansi.SetBlinkOff();
         }
@@ -221,7 +226,6 @@ public sealed class TraceRouteFrame : Ui.Frame {
                 status = reply.Status == IPStatus.TtlExpired || reply.Status == IPStatus.Success;
                 host   = reply.Address?.ToString() ?? "unknown";
                 domain = String.Empty;
-                //rtt    = status ? (int)reply.RoundtripTime : -1;
 
                 if (reply.Status == IPStatus.Success || reply.Status == IPStatus.TtlExpired) {
                     try {
@@ -247,7 +251,6 @@ public sealed class TraceRouteFrame : Ui.Frame {
                 status = false;
                 host   = "timed out";
                 domain = String.Empty;
-                break;
             }
 
             int lastIndex = list.index;
@@ -263,8 +266,8 @@ public sealed class TraceRouteFrame : Ui.Frame {
             }
 
             list.drawItemHandler(list.items.Count - 1, left, top, width);
-        }
 
-        textbox.Focus(true);
+            Ansi.Push();
+        }
     }
 }
