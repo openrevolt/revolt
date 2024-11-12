@@ -161,11 +161,7 @@ public sealed class TraceRouteFrame : Ui.Frame {
                 textbox.Blur(true);
                 list.Clear();
                 textbox.history.Add(value);
-
-                SetStatus("Tracing route");
-                Trace(value);
-                SetStatus(null);
-                
+                TraceAsync(value).GetAwaiter().GetResult();
                 textbox.Focus(true);
             }
             else {
@@ -186,7 +182,7 @@ public sealed class TraceRouteFrame : Ui.Frame {
         int padding = width < 64 ? 1 : 16;
 
         Ansi.SetCursorPosition(padding + 1, 7);
-        Ansi.SetFgColor(Data.FG_COLOR);
+        Ansi.SetFgColor(Data.SELECT_COLOR);
         Ansi.SetBgColor(Data.BG_COLOR);
 
         if (status is null) {
@@ -205,16 +201,17 @@ public sealed class TraceRouteFrame : Ui.Frame {
         list.Clear();
     }
 
-    private void Trace(string target) {
+    private async Task TraceAsync(string target) {
         const int timeout = 1_000;
         const int maxHops = 30;
-
         (int left, int top, int width, _) = list.GetBounding();
-
         string lastAddress = String.Empty;
-        using Ping ping = new Ping();
-        for (int ttl = 1; ttl <= maxHops; ttl++) {
 
+        using Ping ping = new Ping();
+
+        SetStatus("Tracing route");
+
+        for (int ttl = 1; ttl <= maxHops; ttl++) {
             bool status;
             string host;
             string domain;
@@ -227,17 +224,17 @@ public sealed class TraceRouteFrame : Ui.Frame {
                 host   = reply.Address?.ToString() ?? "unknown";
                 domain = String.Empty;
 
-                if (reply.Status == IPStatus.Success || reply.Status == IPStatus.TtlExpired) {
+                if (status) {
                     try {
-                        domain = System.Net.Dns.GetHostEntryAsync(host).GetAwaiter().GetResult().HostName;
+                        domain = (await System.Net.Dns.GetHostEntryAsync(host)).HostName;
                     }
                     catch { }
 
-                    if (lastAddress == reply.Address.ToString()) {
+                    if (lastAddress == host) {
                         break;
                     }
                     else {
-                        lastAddress = reply.Address.ToString();
+                        lastAddress = host;
                     }
                 }
                 else if (reply.Status == IPStatus.TimedOut) {
@@ -269,5 +266,7 @@ public sealed class TraceRouteFrame : Ui.Frame {
 
             Ansi.Push();
         }
+
+        SetStatus(null);
     }
 }

@@ -116,6 +116,10 @@ public sealed class MainMenu : Ui.Frame {
             TraceRouteFrame.Instance.Show();
             return true;
 
+        case "IP discovery":
+            IpDiscoveryFrame.Instance.Show();
+            return true;
+
         case "Quit":
              return false;
 

@@ -39,7 +39,8 @@ public sealed class Toggle(Frame parentFrame, string text) : Element(parentFrame
 
         Ansi.SetFgColor(Data.CONTROL_COLOR);
         Ansi.SetBgColor(Data.PANE_COLOR);
-        Ansi.Write(_value ? Data.FULL_CIRCLE : Data.EMPTY_CIRCLE);
+
+        Ansi.Write(_value ? Data.TOGGLE_ON : Data.TOGGLE_OFF);
 
         if (push) {
             Ansi.Push();
