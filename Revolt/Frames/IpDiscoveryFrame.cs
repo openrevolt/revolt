@@ -24,8 +24,8 @@ public sealed class IpDiscoveryFrame : Ui.Frame {
             left  = 1,
             right = 1,
             items = [
-                new Ui.Toolbar.ToolbarItem() { text="Discover", action=Start},
-                new Ui.Toolbar.ToolbarItem() { text="Clear",    action=Clear},
+                new Ui.Toolbar.ToolbarItem() { text="Discover", action=Start },
+                new Ui.Toolbar.ToolbarItem() { text="Clear",    action=Clear },
             ]
         };
 
@@ -122,24 +122,22 @@ public sealed class IpDiscoveryFrame : Ui.Frame {
 
     }
 
-    private void Start() =>
-        Task.Run(Discover);
+    private void Start() {
+        OptionsDialog dialog = new OptionsDialog();
+
+        dialog.okButton.action = () => {
+            dialog.Close();
+            Task.Run(Discover);
+        };
+
+        dialog.Show(true);
+    }
 
     private void Stop() =>
         cancellationTokenSource?.Cancel();
 
     private void Clear() {
         list.Clear();
-    }
-
-    private void OptionsDialog() {
-        OptionsDialog dialog = new OptionsDialog();
-
-        dialog.okButton.action = () => {
-            dialog.Close();
-        };
-
-        dialog.Show(true);
     }
 }
 
