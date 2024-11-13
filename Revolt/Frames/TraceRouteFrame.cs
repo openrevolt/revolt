@@ -4,10 +4,8 @@ namespace Revolt.Frames;
 
 public sealed class TraceRouteFrame : Ui.Frame {
     public struct TraceItem {
-        public bool status;
         public string host;
         public string domain;
-        //public int rtt;
     }
 
     public static TraceRouteFrame Instance { get; } = new TraceRouteFrame();
@@ -205,68 +203,60 @@ public sealed class TraceRouteFrame : Ui.Frame {
         const int timeout = 1_000;
         const int maxHops = 30;
         (int left, int top, int width, _) = list.GetBounding();
-        string lastAddress = String.Empty;
-
-        using Ping ping = new Ping();
 
         SetStatus("Tracing route");
 
-        for (int ttl = 1; ttl <= maxHops; ttl++) {
-            bool status;
-            string host;
-            string domain;
+        Task<string[]>[] tasks = new Task<string[]>[maxHops];
+        for (int ttl = 0; ttl < maxHops; ttl++) {
+            tasks[ttl] = TraceHost(target, timeout, ttl + 1);
+        }
 
-            try {
-                PingReply reply = ping.Send(target, timeout, Protocols.Icmp.ICMP_PAYLOAD, new PingOptions(ttl, true));
-                if (reply is null) break;
+        string[][] results = await Task.WhenAll(tasks);
 
-                status = reply.Status == IPStatus.TtlExpired || reply.Status == IPStatus.Success;
-                host   = reply.Address?.ToString() ?? "unknown";
-                domain = String.Empty;
-
-                if (status) {
-                    try {
-                        domain = (await System.Net.Dns.GetHostEntryAsync(host)).HostName;
-                    }
-                    catch { }
-
-                    if (lastAddress == host) {
-                        break;
-                    }
-                    else {
-                        lastAddress = host;
-                    }
-                }
-                else if (reply.Status == IPStatus.TimedOut) {
-                    host = "timed out";
-                }
-                else {
-                    break;
-                }
-            }
-            catch (Exception) {
-                status = false;
-                host   = "timed out";
-                domain = String.Empty;
-            }
-
-            int lastIndex = list.index;
-
+        for (int i = 0; i < results.Length; i++) {
             list.Add(new TraceItem {
-                status = status,
-                host   = host,
-                domain = domain,
+                host = results[i][0],
+                domain = results[i][1]
             });
-
-            if (lastIndex > -1) {
-                list.drawItemHandler(lastIndex, left, top, width);
-            }
 
             list.drawItemHandler(list.items.Count - 1, left, top, width);
 
-            Ansi.Push();
+            list.Draw(true);
+
+            if (results[i][0] == target) {
+                break;
+            }
         }
 
         SetStatus(null);
     }
+
+    private static async Task<string[]> TraceHost(string target, int timeout, int ttl) {
+        using Ping ping = new Ping();
+
+        PingReply reply = await ping.SendPingAsync(target, timeout, Protocols.Icmp.ICMP_PAYLOAD, new PingOptions(ttl, true));
+        string host, domain;
+
+        try {
+            host = reply.Address?.ToString() ?? "unknown";
+            domain = String.Empty;
+
+            if (reply.Status == IPStatus.TtlExpired || reply.Status == IPStatus.Success) {
+                try {
+                    domain = (await System.Net.Dns.GetHostEntryAsync(host)).HostName;
+                }
+                catch { }
+            }
+            else if (reply.Status == IPStatus.TimedOut) {
+                host = "timed out";
+            }
+        }
+        catch (Exception) {
+            host = "timed out";
+            domain = String.Empty;
+        }
+
+        return [host, domain];
+    }
+
 }

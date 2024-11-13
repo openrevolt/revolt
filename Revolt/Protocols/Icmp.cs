@@ -28,7 +28,9 @@ public static class Icmp {
 
     public static async Task<short[]> PingArrayAsync(SynchronizedList<PingItem> list, int timeout) {
         List<Task<short>> tasks = [];
-        for (int i = 0; i < list.Count; i++) tasks.Add(PingAsync(list[i], timeout));
+        for (int i = 0; i < list.Count; i++) {
+            tasks.Add(PingAsync(list[i], timeout));
+        }
         short[] result = await Task.WhenAll(tasks);
         return result;
     }
