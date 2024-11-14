@@ -2,7 +2,7 @@
 
 public sealed class SynchronizedList<T> : IList<T> where T : notnull {
     private readonly List<T> _list = [];
-    private readonly object _mutex = new object();
+    private readonly Lock _mutex = new Lock();
 
     public int Count {
         get {
