@@ -202,33 +202,59 @@ public sealed class TraceRouteFrame : Ui.Frame {
     private async Task TraceAsync(string target) {
         const int timeout = 1_000;
         const int maxHops = 30;
+        const int batch = 4;
         (int left, int top, int width, _) = list.GetBounding();
 
         SetStatus("Tracing route");
 
-        Task<string[]>[] tasks = new Task<string[]>[maxHops];
-        for (int ttl = 0; ttl < maxHops; ttl++) {
-            tasks[ttl] = TraceHost(target, timeout, ttl + 1);
+        string lastHop = String.Empty;
+        string targetIpString;
+
+        try {
+            System.Net.IPAddress[] targetIpAddress = System.Net.Dns.GetHostAddresses(target);
+            if (targetIpAddress.Length == 0) return;
+
+            targetIpString = targetIpAddress[0].ToString();
+        }
+        catch {
+            return;
         }
 
-        string[][] results = await Task.WhenAll(tasks);
+        try {
+            for (int i = 0; i < maxHops; i += batch) {
+                int currentBatchSize = Math.Min(batch, maxHops - i);
+                Task<string[]>[] batchTasks = new Task<string[]>[currentBatchSize];
+                for (int ttl = 0; ttl < currentBatchSize; ttl++) {
+                    batchTasks[ttl] = TraceHost(targetIpString, timeout, i + ttl + 1);
+                }
 
-        for (int i = 0; i < results.Length; i++) {
-            list.Add(new TraceItem {
-                host = results[i][0],
-                domain = results[i][1]
-            });
+                string[][] batchResults = await Task.WhenAll(batchTasks);
 
-            list.drawItemHandler(list.items.Count - 1, left, top, width);
+                foreach (string[] result in batchResults) {
+                    string hop    = result[0];
+                    string domain = result[1];
 
-            list.Draw(true);
+                    if (hop == lastHop && !lastHop.Equals("timed out") && lastHop.Equals("unknown")) return;
 
-            if (results[i][0] == target) {
-                break;
+                    list.Add(new TraceItem {
+                        host = hop,
+                        domain = domain,
+                    });
+
+                    list.drawItemHandler(list.items.Count - 1, left, top, width);
+
+                    if (hop == targetIpString) return;
+
+                    lastHop = hop;
+                }
+
+                list.Draw(true);
             }
         }
-
-        SetStatus(null);
+        finally {
+            list.Draw(true);
+            SetStatus(null);
+        }
     }
 
     private static async Task<string[]> TraceHost(string target, int timeout, int ttl) {
@@ -238,7 +264,7 @@ public sealed class TraceRouteFrame : Ui.Frame {
         string host, domain;
 
         try {
-            host = reply.Address?.ToString() ?? "unknown";
+            host   = reply.Address?.ToString() ?? "unknown";
             domain = String.Empty;
 
             if (reply.Status == IPStatus.TtlExpired || reply.Status == IPStatus.Success) {
@@ -252,7 +278,7 @@ public sealed class TraceRouteFrame : Ui.Frame {
             }
         }
         catch (Exception) {
-            host = "timed out";
+            host   = "timed out";
             domain = String.Empty;
         }
 

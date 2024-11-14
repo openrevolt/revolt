@@ -159,8 +159,8 @@ public sealed class DnsFrame : Ui.Frame {
         
         if (item.answerType >= 0) {
             string ttlString = item.ttl.ToString();
-            Ansi.Write(ttlString);
-            Ansi.Write(new String(' ', ttlWidth - ttlString.Length));
+            Ansi.Write($"{ttlString}s");
+            Ansi.Write(new String(' ', ttlWidth - ttlString.Length - 1));
         }
         else {
             Ansi.Write(new String(' ', 10));

@@ -2,8 +2,8 @@
 
   <PropertyGroup>
     <OutputType>Exe</OutputType>
-    <TargetFramework>net8.0</TargetFramework>
-    <LangVersion>12</LangVersion>
+    <TargetFramework>net9.0</TargetFramework>
+    <LangVersion>13</LangVersion>
 
     <Product>Revolt</Product>
     <AssemblyName>revolt</AssemblyName>
@@ -30,13 +30,9 @@
 
     <WarningLevel>9999</WarningLevel>
     <TreatWarningsAsErrors>True</TreatWarningsAsErrors>
+
+    <NoWarn>IDE0090</NoWarn>
+
   </PropertyGroup>
 
-  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|AnyCPU'">
-    <NoWarn>IDE0090</NoWarn>
-  </PropertyGroup>
-
-  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|AnyCPU'">
-    <NoWarn>IDE0090</NoWarn>
-  </PropertyGroup>
 </Project>
