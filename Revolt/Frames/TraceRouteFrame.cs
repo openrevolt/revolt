@@ -6,6 +6,7 @@ public sealed class TraceRouteFrame : Ui.Frame {
     public struct TraceItem {
         public string host;
         public string domain;
+        public string rtt;
     }
 
     public static TraceRouteFrame Instance { get; } = new TraceRouteFrame();
@@ -122,12 +123,17 @@ public sealed class TraceRouteFrame : Ui.Frame {
 
         Ansi.Write(' ');
 
-        int hostWidth   = 24;
-        int domainWidth = Math.Max(width - hostWidth - 6, 1);
+        int hostWidth   = 20;
+        int rttWidth    = 10;
+        int domainWidth = Math.Max(width - hostWidth - rttWidth - 10, 1);
 
         Ansi.Write(item.host.Length > hostWidth ? item.host[..(hostWidth - 1)] + Data.ELLIPSIS : item.host.PadRight(hostWidth));
 
         Ansi.Write(' ');
+
+        Ansi.Write(item.rtt.PadLeft(rttWidth));
+
+        Ansi.Write(new String(' ', 4));
 
         Ansi.SetFgColor(Data.INPUT_COLOR);
         Ansi.Write(item.domain.Length > domainWidth ? item.domain[..(domainWidth - 1)] + Data.ELLIPSIS : item.domain.PadRight(domainWidth));
@@ -200,12 +206,7 @@ public sealed class TraceRouteFrame : Ui.Frame {
     }
 
     private async Task TraceAsync(string target) {
-        const int timeout = 1_000;
-        const int maxHops = 30;
-        const int batch = 4;
-        (int left, int top, int width, _) = list.GetBounding();
-
-        SetStatus("Tracing route");
+        SetStatus("Tracing route...");
 
         string lastHop = String.Empty;
         string targetIpString;
@@ -217,8 +218,15 @@ public sealed class TraceRouteFrame : Ui.Frame {
             targetIpString = targetIpAddress[0].ToString();
         }
         catch {
+            list.Draw(true);
+            SetStatus(null);
             return;
         }
+
+        const int timeout = 1_000;
+        const int maxHops = 30;
+        const int batch = 8;
+        (int left, int top, int width, _) = list.GetBounding();
 
         try {
             for (int i = 0; i < maxHops; i += batch) {
@@ -233,12 +241,14 @@ public sealed class TraceRouteFrame : Ui.Frame {
                 foreach (string[] result in batchResults) {
                     string hop    = result[0];
                     string domain = result[1];
+                    string rtt    = result[2];
 
                     if (hop == lastHop && !lastHop.Equals("timed out") && lastHop.Equals("unknown")) return;
 
                     list.Add(new TraceItem {
-                        host = hop,
+                        host   = hop,
                         domain = domain,
+                        rtt    = rtt,
                     });
 
                     list.drawItemHandler(list.items.Count - 1, left, top, width);
@@ -260,29 +270,33 @@ public sealed class TraceRouteFrame : Ui.Frame {
     private static async Task<string[]> TraceHost(string target, int timeout, int ttl) {
         using Ping ping = new Ping();
 
-        PingReply reply = await ping.SendPingAsync(target, timeout, Protocols.Icmp.ICMP_PAYLOAD, new PingOptions(ttl, true));
-        string host, domain;
+        string host, domain, rtt;
+        domain = String.Empty;
+        rtt = String.Empty;
 
         try {
-            host   = reply.Address?.ToString() ?? "unknown";
-            domain = String.Empty;
+            PingReply reply = await ping.SendPingAsync(target, timeout, Protocols.Icmp.ICMP_PAYLOAD, new PingOptions(ttl, true));
+            host = reply.Address?.ToString() ?? "unknown";
 
             if (reply.Status == IPStatus.TtlExpired || reply.Status == IPStatus.Success) {
                 try {
                     domain = (await System.Net.Dns.GetHostEntryAsync(host)).HostName;
                 }
                 catch { }
+
+                reply = await ping.SendPingAsync(host, timeout, Protocols.Icmp.ICMP_PAYLOAD, new PingOptions(ttl, true));
+                rtt = $"{reply.RoundtripTime}ms";
             }
             else if (reply.Status == IPStatus.TimedOut) {
-                host = "timed out";
+                host = "--";
+                rtt  = "timed out";
             }
         }
         catch (Exception) {
-            host   = "timed out";
-            domain = String.Empty;
+            host = "--";
+            rtt  = "timed out";
         }
 
-        return [host, domain];
+        return [host, domain, rtt];
     }
-
 }
