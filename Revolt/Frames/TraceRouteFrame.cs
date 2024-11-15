@@ -225,7 +225,8 @@ public sealed class TraceRouteFrame : Ui.Frame {
 
         const int timeout = 1_000;
         const int maxHops = 30;
-        const int batch = 8;
+        int batch = OperatingSystem.IsWindows() ? 8 : 1;
+
         (int left, int top, int width, _) = list.GetBounding();
 
         try {

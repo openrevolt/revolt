@@ -1,4 +1,7 @@
-﻿namespace Revolt;
+﻿using System.Net;
+using System.Net.Sockets;
+
+namespace Revolt;
 
 public static class Data {
     public static readonly byte[] FG_COLOR           = [192, 192, 192];
@@ -34,4 +37,43 @@ public static class Data {
     public const char BIG_LEFT_TRIANGLE = '\uE0B2';
 
     public const char PING_CELL = '\x258C';
+
+    public static bool IsPrivate(this IPAddress address) {
+        if (address.AddressFamily != AddressFamily.InterNetwork) return false;
+
+        byte[] bytes = address.GetAddressBytes();
+        return bytes[0] switch {
+            10  => true,
+            127 => true,
+            172 => bytes[1] < 32 && bytes[1] >= 16,
+            192 => bytes[1] == 168,
+            _   => false,
+        };
+    }
+
+    public static bool IsApipa(this IPAddress address) {
+        if (address.AddressFamily != AddressFamily.InterNetwork) return false;
+        byte[] bytes = address.GetAddressBytes();
+        if (bytes[0] == 169 && bytes[1] == 254) return true;
+        return false;
+    }
+
+    public static int SubnetMaskToCidr(IPAddress subnetMask) {
+        byte[] bytes = subnetMask.GetAddressBytes();
+
+        int cidr = 0;
+        foreach (byte b in bytes) {
+            cidr += CountBits(b);
+        }
+
+        return cidr;
+    }
+    private static int CountBits(byte b) {
+        int count = 0;
+        while (b != 0) {
+            count += b & 1;
+            b >>= 1;
+        }
+        return count;
+    }
 }

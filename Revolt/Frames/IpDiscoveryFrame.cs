@@ -1,4 +1,8 @@
-﻿namespace Revolt.Frames;
+﻿using System.Net;
+using System.Net.NetworkInformation;
+using System.Net.Sockets;
+
+namespace Revolt.Frames;
 
 public sealed class IpDiscoveryFrame : Ui.Frame {
 
@@ -119,7 +123,6 @@ public sealed class IpDiscoveryFrame : Ui.Frame {
         list.Add(new DiscoverItem {
             status = 0,
         });
-
     }
 
     private void Start() {
@@ -133,8 +136,7 @@ public sealed class IpDiscoveryFrame : Ui.Frame {
         dialog.Show(true);
     }
 
-    private void Stop() =>
-        cancellationTokenSource?.Cancel();
+    private void Stop() => cancellationTokenSource?.Cancel();
 
     private void Clear() {
         list.Clear();
@@ -142,32 +144,18 @@ public sealed class IpDiscoveryFrame : Ui.Frame {
 }
 
 file sealed class OptionsDialog : Ui.DialogBox {
-    public Ui.IntegerBox timeoutTextbox;
-    public Ui.IntegerBox intervalTextbox;
-    public Ui.SelectBox moveSelectBox;
+    public Ui.SelectBox nicSelectBox;
 
     public OptionsDialog() {
-        timeoutTextbox = new Ui.IntegerBox(this) {
-            backColor = Data.PANE_COLOR,
-            min = 50,
-            max = 5_000
+        okButton.text = "  Start  ";
+
+        nicSelectBox = new Ui.SelectBox(this) {
+            options = GetNics(),
         };
 
-        intervalTextbox = new Ui.IntegerBox(this) {
-            backColor = Data.PANE_COLOR,
-            min = 100,
-            max = 10_000
-        };
+        elements.Add(nicSelectBox);
 
-        moveSelectBox = new Ui.SelectBox(this) {
-            options = ["Never", "On rise", "On fall", "On rise and fall"],
-        };
-
-        elements.Add(timeoutTextbox);
-        elements.Add(intervalTextbox);
-        elements.Add(moveSelectBox);
-
-        defaultElement = timeoutTextbox;
+        defaultElement = nicSelectBox;
     }
 
     public override void Draw(int width, int height) {
@@ -182,26 +170,10 @@ file sealed class OptionsDialog : Ui.DialogBox {
         Ansi.SetCursorPosition(left, top);
         Ansi.Write(blank);
 
-        WriteLabel("Timed out (ms):", left, ++top, width);
-        timeoutTextbox.left = left + 16;
-        timeoutTextbox.right = Renderer.LastWidth - width - left + 2;
-        timeoutTextbox.top = top++ - 1;
-
-        Ansi.SetCursorPosition(left, top);
-        Ansi.Write(blank);
-
-        WriteLabel("Interval (ms):", left, ++top, width);
-        intervalTextbox.left = left + 16;
-        intervalTextbox.right = Renderer.LastWidth - width - left + 2;
-        intervalTextbox.top = top++ - 1;
-
-        Ansi.SetCursorPosition(left, top);
-        Ansi.Write(blank);
-
-        WriteLabel("Move on top:", left, ++top, width);
-        moveSelectBox.left = left + 16;
-        moveSelectBox.right = Renderer.LastWidth - width - left + 2;
-        moveSelectBox.top = top++ - 1;
+        WriteLabel("Network:", left, ++top, width);
+        nicSelectBox.left = left + 16;
+        nicSelectBox.right = Renderer.LastWidth - width - left + 2;
+        nicSelectBox.top = top++ - 1;
 
         for (int i = 0; i < 3; i++) {
             Ansi.SetCursorPosition(left, top + i);
@@ -220,11 +192,8 @@ file sealed class OptionsDialog : Ui.DialogBox {
             elements[i].Draw(false);
         }
 
-        if (focusedElement == timeoutTextbox) {
-            timeoutTextbox.Focus();
-        }
-        else if (focusedElement == intervalTextbox) {
-            intervalTextbox.Focus();
+        if (focusedElement == nicSelectBox) {
+            nicSelectBox.Focus();
         }
 
         Ansi.Push();
@@ -242,7 +211,7 @@ file sealed class OptionsDialog : Ui.DialogBox {
             return true;
 
         case ConsoleKey.Enter:
-            if (focusedElement == timeoutTextbox || focusedElement == intervalTextbox || focusedElement == moveSelectBox) {
+            if (focusedElement == nicSelectBox) {
                 okButton.action();
                 return true;
             }
@@ -258,5 +227,35 @@ file sealed class OptionsDialog : Ui.DialogBox {
     public override void Close() {
         Ansi.HideCursor();
         base.Close();
+    }
+
+    private static string[] GetNics() {
+        List<string> filtered = [];
+
+        NetworkInterface[] nics = NetworkInterface.GetAllNetworkInterfaces();
+        foreach (NetworkInterface nic in nics) {
+            UnicastIPAddressInformationCollection unicast = nic.GetIPProperties().UnicastAddresses;
+            GatewayIPAddressInformationCollection gateway = nic.GetIPProperties().GatewayAddresses;
+
+            if (unicast.Count == 0) continue;
+
+            IPAddress localIpV4 = null;
+            IPAddress subnetMask = null;
+
+            foreach (UnicastIPAddressInformation address in unicast) {
+                if (address.Address.AddressFamily == AddressFamily.InterNetwork) {
+                    localIpV4 = address.Address;
+                    subnetMask = address.IPv4Mask;
+                }
+            }
+
+            if (localIpV4 is null || IPAddress.IsLoopback(localIpV4) || localIpV4.IsApipa()) continue;
+
+
+            filtered.Add($"{localIpV4}/{Data.SubnetMaskToCidr(subnetMask)}");
+        }
+
+
+    return filtered.ToArray();
     }
 }

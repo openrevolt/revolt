@@ -4,6 +4,7 @@ using System.Net.Security;
 using System.Net.NetworkInformation;
 using System.Text;
 using System.Text.Json;
+using System.Collections.Frozen;
 
 namespace Revolt.Protocols;
 
@@ -49,7 +50,7 @@ public static class Dns {
         public byte error;
     }
 
-    public static readonly Dictionary<int, string> errorMessages = new() {
+    public static readonly FrozenDictionary<int, string> errorMessages = new Dictionary<int, string>() {
         { 0, "no error" },
         { 1, "query format error" },
         { 2, "server failure" },
@@ -61,7 +62,7 @@ public static class Dns {
         { 8, "server not authoritative for the zone" },
         { 9, "name not in zone" },
         { 254, "invalid response" }
-    };
+    }.ToFrozenDictionary();
 
     public static readonly string[] typeStrings = ["A", "AAAA", "NS", "CNAME", "SOA", "PTR", "MX", "TXT", "SRV", "ANY"];
 

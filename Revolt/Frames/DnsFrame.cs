@@ -127,7 +127,7 @@ public sealed class DnsFrame : Ui.Frame {
         Ansi.Write(' ');
 
         int adjustedQuestionWidth = Math.Max(questionWidth - 9, 0);
-        int adjustedAnswerWidth = Math.Max(answerWidth - 10, 0);
+        int adjustedAnswerWidth = Math.Max(answerWidth - 10, 1);
 
         Ansi.SetFgColor(foreColor);
         Ansi.Write(item.questionString.Length > adjustedQuestionWidth ? item.questionString[..(adjustedQuestionWidth-1)] + Data.ELLIPSIS : item.questionString.PadRight(adjustedQuestionWidth));
@@ -145,7 +145,6 @@ public sealed class DnsFrame : Ui.Frame {
             Ansi.SetBgColor(item.answerColor);
             Ansi.Write($" {answerTypeString} ");
 
-
             Ansi.SetBgColor(isSelected ? Data.SELECT_COLOR_LIGHT : Data.BG_COLOR);
             Ansi.Write(' ');
         }
@@ -155,8 +154,8 @@ public sealed class DnsFrame : Ui.Frame {
 
         Ansi.SetCursorPosition(questionWidth + 12, adjustedY);
         Ansi.SetFgColor(item.answerType < 0 ? [176, 0, 0] : Data.FG_COLOR);
-        Ansi.Write(item.answerString.Length > adjustedAnswerWidth ? item.answerString[..(adjustedAnswerWidth-1)] + Data.ELLIPSIS : item.answerString.PadRight(adjustedAnswerWidth));
-        
+        Ansi.Write(item.answerString.Length > adjustedAnswerWidth ? item.answerString[..(adjustedAnswerWidth - 1)] + Data.ELLIPSIS : item.answerString.PadRight(adjustedAnswerWidth));
+
         if (item.answerType >= 0) {
             string ttlString = item.ttl.ToString();
             Ansi.Write($"{ttlString}s");
@@ -184,6 +183,20 @@ public sealed class DnsFrame : Ui.Frame {
                 answerType    = -1,
                 answerColor   = [255, 255, 255],
                 ttl           = 0,
+            };
+        }
+        else if (String.IsNullOrEmpty(answer.answerString)) {
+            string errorMessage = "unknown error";
+            int questionTypeIndex = Array.IndexOf(Dns.types, questionType);
+
+            item = new DnsItem() {
+                questionString = question,
+                questionType = questionTypeIndex,
+                questionColor = Dns.typesColors[questionTypeIndex],
+                answerString = errorMessage,
+                answerType = -1,
+                answerColor = [255, 255, 255],
+                ttl = 0,
             };
         }
         else {
