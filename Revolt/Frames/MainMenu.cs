@@ -12,10 +12,10 @@ public sealed class MainMenu : Ui.Frame {
             "DNS lookup",
             "Trace route",
             "IP discovery",
-            "Reverse proxy",
-            "Packet capture",
+            //"Reverse proxy",
+            "Packet sniffer",
             null,
-            "Options",
+            "Configuration",
             "Quit"
         ];
     }

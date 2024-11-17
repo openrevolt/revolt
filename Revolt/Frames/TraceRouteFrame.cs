@@ -59,14 +59,13 @@ public sealed class TraceRouteFrame : Ui.Frame {
 
         int top = 0;
         Ansi.SetBgColor(Data.BG_COLOR);
-        for (int y = top; y <= height; y++) {
-            if (y > Console.WindowHeight) break;
-
-            Ansi.SetCursorPosition(0, y);
+        for (int i = top; i <= height; i++) {
+            if (i > Console.WindowHeight) break;
+            Ansi.SetCursorPosition(0, i);
             Ansi.Write(blank);
         }
 
-        int padding = width < 64 ? 1 : 16;
+        int padding = width < 96 ? 1 : 12;
         textbox.left = padding;
         textbox.right = padding;
 
@@ -79,6 +78,10 @@ public sealed class TraceRouteFrame : Ui.Frame {
 
         for (int i = 0; i < elements.Count; i++) {
             elements[i].Draw(false);
+        }
+
+        if (textbox.isFocused) {
+            textbox.Focus(false);
         }
 
         Ansi.Push();
@@ -123,7 +126,7 @@ public sealed class TraceRouteFrame : Ui.Frame {
 
         Ansi.Write(' ');
 
-        int hostWidth   = 20;
+        int hostWidth   = Math.Max(24, width / 3);
         int rttWidth    = 10;
         int domainWidth = Math.Max(width - hostWidth - rttWidth - 10, 1);
 
@@ -182,10 +185,9 @@ public sealed class TraceRouteFrame : Ui.Frame {
     }
 
     private void SetStatus(string status) {
-        (int _, int _, int width, int _) = list.GetBounding();
-        int padding = width < 64 ? 1 : 16;
+        (int left, int _, int width, int _) = list.GetBounding();
 
-        Ansi.SetCursorPosition(padding + 1, 7);
+        Ansi.SetCursorPosition(left, 7);
         Ansi.SetFgColor(Data.SELECT_COLOR);
         Ansi.SetBgColor(Data.BG_COLOR);
 

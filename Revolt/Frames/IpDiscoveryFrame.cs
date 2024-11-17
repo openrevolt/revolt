@@ -14,7 +14,6 @@ public sealed class IpDiscoveryFrame : Ui.Frame {
         public string ip;
         public string mac;
         public string manufacturer;
-        public string[] services;
     }
 
     public Ui.Toolbar toolbar;
