@@ -104,12 +104,15 @@ public sealed class IpDiscoveryFrame : Ui.Frame {
         Tokens.dictionary.TryAdd(cancellationTokenSource, cancellationToken);
 
         while (!cancellationToken.IsCancellationRequested) {
-
             if (Renderer.ActiveFrame == this && Renderer.ActiveDialog is null) {
                 DrawStatus();
                 Ansi.Push();
             }
             await Task.Delay(500);
+
+            if (Renderer.ActiveDialog is not null) continue;
+            if (Renderer.ActiveFrame != this) continue;
+
         }
 
         Tokens.dictionary.TryRemove(cancellationTokenSource, out _);
@@ -146,10 +149,16 @@ file sealed class OptionsDialog : Ui.DialogBox {
     public Ui.SelectBox nicSelectBox;
 
     public OptionsDialog() {
+        string[] nics = GetNics();
+
+        if (nics.Length == 0) {
+            nics = [String.Empty];
+        }
+
         okButton.text = "  Start  ";
 
         nicSelectBox = new Ui.SelectBox(this) {
-            options = GetNics(),
+            options = nics,
         };
 
         elements.Add(nicSelectBox);
@@ -254,7 +263,6 @@ file sealed class OptionsDialog : Ui.DialogBox {
             filtered.Add($"{localIpV4}/{Data.SubnetMaskToCidr(subnetMask)}");
         }
 
-
-    return filtered.ToArray();
+        return filtered.ToArray();
     }
 }

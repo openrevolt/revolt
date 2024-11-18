@@ -385,8 +385,7 @@ public sealed class PingFrame : Ui.Frame {
         //list.drawItemHandler(list.items.Count - 1, left, top, width);
     }
 
-    private void Start() =>
-        Task.Run(PingLoop);
+    private void Start() => Task.Run(PingLoop);
 
     private void Stop() =>
         cancellationTokenSource?.Cancel();
