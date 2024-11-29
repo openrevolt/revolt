@@ -5,22 +5,29 @@ using System.Net.Sockets;
 namespace Revolt.Frames;
 
 public sealed class IpDiscoveryFrame : Ui.Frame {
-
-    public static IpDiscoveryFrame Instance { get; } = new IpDiscoveryFrame();
-
     public struct DiscoverItem {
-        public int status;
+        public int    status;
         public string name;
         public string ip;
         public string mac;
         public string manufacturer;
+        public string other;
+        public byte[] bytes;
     }
+
+    public static IpDiscoveryFrame Instance { get; } = new IpDiscoveryFrame();
 
     public Ui.Toolbar toolbar;
     public Ui.ListBox<DiscoverItem> list;
 
     private CancellationTokenSource cancellationTokenSource;
     private CancellationToken cancellationToken;
+
+    public bool icmp     = true;
+    public bool mdns     = false;
+    public bool ssdp     = false;
+    public bool mikrotik = false;
+    public bool ubiquiti = false;
 
     public IpDiscoveryFrame() {
         toolbar = new Ui.Toolbar(this) {
@@ -37,8 +44,8 @@ public sealed class IpDiscoveryFrame : Ui.Frame {
             right             = 1,
             top               = 3,
             bottom            = 1,
-            itemHeight        = 2,
-            drawItemHandler   = DrawPingItem,
+            itemHeight        = 1,
+            drawItemHandler   = DrawDiscoverItem,
             drawStatusHandler = DrawStatus
         };
 
@@ -76,15 +83,58 @@ public sealed class IpDiscoveryFrame : Ui.Frame {
         return true;
     }
 
-    private void DrawPingItem(int index, int x, int y, int width) {
+    private void DrawDiscoverItem(int index, int x, int y, int width) {
         if (list.items is null || list.items.Count == 0) return;
         if (index >= list.items.Count) return;
 
-        int adjustedY = y + index * 2 - list.scrollOffset * list.itemHeight;
+        int adjustedY = y + index - list.scrollOffset * list.itemHeight;
         if (adjustedY < y || adjustedY > Renderer.LastHeight) return;
 
-        DiscoverItem item = list.items[index];
+        int nameWidth = Math.Min(width / 3, 40);
+        int ipWidth = 18;
+        int macWidth = 20;
+        int otherWidth = width - nameWidth - ipWidth - macWidth;
 
+        Ansi.SetCursorPosition(2, adjustedY);
+
+        DiscoverItem item = list.items[index];
+        bool isSelected = index == list.index;
+        byte[] foreColor, backColor;
+
+        if (isSelected) {
+            foreColor = list.isFocused ? [16, 16, 16] : Data.FG_COLOR;
+            backColor = list.isFocused ? Data.SELECT_COLOR : Data.SELECT_COLOR_LIGHT;
+        }
+        else {
+            foreColor = Data.FG_COLOR;
+            backColor = Data.BG_COLOR;
+        }
+
+        Ansi.SetBgColor(backColor);
+        Ansi.SetFgColor(foreColor);
+        
+        if (String.IsNullOrEmpty(item.name)) {
+            Ansi.Write(new string(' ', nameWidth));
+        }
+        else {
+            Ansi.Write(item.name.Length > nameWidth ? item.name[..(nameWidth - 1)] + Data.ELLIPSIS : item.name.PadRight(nameWidth));
+        }
+
+        Ansi.Write(item.ip);
+        Ansi.Write(new String(' ', Math.Max(ipWidth - item.ip.Length, 0)));
+
+        Ansi.Write(item.mac);
+        Ansi.Write(new String(' ', Math.Max(macWidth - item.mac.Length, 0)));
+
+
+        if (String.IsNullOrEmpty(item.other)) {
+            Ansi.Write(new string(' ', otherWidth));
+        }
+        else {
+            Ansi.Write(item.other.Length > otherWidth ? item.other[..(otherWidth - 1)] + Data.ELLIPSIS : item.other.PadRight(otherWidth));
+        }
+
+        Ansi.SetBgColor(Data.BG_COLOR);
     }
 
     private void DrawStatus() {
@@ -95,6 +145,8 @@ public sealed class IpDiscoveryFrame : Ui.Frame {
         Ansi.SetFgColor([16, 16, 16]);
         Ansi.SetBgColor(Data.FG_COLOR);
         Ansi.Write($" {total} ");
+
+        Ansi.SetBgColor(Data.BG_COLOR);
     }
 
     private async Task Discover() {
@@ -102,6 +154,17 @@ public sealed class IpDiscoveryFrame : Ui.Frame {
         cancellationToken = cancellationTokenSource.Token;
 
         Tokens.dictionary.TryAdd(cancellationTokenSource, cancellationToken);
+
+        if (mikrotik) {
+
+        }
+
+        if (ubiquiti) {
+            DiscoverItem[] items = Proprietary.Ubiquiti.Discover();
+            for (int i = 0; i < items.Length; i++) {
+                list.Add(items[i]);
+            }
+        }
 
         while (!cancellationToken.IsCancellationRequested) {
             if (Renderer.ActiveFrame == this && Renderer.ActiveDialog is null) {
@@ -112,11 +175,12 @@ public sealed class IpDiscoveryFrame : Ui.Frame {
 
             if (Renderer.ActiveDialog is not null) continue;
             if (Renderer.ActiveFrame != this) continue;
-
         }
 
         Tokens.dictionary.TryRemove(cancellationTokenSource, out _);
         cancellationTokenSource.Dispose();
+
+        list.Draw(true);
     }
 
     private void AddItem(string host) {
@@ -131,11 +195,23 @@ public sealed class IpDiscoveryFrame : Ui.Frame {
         OptionsDialog dialog = new OptionsDialog();
 
         dialog.okButton.action = () => {
+            icmp     = dialog.icmpToggle.Value;
+            mdns     = dialog.mdnsToggle.Value;
+            ssdp     = dialog.ssdpToggle.Value;
+            mikrotik = dialog.mikrotikToggle.Value;
+            ubiquiti = dialog.ubiquitiToggle.Value;
+
             dialog.Close();
             Task.Run(Discover);
         };
 
         dialog.Show(true);
+
+        dialog.icmpToggle.Value     = icmp;
+        dialog.mdnsToggle.Value     = mdns;
+        dialog.ssdpToggle.Value     = ssdp;
+        dialog.mikrotikToggle.Value = mikrotik;
+        dialog.ubiquitiToggle.Value = ubiquiti;
     }
 
     private void Stop() => cancellationTokenSource?.Cancel();
@@ -147,6 +223,12 @@ public sealed class IpDiscoveryFrame : Ui.Frame {
 
 file sealed class OptionsDialog : Ui.DialogBox {
     public Ui.SelectBox nicSelectBox;
+
+    public Ui.Toggle icmpToggle;
+    public Ui.Toggle mdnsToggle;
+    public Ui.Toggle ssdpToggle;
+    public Ui.Toggle mikrotikToggle;
+    public Ui.Toggle ubiquitiToggle;
 
     public OptionsDialog() {
         string[] nics = GetNics();
@@ -161,7 +243,19 @@ file sealed class OptionsDialog : Ui.DialogBox {
             options = nics,
         };
 
+        icmpToggle     = new Ui.Toggle(this, "ICMP");
+        mdnsToggle     = new Ui.Toggle(this, "mDNS");
+        ssdpToggle     = new Ui.Toggle(this, "SSDP");
+        mikrotikToggle = new Ui.Toggle(this, "Mikrotik discover");
+        ubiquitiToggle    = new Ui.Toggle(this, "Ubiquiti discover");
+
         elements.Add(nicSelectBox);
+
+        elements.Add(icmpToggle);
+        elements.Add(mdnsToggle);
+        elements.Add(ssdpToggle);
+        elements.Add(mikrotikToggle);
+        elements.Add(ubiquitiToggle);
 
         defaultElement = nicSelectBox;
     }
@@ -178,10 +272,38 @@ file sealed class OptionsDialog : Ui.DialogBox {
         Ansi.SetCursorPosition(left, top);
         Ansi.Write(blank);
 
-        WriteLabel("Network:", left, ++top, width);
+        WriteLabel("Range:", left, ++top, width);
         nicSelectBox.left = left + 16;
         nicSelectBox.right = Renderer.LastWidth - width - left + 2;
         nicSelectBox.top = top++ - 1;
+
+        Ansi.SetCursorPosition(left, top++);
+        Ansi.Write(blank);
+
+        icmpToggle.left = left;
+        icmpToggle.top = top - 1;
+        Ansi.SetCursorPosition(left, top++);
+        Ansi.Write(blank);
+
+        mdnsToggle.left = left;
+        mdnsToggle.top = top - 1;
+        Ansi.SetCursorPosition(left, top++);
+        Ansi.Write(blank);
+
+        ssdpToggle.left = left;
+        ssdpToggle.top = top - 1;
+        Ansi.SetCursorPosition(left, top++);
+        Ansi.Write(blank);
+
+        mikrotikToggle.left = left;
+        mikrotikToggle.top = top - 1;
+        Ansi.SetCursorPosition(left, top++);
+        Ansi.Write(blank);
+
+        ubiquitiToggle.left = left;
+        ubiquitiToggle.top = top - 1;
+        Ansi.SetCursorPosition(left, top++);
+        Ansi.Write(blank);
 
         for (int i = 0; i < 3; i++) {
             Ansi.SetCursorPosition(left, top + i);

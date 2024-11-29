@@ -31,7 +31,7 @@
     <WarningLevel>9999</WarningLevel>
     <TreatWarningsAsErrors>true</TreatWarningsAsErrors>
 
-    <NoWarn>IDE0090</NoWarn>
+    <NoWarn>IDE0090, IDE0305</NoWarn>
 
   </PropertyGroup>
 
