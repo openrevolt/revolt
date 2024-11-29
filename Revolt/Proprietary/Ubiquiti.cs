@@ -73,53 +73,42 @@ public class Ubiquiti {
 
         IpDiscoveryFrame.DiscoverItem item = new IpDiscoveryFrame.DiscoverItem();
 
-        string firmware = String.Empty;
-
         foreach (KeyValuePair<byte, (int, int)> pair in attributers) {
             byte type = pair.Key;
             (int offset, int size) = pair.Value;
 
             switch (type) {
 
-            case 0x01: { //mac
+            case 0x01: {
                 string mac = ExtractMac(data, offset, size);
                 item.mac = mac;
                 break;
             }
 
-            case 0x02: { //mac and ip
+            case 0x02: {
                 (string mac, string ip) = ExtractMacIpPair(data, offset, size);
                 item.mac = mac;
                 item.ip = ip;
                 break;
             }
 
-            case 0x03: { //firmware
-                firmware = ExtractName(data, offset, size);
+            /*case 0x03: {
+                string firmware = ExtractName(data, offset, size);
                 break;
-            }
+            }*/
 
-            case 0x0B: { //name
+            case 0x0B: {
                 string name = ExtractName(data, offset, size);
                 item.name = name;
                 break;
             }
 
-            case 0x0C: { //product
+            case 0x0C: {
                 string product = ExtractName(data, offset, size);
                 item.other = product;
                 break;
             }
 
-            }
-        }
-
-        if (!String.IsNullOrEmpty(firmware)) {
-            if (String.IsNullOrEmpty(item.other)) {
-                item.other = firmware;
-            }
-            else {
-                item.other += $" - {firmware}";
             }
         }
 

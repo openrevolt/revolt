@@ -166,6 +166,9 @@ public sealed class IpDiscoveryFrame : Ui.Frame {
             }
         }
 
+        list.Draw(true);
+
+
         while (!cancellationToken.IsCancellationRequested) {
             if (Renderer.ActiveFrame == this && Renderer.ActiveDialog is null) {
                 DrawStatus();
