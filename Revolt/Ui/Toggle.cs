@@ -22,7 +22,9 @@ public sealed class Toggle(Frame parentFrame, string text) : Element(parentFrame
 
         DrawValue(false);
 
-        Ansi.SetCursorPosition(left + 2, top);
+        Ansi.SetBgColor(Data.PANE_COLOR);
+        Ansi.Write(' ');
+
         Ansi.SetFgColor(Data.BG_COLOR);
         Ansi.SetBgColor(backColor);
         Ansi.Write(text);
@@ -36,11 +38,20 @@ public sealed class Toggle(Frame parentFrame, string text) : Element(parentFrame
         (int left, int top, _, _) = GetBounding();
 
         Ansi.SetCursorPosition(left, top);
+        Ansi.SetBgColor([128,128,128]);
 
-        Ansi.SetFgColor(Data.CONTROL_COLOR);
-        Ansi.SetBgColor(Data.PANE_COLOR);
-
-        Ansi.Write(_value ? Data.TOGGLE_ON : Data.TOGGLE_OFF);
+        if (_value) {
+            Ansi.SetFgColor(Data.SELECT_COLOR);
+            Ansi.Write(' ');
+            Ansi.Write(' ');
+            Ansi.Write(Data.TOGGLE_BOX);
+        }
+        else {
+            Ansi.SetFgColor(Data.CONTROL_COLOR);
+            Ansi.Write(Data.TOGGLE_BOX);
+            Ansi.Write(' ');
+            Ansi.Write(' ');
+        }
 
         if (push) {
             Ansi.Push();
@@ -48,11 +59,25 @@ public sealed class Toggle(Frame parentFrame, string text) : Element(parentFrame
     }
 
     public override void HandleKey(ConsoleKeyInfo key) {
-        if (key.Key == ConsoleKey.LeftArrow || key.Key == ConsoleKey.UpArrow) {
+        if (key.Key == ConsoleKey.UpArrow) {
             parentFrame.FocusPrevious();
         }
-        else if (key.Key == ConsoleKey.RightArrow || key.Key == ConsoleKey.DownArrow) {
+        else if (key.Key == ConsoleKey.DownArrow) {
             parentFrame.FocusNext();
+        }
+        else if (key.Key == ConsoleKey.LeftArrow) {
+            _value = false;
+            DrawValue(true);
+            if (action is not null) {
+                action();
+            }
+        }
+        else if (key.Key == ConsoleKey.RightArrow) {
+            _value = true;
+            DrawValue(true);
+            if (action is not null) {
+                action();
+            }
         }
         else if (key.Key == ConsoleKey.Enter || key.Key == ConsoleKey.Spacebar) {
             _value = !_value;

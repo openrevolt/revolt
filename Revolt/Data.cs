@@ -30,8 +30,7 @@ public static class Data {
     public const char LEFT_TRIANGLE  = '\u25C2';
     public const char RIGHT_TRIANGLE = '\u25B8';
 
-    public const char TOGGLE_ON  = '\u25A3';
-    public const char TOGGLE_OFF = '\u25A2';
+    public const char TOGGLE_BOX = '\u25A0';
     
     public const char BIG_RIGHT_TRIANGLE = '\uE0B0';
     public const char BIG_LEFT_TRIANGLE = '\uE0B2';
