@@ -7,7 +7,7 @@ public sealed class Button(Frame parentFrame, string text) : Element(parentFrame
     public override void Draw(bool push) {
         (int left, int top, _, _) = GetBounding();
 
-        byte[] foreColor = isFocused ? [16, 16, 16] : Data.FG_COLOR;
+        byte[] foreColor = isFocused ? [16, 16, 16] : Data.LIGHT_COLOR;
         byte[] backColor = isFocused ? Data.SELECT_COLOR : Data.CONTROL_COLOR;
 
         Ansi.SetFgColor(foreColor);

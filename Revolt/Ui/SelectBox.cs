@@ -9,7 +9,7 @@ public sealed class SelectBox(Frame parentFrame) : Element(parentFrame) {
         (int left, int top, int width, _) = GetBounding();
         int usableWidth = Math.Max(width, 6);
 
-        byte[] foreColor = isFocused ? [16, 16, 16] : Data.FG_COLOR;
+        byte[] foreColor = isFocused ? [16, 16, 16] : Data.LIGHT_COLOR;
         byte[] backColor = isFocused ? Data.SELECT_COLOR : Data.INPUT_COLOR;
         string selected = options[index];
 

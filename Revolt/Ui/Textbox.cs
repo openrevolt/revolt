@@ -3,7 +3,7 @@
 public sealed class Textbox(Frame parentFrame) : Element(parentFrame) {
     const int scrollInterval = 16;
 
-    public byte[] backColor = Data.BG_COLOR;
+    public byte[] backColor = Data.DARK_COLOR;
     public string placeholder = String.Empty;
     public Action action;
 
@@ -30,7 +30,7 @@ public sealed class Textbox(Frame parentFrame) : Element(parentFrame) {
         (int left, int top, int width, _) = GetBounding();
         int usableWidth = Math.Max(width, 0);
 
-        Ansi.SetFgColor(Data.FG_COLOR);
+        Ansi.SetFgColor(Data.LIGHT_COLOR);
         Ansi.SetBgColor(Data.INPUT_COLOR);
         Ansi.SetCursorPosition(left, top);
         Ansi.Write(new String(' ', usableWidth));
@@ -48,7 +48,7 @@ public sealed class Textbox(Frame parentFrame) : Element(parentFrame) {
 
         int usableWidth = Math.Max(width - 1, 0);
 
-        Ansi.SetFgColor(Data.FG_COLOR);
+        Ansi.SetFgColor(Data.LIGHT_COLOR);
         Ansi.SetBgColor(Data.INPUT_COLOR);
         Ansi.SetCursorPosition(left, top);
 

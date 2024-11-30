@@ -28,8 +28,8 @@ public sealed class MainMenu : Ui.Frame {
     public override void Draw(int width, int height) {
         base.Draw(width, height);
 
-        Ansi.SetFgColor(Data.FG_COLOR);
-        Ansi.SetBgColor(Data.BG_COLOR);
+        Ansi.SetFgColor(Data.LIGHT_COLOR);
+        Ansi.SetBgColor(Data.DARK_COLOR);
 
         Ansi.SetCursorPosition(0, 0);
 
@@ -50,7 +50,7 @@ public sealed class MainMenu : Ui.Frame {
 
         if (String.IsNullOrEmpty(menu[i])) {
             Ansi.SetFgColor([64, 64, 64]);
-            Ansi.SetBgColor(Data.BG_COLOR);
+            Ansi.SetBgColor(Data.DARK_COLOR);
             Ansi.SetCursorPosition(3, y);
 
             Ansi.Write(new String('-', length));
@@ -69,8 +69,8 @@ public sealed class MainMenu : Ui.Frame {
             Ansi.SetBgColor(Data.SELECT_COLOR);
         }
         else {
-            Ansi.SetFgColor(Data.FG_COLOR);
-            Ansi.SetBgColor(Data.BG_COLOR);
+            Ansi.SetFgColor(Data.LIGHT_COLOR);
+            Ansi.SetBgColor(Data.DARK_COLOR);
         }
 
         Ansi.Write(item);

@@ -4,8 +4,8 @@ using System.Net.Sockets;
 namespace Revolt;
 
 public static class Data {
-    public static readonly byte[] FG_COLOR           = [192, 192, 192];
-    public static readonly byte[] BG_COLOR           = [24, 24, 24];
+    public static readonly byte[] LIGHT_COLOR        = [192, 192, 192];
+    public static readonly byte[] DARK_COLOR         = [24, 24, 24];
     public static readonly byte[] TOOLBAR_COLOR      = [64, 64, 64];
     public static readonly byte[] CONTROL_COLOR      = [72, 72, 72];
     public static readonly byte[] INPUT_COLOR        = [96, 96, 96];

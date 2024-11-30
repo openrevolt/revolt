@@ -23,7 +23,7 @@ public sealed class ListBox<T>(Frame parentFrame) : Element(parentFrame) {
 
         if (items.Count * itemHeight < height - 1) {
             string blank = new String(' ', width);
-            Ansi.SetBgColor(Data.BG_COLOR);
+            Ansi.SetBgColor(Data.DARK_COLOR);
             for (int i = items.Count * itemHeight; i < height - 1; i++) {
                 Ansi.SetCursorPosition(left, top + i);
                 Ansi.Write(blank);

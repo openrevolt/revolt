@@ -58,7 +58,7 @@ public sealed class TraceRouteFrame : Ui.Frame {
         string blank = new string(' ', width);
 
         int top = 0;
-        Ansi.SetBgColor(Data.BG_COLOR);
+        Ansi.SetBgColor(Data.DARK_COLOR);
         for (int i = top; i <= height; i++) {
             if (i > Console.WindowHeight) break;
             Ansi.SetCursorPosition(0, i);
@@ -72,8 +72,8 @@ public sealed class TraceRouteFrame : Ui.Frame {
         list.left = padding;
         list.right = padding;
 
-        Ansi.SetFgColor(Data.FG_COLOR);
-        Ansi.SetBgColor(Data.BG_COLOR);
+        Ansi.SetFgColor(Data.LIGHT_COLOR);
+        Ansi.SetBgColor(Data.DARK_COLOR);
         WriteLabel("Target:", padding, 4, width - padding);
 
         for (int i = 0; i < elements.Count; i++) {
@@ -99,12 +99,12 @@ public sealed class TraceRouteFrame : Ui.Frame {
         Ansi.SetCursorPosition(2, adjustedY);
 
         if (index == list.index) {
-            Ansi.SetFgColor(list.isFocused ? [16, 16, 16] : Data.FG_COLOR);
+            Ansi.SetFgColor(list.isFocused ? [16, 16, 16] : Data.LIGHT_COLOR);
             Ansi.SetBgColor(list.isFocused ? Data.SELECT_COLOR : Data.SELECT_COLOR_LIGHT);
         }
         else {
-            Ansi.SetFgColor(Data.FG_COLOR);
-            Ansi.SetBgColor(Data.BG_COLOR);
+            Ansi.SetFgColor(Data.LIGHT_COLOR);
+            Ansi.SetBgColor(Data.DARK_COLOR);
         }
 
         Ansi.SetCursorPosition(x, adjustedY);
@@ -117,12 +117,12 @@ public sealed class TraceRouteFrame : Ui.Frame {
             Ansi.Write(Data.BIG_RIGHT_TRIANGLE);
         }
         else {
-            Ansi.SetBgColor(Data.BG_COLOR);
+            Ansi.SetBgColor(Data.DARK_COLOR);
             Ansi.Write(' ');
         }
 
-        Ansi.SetFgColor(Data.FG_COLOR);
-        Ansi.SetBgColor(index == list.index ? Data.SELECT_COLOR_LIGHT : Data.BG_COLOR);
+        Ansi.SetFgColor(Data.LIGHT_COLOR);
+        Ansi.SetBgColor(index == list.index ? Data.SELECT_COLOR_LIGHT : Data.DARK_COLOR);
 
         Ansi.Write(' ');
 
@@ -141,7 +141,7 @@ public sealed class TraceRouteFrame : Ui.Frame {
         Ansi.SetFgColor(Data.INPUT_COLOR);
         Ansi.Write(item.domain.Length > domainWidth ? item.domain[..(domainWidth - 1)] + Data.ELLIPSIS : item.domain.PadRight(domainWidth));
 
-        Ansi.SetBgColor(Data.BG_COLOR);
+        Ansi.SetBgColor(Data.DARK_COLOR);
     }
 
     public override bool HandleKey(ConsoleKeyInfo key) {
@@ -189,7 +189,7 @@ public sealed class TraceRouteFrame : Ui.Frame {
 
         Ansi.SetCursorPosition(left, 7);
         Ansi.SetFgColor(Data.SELECT_COLOR);
-        Ansi.SetBgColor(Data.BG_COLOR);
+        Ansi.SetBgColor(Data.DARK_COLOR);
 
         if (status is null) {
             Ansi.Write(new String(' ', width - 1));

@@ -107,19 +107,19 @@ public sealed class PingFrame : Ui.Frame {
 
     private void DrawItemLabel(PingItem item, int index, int y) {
         if (index == list.index) {
-            Ansi.SetFgColor(list.isFocused ? [16, 16, 16] : Data.FG_COLOR);
+            Ansi.SetFgColor(list.isFocused ? [16, 16, 16] : Data.LIGHT_COLOR);
             Ansi.SetBgColor(list.isFocused ? Data.SELECT_COLOR : Data.SELECT_COLOR_LIGHT);
         }
         else {
-            Ansi.SetFgColor(Data.FG_COLOR);
-            Ansi.SetBgColor(Data.BG_COLOR);
+            Ansi.SetFgColor(Data.LIGHT_COLOR);
+            Ansi.SetBgColor(Data.DARK_COLOR);
         }
 
         Ansi.SetCursorPosition(2, y);
         Ansi.Write(item.host.Length > 23 ? item.host[..22] + Data.ELLIPSIS : item.host.PadRight(23));
 
         Ansi.SetFgColor(index == list.index && list.isFocused ? Data.SELECT_COLOR : Data.SELECT_COLOR_LIGHT);
-        Ansi.SetBgColor(index == list.index ? Data.SELECT_COLOR_LIGHT : Data.BG_COLOR);
+        Ansi.SetBgColor(index == list.index ? Data.SELECT_COLOR_LIGHT : Data.DARK_COLOR);
         Ansi.Write(index == list.index && list.isFocused ? Data.BIG_RIGHT_TRIANGLE : ' ');
     }
 
@@ -132,7 +132,7 @@ public sealed class PingFrame : Ui.Frame {
         int usableWidth = Math.Min(width - 38, HISTORY_LEN);
         int historyOffset = (ringIndex + HISTORY_LEN - usableWidth + 1) % HISTORY_LEN;
 
-        Ansi.SetBgColor(index == list.index ? Data.SELECT_COLOR_LIGHT : Data.BG_COLOR);
+        Ansi.SetBgColor(index == list.index ? Data.SELECT_COLOR_LIGHT : Data.DARK_COLOR);
 
         Ansi.SetCursorPosition(x + 24, y);
         Ansi.Write(' ');
@@ -151,7 +151,7 @@ public sealed class PingFrame : Ui.Frame {
         Ansi.SetFgColor(DetermineRttColor(item.status));
         Ansi.Write(DetermineRttText(item.status));
 
-        Ansi.SetBgColor(Data.BG_COLOR);
+        Ansi.SetBgColor(Data.DARK_COLOR);
     }
 
     private void DrawStatus() {
@@ -172,11 +172,11 @@ public sealed class PingFrame : Ui.Frame {
         }
 
         Ansi.SetFgColor([16, 16, 16]);
-        Ansi.SetBgColor(Data.FG_COLOR);
+        Ansi.SetBgColor(Data.LIGHT_COLOR);
         Ansi.Write($" {total} ");
 
-        Ansi.SetFgColor(Data.FG_COLOR);
-        Ansi.SetBgColor(Data.BG_COLOR);
+        Ansi.SetFgColor(Data.LIGHT_COLOR);
+        Ansi.SetBgColor(Data.DARK_COLOR);
         Ansi.Write(new String(' ', 8));
     }
 

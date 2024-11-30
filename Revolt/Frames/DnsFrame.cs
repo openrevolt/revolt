@@ -106,12 +106,12 @@ public sealed class DnsFrame : Ui.Frame {
         string questionTypeString = Dns.typeStrings[item.questionType];
 
         if (isSelected) {
-            foreColor = list.isFocused ? [16, 16, 16] : Data.FG_COLOR;
+            foreColor = list.isFocused ? [16, 16, 16] : Data.LIGHT_COLOR;
             backColor = list.isFocused ? Data.SELECT_COLOR : Data.SELECT_COLOR_LIGHT;
         }
         else {
-            foreColor = Data.FG_COLOR;
-            backColor = Data.BG_COLOR;
+            foreColor = Data.LIGHT_COLOR;
+            backColor = Data.DARK_COLOR;
         }
 
         Ansi.SetBgColor(backColor);
@@ -133,7 +133,7 @@ public sealed class DnsFrame : Ui.Frame {
         Ansi.Write(item.questionString.Length > adjustedQuestionWidth ? item.questionString[..(adjustedQuestionWidth-1)] + Data.ELLIPSIS : item.questionString.PadRight(adjustedQuestionWidth));
 
         Ansi.SetFgColor(backColor);
-        Ansi.SetBgColor(isSelected ? Data.SELECT_COLOR_LIGHT : Data.BG_COLOR);
+        Ansi.SetBgColor(isSelected ? Data.SELECT_COLOR_LIGHT : Data.DARK_COLOR);
         Ansi.Write(isSelected ? Data.BIG_RIGHT_TRIANGLE : ' ');
 
         if (item.answerType >= 0) {
@@ -145,7 +145,7 @@ public sealed class DnsFrame : Ui.Frame {
             Ansi.SetBgColor(item.answerColor);
             Ansi.Write($" {answerTypeString} ");
 
-            Ansi.SetBgColor(isSelected ? Data.SELECT_COLOR_LIGHT : Data.BG_COLOR);
+            Ansi.SetBgColor(isSelected ? Data.SELECT_COLOR_LIGHT : Data.DARK_COLOR);
             Ansi.Write(' ');
         }
         else {
@@ -153,7 +153,7 @@ public sealed class DnsFrame : Ui.Frame {
         }
 
         Ansi.SetCursorPosition(questionWidth + 12, adjustedY);
-        Ansi.SetFgColor(item.answerType < 0 ? [176, 0, 0] : Data.FG_COLOR);
+        Ansi.SetFgColor(item.answerType < 0 ? [176, 0, 0] : Data.LIGHT_COLOR);
         Ansi.Write(item.answerString.Length > adjustedAnswerWidth ? item.answerString[..(adjustedAnswerWidth - 1)] + Data.ELLIPSIS : item.answerString.PadRight(adjustedAnswerWidth));
 
         if (item.answerType >= 0) {
@@ -165,7 +165,7 @@ public sealed class DnsFrame : Ui.Frame {
             Ansi.Write(new String(' ', 10));
         }
 
-        Ansi.SetBgColor(Data.BG_COLOR);
+        Ansi.SetBgColor(Data.DARK_COLOR);
     }
 
     private void AddItem(string question, Dns.RecordType questionType, Dns.Answer answer) {

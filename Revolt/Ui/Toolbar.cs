@@ -31,7 +31,7 @@ public sealed class Toolbar(Frame parentFrame) : Element(parentFrame) {
 
         Ansi.SetCursorPosition(offset + 2, 3);
         Ansi.SetFgColor(Data.TOOLBAR_COLOR);
-        Ansi.SetBgColor(Data.BG_COLOR);
+        Ansi.SetBgColor(Data.DARK_COLOR);
         Ansi.Write(new String(Data.UPPER_1_8TH_BLOCK, width - offset));
 
         Ansi.Push();
@@ -41,7 +41,7 @@ public sealed class Toolbar(Frame parentFrame) : Element(parentFrame) {
         Ansi.SetCursorPosition(offset, 1);
 
         Ansi.SetFgColor(Data.TOOLBAR_COLOR);
-        Ansi.SetBgColor(Data.BG_COLOR);
+        Ansi.SetBgColor(Data.DARK_COLOR);
         Ansi.Write(Data.LOWER_3_8TH_BLOCK);
 
         Ansi.SetFgColor(isFocused && i == index ? Data.SELECT_COLOR : Data.CONTROL_COLOR);
@@ -53,7 +53,7 @@ public sealed class Toolbar(Frame parentFrame) : Element(parentFrame) {
         Ansi.SetBgColor(Data.TOOLBAR_COLOR);
         Ansi.Write(' ');
 
-        Ansi.SetFgColor(this.isFocused && i == index ? [16, 16, 16] : Data.FG_COLOR);
+        Ansi.SetFgColor(this.isFocused && i == index ? [16, 16, 16] : Data.LIGHT_COLOR);
         Ansi.SetBgColor(this.isFocused && i == index ? Data.SELECT_COLOR : Data.CONTROL_COLOR);
         Ansi.SetBold(true);
         Ansi.Write($" {items[i].text} ");
@@ -63,7 +63,7 @@ public sealed class Toolbar(Frame parentFrame) : Element(parentFrame) {
         Ansi.SetCursorPosition(offset, 3);
 
         Ansi.SetFgColor(Data.TOOLBAR_COLOR);
-        Ansi.SetBgColor(Data.BG_COLOR);
+        Ansi.SetBgColor(Data.DARK_COLOR);
         Ansi.Write(Data.UPPER_1_8TH_BLOCK);
 
         Ansi.SetFgColor(isFocused && i == index ? Data.SELECT_COLOR : Data.CONTROL_COLOR);

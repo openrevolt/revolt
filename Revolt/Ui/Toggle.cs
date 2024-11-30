@@ -25,7 +25,7 @@ public sealed class Toggle(Frame parentFrame, string text) : Element(parentFrame
         Ansi.SetBgColor(Data.PANE_COLOR);
         Ansi.Write(' ');
 
-        Ansi.SetFgColor(Data.BG_COLOR);
+        Ansi.SetFgColor(Data.DARK_COLOR);
         Ansi.SetBgColor(backColor);
         Ansi.Write(text);
 
@@ -38,15 +38,16 @@ public sealed class Toggle(Frame parentFrame, string text) : Element(parentFrame
         (int left, int top, _, _) = GetBounding();
 
         Ansi.SetCursorPosition(left, top);
-        Ansi.SetBgColor([128,128,128]);
 
         if (_value) {
-            Ansi.SetFgColor(Data.SELECT_COLOR);
+            Ansi.SetBgColor(Data.SELECT_COLOR);
+            Ansi.SetFgColor(Data.DARK_COLOR);
             Ansi.Write(' ');
             Ansi.Write(' ');
             Ansi.Write(Data.TOGGLE_BOX);
         }
         else {
+            Ansi.SetBgColor([128,128,128]);
             Ansi.SetFgColor(Data.CONTROL_COLOR);
             Ansi.Write(Data.TOGGLE_BOX);
             Ansi.Write(' ');

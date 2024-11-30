@@ -102,12 +102,12 @@ public sealed class IpDiscoveryFrame : Ui.Frame {
         byte[] foreColor, backColor;
 
         if (isSelected) {
-            foreColor = list.isFocused ? [16, 16, 16] : Data.FG_COLOR;
+            foreColor = list.isFocused ? [16, 16, 16] : Data.LIGHT_COLOR;
             backColor = list.isFocused ? Data.SELECT_COLOR : Data.SELECT_COLOR_LIGHT;
         }
         else {
-            foreColor = Data.FG_COLOR;
-            backColor = Data.BG_COLOR;
+            foreColor = Data.LIGHT_COLOR;
+            backColor = Data.DARK_COLOR;
         }
 
         Ansi.SetBgColor(backColor);
@@ -134,7 +134,7 @@ public sealed class IpDiscoveryFrame : Ui.Frame {
             Ansi.Write(item.other.Length > otherWidth ? item.other[..(otherWidth - 1)] + Data.ELLIPSIS : item.other.PadRight(otherWidth));
         }
 
-        Ansi.SetBgColor(Data.BG_COLOR);
+        Ansi.SetBgColor(Data.DARK_COLOR);
     }
 
     private void DrawStatus() {
@@ -143,10 +143,10 @@ public sealed class IpDiscoveryFrame : Ui.Frame {
         Ansi.SetCursorPosition(2, Renderer.LastHeight);
 
         Ansi.SetFgColor([16, 16, 16]);
-        Ansi.SetBgColor(Data.FG_COLOR);
+        Ansi.SetBgColor(Data.LIGHT_COLOR);
         Ansi.Write($" {total} ");
 
-        Ansi.SetBgColor(Data.BG_COLOR);
+        Ansi.SetBgColor(Data.DARK_COLOR);
     }
 
     private async Task Discover() {
