@@ -76,7 +76,7 @@ public static class Dns {
         "Mail Exchange",
         "Text",
         "Service",
-        "All types known"
+        "All types"
     ];
 
     public static readonly RecordType[] types = [

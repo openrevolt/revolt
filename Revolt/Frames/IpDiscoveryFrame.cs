@@ -1,6 +1,7 @@
 ﻿using System.Net;
 using System.Net.NetworkInformation;
 using System.Net.Sockets;
+using Revolt.Protocols;
 
 namespace Revolt.Frames;
 
@@ -12,7 +13,6 @@ public sealed class IpDiscoveryFrame : Ui.Frame {
         public string mac;
         public string manufacturer;
         public string other;
-        public byte[] bytes;
     }
 
     public static IpDiscoveryFrame Instance { get; } = new IpDiscoveryFrame();
@@ -25,8 +25,6 @@ public sealed class IpDiscoveryFrame : Ui.Frame {
 
     public bool icmp     = true;
     public bool mdns     = false;
-    public bool ssdp     = false;
-    public bool mikrotik = false;
     public bool ubiquiti = false;
 
     public IpDiscoveryFrame() {
@@ -155,14 +153,19 @@ public sealed class IpDiscoveryFrame : Ui.Frame {
 
         Tokens.dictionary.TryAdd(cancellationTokenSource, cancellationToken);
 
-        if (mikrotik) {
-
+        if (ubiquiti) {
+            List<DiscoverItem> items = Proprietary.Ubiquiti.Discover();
+            for (int i = 0; i < items.Count; i++) {
+                list.Add(items[i]);
+            }
         }
 
-        if (ubiquiti) {
-            DiscoverItem[] items = Proprietary.Ubiquiti.Discover();
-            for (int i = 0; i < items.Length; i++) {
-                list.Add(items[i]);
+        if (mdns) {
+            List<Mdns.Answer> answers = Mdns.Resolve(Mdns.anyDeviceQuery);
+            for (int i = 0; i < answers.Count; i++) {
+                list.Add(new DiscoverItem() {
+                     ip = answers[i].remote.ToString(),
+                });
             }
         }
 
@@ -200,8 +203,6 @@ public sealed class IpDiscoveryFrame : Ui.Frame {
         dialog.okButton.action = () => {
             icmp     = dialog.icmpToggle.Value;
             mdns     = dialog.mdnsToggle.Value;
-            ssdp     = dialog.ssdpToggle.Value;
-            mikrotik = dialog.mikrotikToggle.Value;
             ubiquiti = dialog.ubiquitiToggle.Value;
 
             dialog.Close();
@@ -212,8 +213,6 @@ public sealed class IpDiscoveryFrame : Ui.Frame {
 
         dialog.icmpToggle.Value     = icmp;
         dialog.mdnsToggle.Value     = mdns;
-        dialog.ssdpToggle.Value     = ssdp;
-        dialog.mikrotikToggle.Value = mikrotik;
         dialog.ubiquitiToggle.Value = ubiquiti;
     }
 
@@ -229,35 +228,29 @@ file sealed class OptionsDialog : Ui.DialogBox {
 
     public Ui.Toggle icmpToggle;
     public Ui.Toggle mdnsToggle;
-    public Ui.Toggle ssdpToggle;
-    public Ui.Toggle mikrotikToggle;
     public Ui.Toggle ubiquitiToggle;
 
     public OptionsDialog() {
-        string[] nics = GetNics();
+        string[] interfaces = GetNetworkInterfaces();
 
-        if (nics.Length == 0) {
-            nics = [String.Empty];
+        if (interfaces.Length == 0) {
+            interfaces = [String.Empty];
         }
 
         okButton.text = "  Start  ";
 
         nicSelectBox = new Ui.SelectBox(this) {
-            options = nics,
+            options = interfaces,
         };
 
         icmpToggle     = new Ui.Toggle(this, "ICMP");
         mdnsToggle     = new Ui.Toggle(this, "mDNS");
-        ssdpToggle     = new Ui.Toggle(this, "SSDP");
-        mikrotikToggle = new Ui.Toggle(this, "Mikrotik discover");
-        ubiquitiToggle    = new Ui.Toggle(this, "Ubiquiti discover");
+        ubiquitiToggle = new Ui.Toggle(this, "Ubiquiti discover");
 
         elements.Add(nicSelectBox);
 
         elements.Add(icmpToggle);
         elements.Add(mdnsToggle);
-        elements.Add(ssdpToggle);
-        elements.Add(mikrotikToggle);
         elements.Add(ubiquitiToggle);
 
         defaultElement = nicSelectBox;
@@ -290,16 +283,6 @@ file sealed class OptionsDialog : Ui.DialogBox {
 
         mdnsToggle.left = left;
         mdnsToggle.top = top - 1;
-        Ansi.SetCursorPosition(left, top++);
-        Ansi.Write(blank);
-
-        ssdpToggle.left = left;
-        ssdpToggle.top = top - 1;
-        Ansi.SetCursorPosition(left, top++);
-        Ansi.Write(blank);
-
-        mikrotikToggle.left = left;
-        mikrotikToggle.top = top - 1;
         Ansi.SetCursorPosition(left, top++);
         Ansi.Write(blank);
 
@@ -362,13 +345,12 @@ file sealed class OptionsDialog : Ui.DialogBox {
         base.Close();
     }
 
-    private static string[] GetNics() {
+    private static string[] GetNetworkInterfaces() {
         List<string> filtered = [];
 
-        NetworkInterface[] nics = NetworkInterface.GetAllNetworkInterfaces();
-        foreach (NetworkInterface nic in nics) {
+        NetworkInterface[] interfaces = NetworkInterface.GetAllNetworkInterfaces();
+        foreach (NetworkInterface nic in interfaces) {
             UnicastIPAddressInformationCollection unicast = nic.GetIPProperties().UnicastAddresses;
-            GatewayIPAddressInformationCollection gateway = nic.GetIPProperties().GatewayAddresses;
 
             if (unicast.Count == 0) continue;
 
@@ -383,7 +365,6 @@ file sealed class OptionsDialog : Ui.DialogBox {
             }
 
             if (localIpV4 is null || IPAddress.IsLoopback(localIpV4) || localIpV4.IsApipa()) continue;
-
 
             filtered.Add($"{localIpV4}/{Data.SubnetMaskToCidr(subnetMask)}");
         }

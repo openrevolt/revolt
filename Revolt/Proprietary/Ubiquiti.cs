@@ -7,45 +7,47 @@ using System.Text;
 namespace Revolt.Proprietary;
 
 public class Ubiquiti {
-    private static readonly IPAddress address       = IPAddress.Parse("233.89.188.1");
-    private static readonly int       port          = 10001;
-    private static readonly byte[]    broadcastData = [0x01, 0x00, 0x00, 0x00];
+    private const           int       timeout     = 2000;
+    private const           int       port        = 10001;
+    private static readonly IPAddress address     = IPAddress.Parse("233.89.188.1");
+    private static readonly byte[]    requestData = [0x01, 0x00, 0x00, 0x00];
 
-    public static IpDiscoveryFrame.DiscoverItem[] Discover() {
+    public static List<IpDiscoveryFrame.DiscoverItem> Discover() {
         List<IpDiscoveryFrame.DiscoverItem> list = [];
 
         using UdpClient client = new UdpClient() {
             EnableBroadcast = true
         };
 
-        //try {
-        IPEndPoint endPoint = new IPEndPoint(address, port);
-        client.Send(broadcastData, broadcastData.Length, endPoint);
-        client.Client.ReceiveTimeout = 2000;
+        try {
+            IPEndPoint endPoint = new IPEndPoint(address, port);
+            client.Send(requestData, requestData.Length, endPoint);
+            client.Client.ReceiveTimeout = timeout;
 
-        while (true) {
-            try {
-                IPEndPoint remoteEndPoint = new IPEndPoint(IPAddress.Any, 0);
-                byte[] receivedData = client.Receive(ref remoteEndPoint);
+            while (true) {
+                try {
+                    IPEndPoint remoteEndPoint = new IPEndPoint(IPAddress.Any, 0);
+                    byte[] receivedData = client.Receive(ref remoteEndPoint);
 
-                (IpDiscoveryFrame.DiscoverItem item, bool error) = Parse(receivedData);
-                if (error) continue;
-                list.Add(item);
-            }
-            catch (SocketException ex) when (ex.SocketErrorCode == SocketError.TimedOut) {
-                break;
+                    (IpDiscoveryFrame.DiscoverItem item, bool error) = Parse(receivedData);
+                    if (!error) {
+                        list.Add(item);
+                    }
+                }
+                catch (SocketException ex) when (ex.SocketErrorCode == SocketError.TimedOut) {
+                    break;
+                }
             }
         }
-        /*}
-        catch { }*/
+        catch { }
 
         list.Sort((a, b) => String.Compare(a.mac, b.mac));
 
-        return list.ToArray();
+        return list;
     }
 
     private static (IpDiscoveryFrame.DiscoverItem, bool) Parse(byte[] data) {
-        if (data.Length < 40) return (default, true);
+        if (data.Length < 4) return (default, true);
 
         byte type = data[0];
 
@@ -60,9 +62,13 @@ public class Ubiquiti {
         Dictionary<byte, (int, int)> attributers = [];
 
         while (index < data.Length) {
+            if (index + 3 > data.Length) return (default, true);
+
             byte type = data[index++];
             index++; //null
             byte size = data[index++];
+
+            if (index + size > data.Length) return (default, true);
 
             attributers.Add(type, (index, size));
 
@@ -80,31 +86,31 @@ public class Ubiquiti {
             switch (type) {
 
             case 0x01: {
-                string mac = ExtractMac(data, offset, size);
+                string mac = ExtractMac(data, offset);
                 item.mac = mac;
                 break;
             }
 
             case 0x02: {
-                (string mac, string ip) = ExtractMacIpPair(data, offset, size);
+                (string mac, string ip) = ExtractMacIpPair(data, offset);
                 item.mac = mac;
                 item.ip = ip;
                 break;
             }
 
             /*case 0x03: {
-                string firmware = ExtractName(data, offset, size);
+                string firmware = ExtractString(data, offset, size);
                 break;
             }*/
 
             case 0x0B: {
-                string name = ExtractName(data, offset, size);
+                string name = ExtractString(data, offset, size);
                 item.name = name;
                 break;
             }
 
             case 0x0C: {
-                string product = ExtractName(data, offset, size);
+                string product = ExtractString(data, offset, size);
                 item.other = product;
                 break;
             }
@@ -115,106 +121,16 @@ public class Ubiquiti {
         return (item, false);
     }
 
-    private static string ExtractMac(byte[] data, int offset, int size) =>
+    private static string ExtractMac(byte[] data, int offset) =>
          $"{data[offset]:X2}-{data[offset+1]:X2}-{data[offset+2]:X2}-{data[offset+3]:X2}-{data[offset+4]:X2}-{data[offset+5]:X2}";
-    
 
-    private static (string, string) ExtractMacIpPair(byte[] data, int offset, int size) {
+    private static (string, string) ExtractMacIpPair(byte[] data, int offset) {
         string mac = $"{data[offset]:X2}-{data[offset+1]:X2}-{data[offset+2]:X2}-{data[offset+3]:X2}-{data[offset+4]:X2}-{data[offset+5]:X2}";
         string ip = $"{data[offset+6]}.{data[offset+7]}.{data[offset+8]}.{data[offset+9]}";
         return (mac, ip);
     }
 
-    private static string ExtractName(byte[] data, int offset, int size) =>
+    private static string ExtractString(byte[] data, int offset, int size) =>
         Encoding.UTF8.GetString(data, offset, size);
 
-
-
-   /* private static (IpDiscoveryFrame.DiscoverItem, bool) ParseTypeA(byte[] data) {
-        string mac, ip;
-        int nameLength, nameIndex;
-        int productLength = 0, productIndex = 0;
-
-        mac = $"{data[16]:X2}-{data[17]:X2}-{data[18]:X2}-{data[19]:X2}-{data[20]:X2}-{data[21]:X2}";
-        ip = $"{data[22]}.{data[23]}.{data[24]}.{data[25]}";
-
-        nameLength = data[35];
-        nameIndex = 36;
-        for (int i = 26; i < data.Length; i++) {
-            if (data[i] == 0x0B) {
-                nameLength = data[i + 2];
-                nameIndex = i + 3;
-                break;
-            }
-        }
-
-        if (nameIndex + nameLength < data.Length) {
-            productLength = data[nameIndex + nameLength + 2];
-            productIndex = nameIndex + nameLength + 3;
-        }
-
-        for (int i = 26; i < data.Length; i++) {
-            if (data[i] == 0x0C) {
-                productLength = data[i + 2];
-                productIndex = i + 3;
-                break;
-            }
-        }
-
-        if (nameIndex + nameLength < data.Length) {
-            productLength = data[nameIndex + nameLength + 2];
-            productIndex = nameIndex + nameLength + 3;
-        }
-
-        string name    = System.Text.Encoding.UTF8.GetString(data, nameIndex, nameLength);
-
-        string product = String.Empty;
-        if (productIndex + productLength < data.Length) {
-            product = System.Text.Encoding.UTF8.GetString(data, productIndex, productLength);
-        }
-
-        IpDiscoveryFrame.DiscoverItem item = new IpDiscoveryFrame.DiscoverItem {
-            name  = name,
-            ip    = ip,
-            mac   = mac,
-            other = product,
-            bytes = data,
-        };
-
-        return (item, false);
-    }
-
-    private static (IpDiscoveryFrame.DiscoverItem, bool) ParseTypeB(byte[] data) {
-        string mac, ip;
-        int nameLength, nameIndex;
-        int productLength = 0, productIndex = 0;
-
-        mac = $"{data[7]:X2}-{data[8]:X2}-{data[9]:X2}-{data[10]:X2}-{data[11]:X2}-{data[12]:X2}";
-        ip = $"{data[13]}.{data[14]}.{data[15]}.{data[16]}";
-        nameLength = data[35];
-        nameIndex = 36;
-
-        if (nameIndex + nameLength < data.Length) {
-            productLength = data[nameIndex + nameLength + 2];
-            productIndex = nameIndex + nameLength + 3;
-        }
-
-        string name    = System.Text.Encoding.UTF8.GetString(data, nameIndex, nameLength);
-
-        string product = String.Empty;
-        if (productIndex + productLength < data.Length) {
-            product = System.Text.Encoding.UTF8.GetString(data, productIndex, productLength);
-        }
-
-        IpDiscoveryFrame.DiscoverItem item = new IpDiscoveryFrame.DiscoverItem {
-            name  = name,
-            ip    = ip,
-            mac   = mac,
-            other = product,
-            bytes = data,
-        };
-
-        return (item, false);
-    }
-   */
 }
