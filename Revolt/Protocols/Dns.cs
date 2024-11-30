@@ -110,7 +110,7 @@ public static class Dns {
             ResolveOverHttps(name, server, type);
         }
         else if (transport == TransportMethod.QUIC) {
-            ResolveOverQuic();
+            ResolveOverQuic(name, server, type).GetAwaiter().GetResult();
         }
         
         byte[] query = ConstructQuery([name], type, isStandard, isInverse, showServerStatus, isTruncated, isRecursive);
@@ -262,8 +262,25 @@ public static class Dns {
         }
     }
 
-    private static Answer[] ResolveOverQuic() {
-        return null;
+    private static async Task<Answer[]> ResolveOverQuic(string name, string server, RecordType type) {
+        string url = $"https://{server}/dns-query?name={name}&type={type}";
+
+        using HttpClient client = new HttpClient {
+            DefaultRequestVersion = HttpVersion.Version30,
+            DefaultVersionPolicy = HttpVersionPolicy.RequestVersionExact
+        };
+
+        /*try*/ {
+            HttpResponseMessage response = await client.GetAsync(url);
+            response.EnsureSuccessStatusCode();
+
+            string body = await response.Content.ReadAsStringAsync();
+
+            return ParseJsonAnswer(body);
+        }
+        /*catch {
+            return null;
+        }*/
     }
 
     private static byte[] ConstructQuery(string[] domainNames, RecordType type, bool isStandard, bool isInverse, bool isServerStatus, bool isTruncated, bool isRecursive) {

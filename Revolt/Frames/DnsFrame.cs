@@ -449,7 +449,7 @@ file sealed class OptionsDialog : Ui.DialogBox {
         };
 
         transportSelectBox = new Ui.SelectBox(this) {
-            options = ["Auto", "UDP", "TCP", "TCP over TLS", "HTTPS"],
+            options = ["Auto", "UDP", "TCP", "TCP over TLS", "HTTPS"] //TODO: "QUIC"
         };
 
         standardToggle      = new Ui.Toggle(this, "Standard");
