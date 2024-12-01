@@ -19,11 +19,25 @@ public static class Ansi {
         }
     }
 
-    private static int Basic256Color(byte[] rgb) =>
-    (rgb[0] / 51) * 36 + (rgb[1] / 51) * 6 + (rgb[2] / 51) + 16;
+    private static int Basic256Color(byte[] rgb) {
+        if (rgb[0]== rgb[1] && rgb[1] == rgb[2]) {
+            if (rgb[1]< 8) return 16;
+            if (rgb[1]> 248) return 231;
+            return 232 + (rgb[1] - 8) / 10;
+        }
+        
+        return (rgb[0]/ 51) * 36 + (rgb[1] / 51) * 6 + (rgb[2] / 51) + 16;
+    }
     
-    private static int Basic256Color(byte r, byte g, byte b) =>
-    (r / 51) * 36 + (g / 51) * 6 + (b / 51) + 16;
+    private static int Basic256Color(byte r, byte g, byte b) {
+        if (r == g && g == b) {
+            if (g < 8) return 16;
+            if (g > 248) return 231;
+            return 232 + (g - 8) / 10;
+        }
+        
+        return (r / 51) * 36 + (g / 51) * 6 + (b / 51) + 16;
+    }
 
     public static void Write(char text) =>
     queue.Enqueue(text.ToString());
