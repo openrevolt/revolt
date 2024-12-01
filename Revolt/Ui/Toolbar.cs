@@ -32,7 +32,13 @@ public sealed class Toolbar(Frame parentFrame) : Element(parentFrame) {
         Ansi.SetCursorPosition(offset + 2, 3);
         Ansi.SetFgColor(Data.TOOLBAR_COLOR);
         Ansi.SetBgColor(Data.DARK_COLOR);
-        Ansi.Write(new String(Data.UPPER_1_8TH_BLOCK, width - offset));
+
+        if (OperatingSystem.IsMacOS()) {
+            Ansi.Write(new String(' ', width - offset));
+        }
+        else {
+            Ansi.Write(new String(Data.UPPER_1_8TH_BLOCK, width - offset));
+        }
 
         Ansi.Push();
     }
@@ -64,10 +70,10 @@ public sealed class Toolbar(Frame parentFrame) : Element(parentFrame) {
 
         Ansi.SetFgColor(Data.TOOLBAR_COLOR);
         Ansi.SetBgColor(Data.DARK_COLOR);
-        Ansi.Write(Data.UPPER_1_8TH_BLOCK);
+        Ansi.Write(OperatingSystem.IsMacOS() ? ' ' : Data.UPPER_1_8TH_BLOCK);
 
         Ansi.SetFgColor(isFocused && i == index ? Data.SELECT_COLOR : Data.CONTROL_COLOR);
-        Ansi.Write(new String(Data.UPPER_1_8TH_BLOCK, items[i].text.Length + 2));
+        Ansi.Write(new String(OperatingSystem.IsMacOS() ? ' ' : Data.UPPER_1_8TH_BLOCK, items[i].text.Length + 2));
 
         return items[i].text.Length + 3;
     }

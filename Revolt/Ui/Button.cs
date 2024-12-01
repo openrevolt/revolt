@@ -20,9 +20,7 @@ public sealed class Button(Frame parentFrame, string text) : Element(parentFrame
         Ansi.SetBgColor(Data.PANE_COLOR);
         Ansi.SetCursorPosition(left, top + 1);
 
-        for (int i = 0; i < text.Length; i++) {
-            Ansi.Write(Data.UPPER_1_8TH_BLOCK);
-        }
+        Ansi.Write(new String(Data.UPPER_1_8TH_BLOCK, text.Length));
 
         if (push) {
             Ansi.Push();

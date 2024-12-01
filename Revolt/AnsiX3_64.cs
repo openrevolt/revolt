@@ -19,6 +19,12 @@ public static class Ansi {
         }
     }
 
+    private static int Basic256Color(byte[] rgb) =>
+    (rgb[0] / 51) * 36 + (rgb[1] / 51) * 6 + (rgb[2] / 51) + 16;
+    
+    private static int Basic256Color(byte r, byte g, byte b) =>
+    (r / 51) * 36 + (g / 51) * 6 + (b / 51) + 16;
+
     public static void Write(char text) =>
     queue.Enqueue(text.ToString());
 
@@ -49,17 +55,41 @@ public static class Ansi {
     public static void SetUnderline(bool value) =>
     queue.Enqueue($"\x1b[{(value ? 4 : 24)}m");
 
-    public static void SetFgColor(byte r, byte g, byte b) =>
-    queue.Enqueue($"\x1b[38;2;{r};{g};{b}m");
+    public static void SetFgColor(byte r, byte g, byte b) {
+        if (OperatingSystem.IsMacOS()) {
+            queue.Enqueue($"\x1b[38;5;{Basic256Color(r, g, b)}m");
+        }
+        else {
+            queue.Enqueue($"\x1b[38;2;{r};{g};{b}m");
+        }
+    }
 
-    public static void SetFgColor(byte[] rgb) =>
-    queue.Enqueue($"\x1b[38;2;{rgb[0]};{rgb[1]};{rgb[2]}m");
+    public static void SetFgColor(byte[] rgb) {
+        if (OperatingSystem.IsMacOS()) {
+            queue.Enqueue($"\x1b[38;5;{Basic256Color(rgb)}m");
+        }
+        else {
+            queue.Enqueue($"\x1b[38;2;{rgb[0]};{rgb[1]};{rgb[2]}m");
+        }
+    }
 
-    public static void SetBgColor(byte r, byte g, byte b) =>
-    queue.Enqueue($"\x1b[48;2;{r};{g};{b}m");
+    public static void SetBgColor(byte r, byte g, byte b) {
+        if (OperatingSystem.IsMacOS()) {
+            queue.Enqueue($"\x1b[48;5;{Basic256Color(r, g, b)}m");
+        }
+        else {
+            queue.Enqueue($"\x1b[48;2;{r};{g};{b}m");
+        }
+    }
 
-    public static void SetBgColor(byte[] rgb) =>
-    queue.Enqueue($"\x1b[48;2;{rgb[0]};{rgb[1]};{rgb[2]}m");
+    public static void SetBgColor(byte[] rgb) {
+        if (OperatingSystem.IsMacOS()) {
+            queue.Enqueue($"\x1b[48;5;{Basic256Color(rgb)}m");
+        }
+        else {
+            queue.Enqueue($"\x1b[48;2;{rgb[0]};{rgb[1]};{rgb[2]}m");
+        }
+    }
 
     public static void SetBlinkOn() =>
     queue.Enqueue("\x1b[5m");
@@ -79,14 +109,21 @@ public static class Ansi {
     public static void SetCursorPosition(int x, int y) =>
     queue.Enqueue($"\x1b[{y};{x}H");
 
-    public static void ResetScrollRegion() => queue.Enqueue("\x1b[r");
+    public static void ResetScrollRegion() =>
+    queue.Enqueue("\x1b[r");
 
-    public static void SetScrollRegion(int y0, int y1) => queue.Enqueue($"\x1b[{y0};{y1}r");
+    public static void SetScrollRegion(int y0, int y1) =>
+    queue.Enqueue($"\x1b[{y0};{y1}r");
 
-    public static void ScrollUp() => queue.Enqueue("\x1b[S");
-    public static void ScrollUp(int n) => queue.Enqueue($"\x1b[{n}S");
+    public static void ScrollUp() =>
+    queue.Enqueue("\x1b[S");
+    
+    public static void ScrollUp(int n) =>
+    queue.Enqueue($"\x1b[{n}S");
 
-    public static void ScrollDown() => queue.Enqueue("\x1b[T");
-    public static void ScrollDown(int n) => queue.Enqueue($"\x1b[{n}T");
+    public static void ScrollDown() =>
+    queue.Enqueue("\x1b[T");
+    public static void ScrollDown(int n) =>
+    queue.Enqueue($"\x1b[{n}T");
 
 }
