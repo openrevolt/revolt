@@ -135,7 +135,7 @@ public static class Dns {
 
     private static byte[] ResolveOverUdp(byte[] query, string server, int timeout) {
         if (!IPAddress.TryParse(server, out IPAddress serverIp)) {
-            serverIp = GetLocalDnsAddress(true);
+            serverIp = NetTools.GetLocalDnsAddress(true);
         }
 
         try {
@@ -161,7 +161,7 @@ public static class Dns {
 
     private static byte[] ResolveOverTcp(byte[] query, string server, int timeout) {
         if (!IPAddress.TryParse(server, out IPAddress serverIp)) {
-            serverIp = GetLocalDnsAddress(true);
+            serverIp = NetTools.GetLocalDnsAddress(true);
         }
 
         try {
@@ -198,7 +198,7 @@ public static class Dns {
 
     private static byte[] ResolveOverTls(byte[] query, string server, int timeout) {
         if (!IPAddress.TryParse(server, out IPAddress serverIp)) {
-            serverIp = GetLocalDnsAddress(true);
+            serverIp = NetTools.GetLocalDnsAddress(true);
         }
 
         try {
@@ -550,21 +550,4 @@ public static class Dns {
         return builder.ToString();
     }
 
-    private static IPAddress GetLocalDnsAddress(bool forceIPv4 = false) {
-        NetworkInterface[] networkInterfaces = NetworkInterface.GetAllNetworkInterfaces();
-
-        foreach (NetworkInterface networkInterface in networkInterfaces) {
-            if (networkInterface.OperationalStatus == OperationalStatus.Up) {
-                IPInterfaceProperties ipProperties = networkInterface.GetIPProperties();
-                IPAddressCollection dnsAddresses = ipProperties.DnsAddresses;
-
-                foreach (IPAddress dnsAddress in dnsAddresses) {
-                    if (forceIPv4 && dnsAddress.AddressFamily != AddressFamily.InterNetwork) { continue; }
-                    return dnsAddress;
-                }
-            }
-        }
-
-        return new IPAddress(0);
-    }
 }

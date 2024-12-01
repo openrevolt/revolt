@@ -1,5 +1,4 @@
 ﻿using System.Net;
-using System.Net.NetworkInformation;
 using System.Net.Sockets;
 using System.Text;
 
@@ -27,17 +26,17 @@ public static class Mdns {
         public byte       error;
     }
 
-    public static  List<Answer> Resolve(string queryString, int timeout = timeout, RecordType type = RecordType.A, bool includeAdditionalRrs = false) {
+    public static List<Answer> Resolve(string queryString, int timeout = timeout, RecordType type = RecordType.A, bool includeAdditionalRrs = false) {
         byte[] request = ConstructQuery(queryString, type);
 
         List<byte[]> receivedData = [];
         List<IPAddress> senders = [];
 
-        IPAddress[] nics = GetIpAddresses();
-        for (int i = 0; i < nics.Length && receivedData.Count == 0; i++) {
-            if (IPAddress.IsLoopback(nics[i])) continue;
+        IPAddress[] ipAddresses = NetTools.GetDirectIpAddresses();
+        for (int i = 0; i < ipAddresses.Length && receivedData.Count == 0; i++) {
+            if (IPAddress.IsLoopback(ipAddresses[i])) continue;
 
-            using Socket socket = CreateAndBindSocket(nics[i], timeout, out IPEndPoint remoteEndPoint);
+            using Socket socket = CreateAndBindSocket(ipAddresses[i], timeout, out IPEndPoint remoteEndPoint);
             if (socket == null) continue;
 
             try {
@@ -85,7 +84,7 @@ public static class Mdns {
         return answers;
     }
 
-    public static byte[] ConstructQuery(string queryString, RecordType type) {
+    private static byte[] ConstructQuery(string queryString, RecordType type) {
         int len = 12;
         string[] label = queryString.Split('.');
 
@@ -141,7 +140,7 @@ public static class Mdns {
         return query;
     }
 
-    public static Socket CreateAndBindSocket(IPAddress localAddress, int timeout, out IPEndPoint remoteEndPoint) {
+    private static Socket CreateAndBindSocket(IPAddress localAddress, int timeout, out IPEndPoint remoteEndPoint) {
         Socket socket = null;
         remoteEndPoint = null;
 
@@ -172,7 +171,7 @@ public static class Mdns {
         }
     }
 
-    public static Answer[] ParseAnswers(byte[] response, IPAddress remoteEndPoint, out ushort answerCount, out ushort authorityCount, out ushort additionalCount, bool additionalString) {
+    private static Answer[] ParseAnswers(byte[] response, IPAddress remoteEndPoint, out ushort answerCount, out ushort authorityCount, out ushort additionalCount, bool additionalString) {
         if (response.Length < 12) {
             answerCount = 0;
             authorityCount = 0;
@@ -240,12 +239,11 @@ public static class Mdns {
 
             index = nameEnd;
 
-            Answer answer = new Answer() {
+            Answer answer = new Answer {
                 questionString = ExtractName(response, nameStart),
-                remote = remoteEndPoint
+                remote = remoteEndPoint,
+                type = (RecordType)((response[index] << 8) | response[index + 1])
             };
-
-            answer.type = (RecordType)((response[index] << 8) | response[index + 1]);
             index += 2;
 
             index += 2; //skip class
@@ -486,18 +484,5 @@ public static class Mdns {
         builder.Append('}');
 
         return Encoding.UTF8.GetBytes(builder.ToString());
-    }
-
-    public static IPAddress[] GetIpAddresses() {
-        NetworkInterface[] adapters = NetworkInterface.GetAllNetworkInterfaces();
-        List<IPAddress> list = [];
-        foreach (NetworkInterface adapter in adapters) {
-            UnicastIPAddressInformationCollection addresses = adapter.GetIPProperties().UnicastAddresses;
-            if (addresses.Count == 0) continue;
-            foreach (UnicastIPAddressInformation address in addresses) {
-                list.Add(address.Address);
-            }
-        }
-        return list.ToArray();
     }
 }

@@ -1,38 +1,55 @@
-﻿using Revolt.Frames;
+﻿using System.Collections.Generic;
 using System.Net;
 using System.Net.Sockets;
-
 using System.Text;
+using Revolt.Frames;
 
 namespace Revolt.Proprietary;
 
 public class Ubiquiti {
-    private const           int       timeout     = 2000;
-    private const           int       port        = 10001;
-    private static readonly IPAddress address     = IPAddress.Parse("233.89.188.1");
-    private static readonly byte[]    requestData = [0x01, 0x00, 0x00, 0x00];
+    private const           int       timeout          = 2000;
+    private const           int       port             = 10001;
+    private static readonly IPAddress multicastAddress = IPAddress.Parse("233.89.188.1");
+    private static readonly byte[]    requestData      = [0x01, 0x00, 0x00, 0x00];
 
-    public static List<IpDiscoveryFrame.DiscoverItem> Discover() {
+    public static List<IpDiscoveryFrame.DiscoverItem> Discover(IPAddress localIpV4) {
         List<IpDiscoveryFrame.DiscoverItem> list = [];
 
-        using UdpClient client = new UdpClient() {
+        IPEndPoint localEndPointV4 = new IPEndPoint(localIpV4, 0);
+        using UdpClient client = new UdpClient(localEndPointV4) {
             EnableBroadcast = true
         };
 
+        SendAndReceive(client, list);
+
+        SendAndReceive(client, list);
+
+        list.Sort((a, b) => String.Compare(a.mac, b.mac));
+
+        return list;
+    }
+
+    private static void SendAndReceive(UdpClient client, List<IpDiscoveryFrame.DiscoverItem> list) {
+        IPEndPoint remoteEndPointA = new IPEndPoint(multicastAddress, port);
+        IPEndPoint remoteEndPointB = new IPEndPoint(IPAddress.Broadcast, port);
+
         try {
-            IPEndPoint endPoint = new IPEndPoint(address, port);
-            client.Send(requestData, requestData.Length, endPoint);
+            client.Send(requestData, requestData.Length, remoteEndPointA);
+            client.Send(requestData, requestData.Length, remoteEndPointB);
             client.Client.ReceiveTimeout = timeout;
 
             while (true) {
                 try {
-                    IPEndPoint remoteEndPoint = new IPEndPoint(IPAddress.Any, 0);
-                    byte[] receivedData = client.Receive(ref remoteEndPoint);
+                    IPEndPoint receivedEndPoint = new IPEndPoint(IPAddress.Any, 0);
+                    byte[] receivedData = client.Receive(ref receivedEndPoint);
 
                     (IpDiscoveryFrame.DiscoverItem item, bool error) = Parse(receivedData);
-                    if (!error) {
-                        list.Add(item);
-                    }
+                    if (error) continue;
+
+                    if (list.FindIndex(o => o.mac == item.mac) > -1) continue;
+
+                    list.Add(item);
+
                 }
                 catch (SocketException ex) when (ex.SocketErrorCode == SocketError.TimedOut) {
                     break;
@@ -40,10 +57,6 @@ public class Ubiquiti {
             }
         }
         catch { }
-
-        list.Sort((a, b) => String.Compare(a.mac, b.mac));
-
-        return list;
     }
 
     private static (IpDiscoveryFrame.DiscoverItem, bool) Parse(byte[] data) {
@@ -51,10 +64,12 @@ public class Ubiquiti {
 
         byte type = data[0];
 
-        return type switch {
+        /*return type switch {
             1 => ParseType1(data),
             _ => (default, true),
-        };
+        };*/
+
+        return ParseType1(data);
     }
 
     private static (IpDiscoveryFrame.DiscoverItem, bool) ParseType1(byte[] data) {

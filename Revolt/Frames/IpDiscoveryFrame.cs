@@ -1,6 +1,4 @@
 ﻿using System.Net;
-using System.Net.NetworkInformation;
-using System.Net.Sockets;
 using Revolt.Protocols;
 
 namespace Revolt.Frames;
@@ -23,9 +21,11 @@ public sealed class IpDiscoveryFrame : Ui.Frame {
     private CancellationTokenSource cancellationTokenSource;
     private CancellationToken cancellationToken;
 
-    public bool icmp     = true;
-    public bool mdns     = false;
-    public bool ubiquiti = false;
+    private bool icmp     = true;
+    private bool mdns     = false;
+    private bool ubiquiti = false;
+
+    private (IPAddress, IPAddress, IPAddress) networkRange = (IPAddress.Loopback, IPAddress.Broadcast, IPAddress.IPv6None);
 
     public IpDiscoveryFrame() {
         toolbar = new Ui.Toolbar(this) {
@@ -154,14 +154,15 @@ public sealed class IpDiscoveryFrame : Ui.Frame {
         Tokens.dictionary.TryAdd(cancellationTokenSource, cancellationToken);
 
         if (ubiquiti) {
-            List<DiscoverItem> items = Proprietary.Ubiquiti.Discover();
+            List<DiscoverItem> items = Proprietary.Ubiquiti.Discover(networkRange.Item1);
             for (int i = 0; i < items.Count; i++) {
+                if (list.items.FindIndex(o => o.mac == items[i].mac) > -1) continue;
                 list.Add(items[i]);
             }
         }
 
         if (mdns) {
-            List<Mdns.Answer> answers = Mdns.Resolve(Mdns.anyDeviceQuery);
+            List<Mdns.Answer> answers = Mdns.Resolve(Mdns.anyDeviceQuery, 1000, Protocols.Dns.RecordType.ANY);
             for (int i = 0; i < answers.Count; i++) {
                 list.Add(new DiscoverItem() {
                      ip = answers[i].remote.ToString(),
@@ -205,6 +206,8 @@ public sealed class IpDiscoveryFrame : Ui.Frame {
             mdns     = dialog.mdnsToggle.Value;
             ubiquiti = dialog.ubiquitiToggle.Value;
 
+            networkRange = dialog.networks[dialog.rangeSelectBox.index];
+
             dialog.Close();
             Task.Run(Discover);
         };
@@ -224,36 +227,41 @@ public sealed class IpDiscoveryFrame : Ui.Frame {
 }
 
 file sealed class OptionsDialog : Ui.DialogBox {
-    public Ui.SelectBox nicSelectBox;
+    public Ui.SelectBox rangeSelectBox;
+    public Ui.Toggle    icmpToggle;
+    public Ui.Toggle    mdnsToggle;
+    public Ui.Toggle    ubiquitiToggle;
 
-    public Ui.Toggle icmpToggle;
-    public Ui.Toggle mdnsToggle;
-    public Ui.Toggle ubiquitiToggle;
+    public (IPAddress, IPAddress, IPAddress)[] networks;
 
     public OptionsDialog() {
-        string[] interfaces = GetNetworkInterfaces();
+        networks = NetTools.GetDirectNetworks();
 
-        if (interfaces.Length == 0) {
-            interfaces = [String.Empty];
+        string[] networksString;
+        if (networks.Length == 0) {
+            networksString = [String.Empty];
+        }
+        else {
+            networksString = networks.Select(o => $"{o.Item1}/{NetTools.SubnetMaskToCidr(o.Item2)}").ToArray(); ;
         }
 
         okButton.text = "  Start  ";
 
-        nicSelectBox = new Ui.SelectBox(this) {
-            options = interfaces,
+        rangeSelectBox = new Ui.SelectBox(this) {
+            options = networksString
         };
 
         icmpToggle     = new Ui.Toggle(this, "ICMP");
         mdnsToggle     = new Ui.Toggle(this, "mDNS");
         ubiquitiToggle = new Ui.Toggle(this, "Ubiquiti discover");
 
-        elements.Add(nicSelectBox);
+        elements.Add(rangeSelectBox);
 
         elements.Add(icmpToggle);
         elements.Add(mdnsToggle);
         elements.Add(ubiquitiToggle);
 
-        defaultElement = nicSelectBox;
+        defaultElement = rangeSelectBox;
     }
 
     public override void Draw(int width, int height) {
@@ -269,9 +277,9 @@ file sealed class OptionsDialog : Ui.DialogBox {
         Ansi.Write(blank);
 
         WriteLabel("Range:", left, ++top, width);
-        nicSelectBox.left = left + 16;
-        nicSelectBox.right = Renderer.LastWidth - width - left + 2;
-        nicSelectBox.top = top++ - 1;
+        rangeSelectBox.left = left + 16;
+        rangeSelectBox.right = Renderer.LastWidth - width - left + 2;
+        rangeSelectBox.top = top++ - 1;
 
         Ansi.SetCursorPosition(left, top++);
         Ansi.Write(blank);
@@ -308,8 +316,8 @@ file sealed class OptionsDialog : Ui.DialogBox {
             elements[i].Draw(false);
         }
 
-        if (focusedElement == nicSelectBox) {
-            nicSelectBox.Focus();
+        if (focusedElement == rangeSelectBox) {
+            rangeSelectBox.Focus();
         }
 
         Ansi.Push();
@@ -327,7 +335,7 @@ file sealed class OptionsDialog : Ui.DialogBox {
             return true;
 
         case ConsoleKey.Enter:
-            if (focusedElement == nicSelectBox) {
+            if (focusedElement == rangeSelectBox) {
                 okButton.action();
                 return true;
             }
@@ -343,32 +351,5 @@ file sealed class OptionsDialog : Ui.DialogBox {
     public override void Close() {
         Ansi.HideCursor();
         base.Close();
-    }
-
-    private static string[] GetNetworkInterfaces() {
-        List<string> filtered = [];
-
-        NetworkInterface[] interfaces = NetworkInterface.GetAllNetworkInterfaces();
-        foreach (NetworkInterface nic in interfaces) {
-            UnicastIPAddressInformationCollection unicast = nic.GetIPProperties().UnicastAddresses;
-
-            if (unicast.Count == 0) continue;
-
-            IPAddress localIpV4 = null;
-            IPAddress subnetMask = null;
-
-            foreach (UnicastIPAddressInformation address in unicast) {
-                if (address.Address.AddressFamily == AddressFamily.InterNetwork) {
-                    localIpV4 = address.Address;
-                    subnetMask = address.IPv4Mask;
-                }
-            }
-
-            if (localIpV4 is null || IPAddress.IsLoopback(localIpV4) || localIpV4.IsApipa()) continue;
-
-            filtered.Add($"{localIpV4}/{Data.SubnetMaskToCidr(subnetMask)}");
-        }
-
-        return filtered.ToArray();
     }
 }

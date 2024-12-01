@@ -69,6 +69,12 @@ public sealed class SynchronizedList<T> : IList<T> where T : notnull {
         }
     }
 
+    public int FindIndex(Predicate<T> match) {
+        lock (_mutex) {
+            return _list.FindIndex(match);
+        }
+    }
+
     public int IndexOf(T item) {
         lock (_mutex) {
             return _list.IndexOf(item);

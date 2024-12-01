@@ -1,25 +1,27 @@
-﻿using Revolt.Frames;
-using System.Net;
+﻿using System.Net;
 using System.Net.Sockets;
 using System.Text;
+using Revolt.Frames;
 
 namespace Revolt.Proprietary;
 
 public class Mndp {
     private const           int       timeout     = 1000;
     private static readonly int       port        = 5678;
+    private static readonly IPAddress multicastAddress = IPAddress.Parse("239.255.255.255");
     private static readonly byte[]    requestData = [0x00, 0x00, 0x00, 0x00];
 
-    public static List<IpDiscoveryFrame.DiscoverItem> Discover() {
+    public static List<IpDiscoveryFrame.DiscoverItem> Discover(IPAddress localIpV4, IPAddress localIpV6) {
         List<IpDiscoveryFrame.DiscoverItem> list = [];
 
-        using UdpClient client = new UdpClient() {
+        IPEndPoint localEndPointV4 = new IPEndPoint(localIpV4, 0);
+
+        using UdpClient client = new UdpClient(localEndPointV4) {
             EnableBroadcast = true
         };
 
         IPEndPoint broadcastEndpoint   = new(IPAddress.Broadcast, port);
-        IPEndPoint multicastEndpoint   = new(IPAddress.Parse("239.255.255.255"), port);
-        IPEndPoint multicastEndpointV6 = new(IPAddress.Parse("ff02::1"), port);
+        IPEndPoint multicastEndpoint   = new(multicastAddress, port);
 
         try {
             client.Send(requestData, requestData.Length, broadcastEndpoint);
@@ -28,8 +30,8 @@ public class Mndp {
 
             while (true) {
                 try {
-                    IPEndPoint remoteEndPoint = new IPEndPoint(IPAddress.Any, 0);
-                    byte[] receivedData = client.Receive(ref remoteEndPoint);
+                    IPEndPoint receivedEndPoint = new IPEndPoint(IPAddress.Any, 0);
+                    byte[] receivedData = client.Receive(ref receivedEndPoint);
 
                     (IpDiscoveryFrame.DiscoverItem item, bool error) = Parse(receivedData);
                     if (!error) {
@@ -42,6 +44,37 @@ public class Mndp {
             }
         }
         catch { }
+
+        if (localIpV6 is not null && localIpV6 != IPAddress.IPv6None) {
+            IPEndPoint localEndPointV6 = new IPEndPoint(localIpV6, 0);
+
+            using UdpClient clientV6 = new UdpClient(localEndPointV6) {
+                EnableBroadcast = true
+            };
+
+            IPEndPoint multicastEndpointV6 = new(IPAddress.Parse("ff02::1"), port);
+
+            try {
+                clientV6.Send(requestData, requestData.Length, multicastEndpointV6);
+                clientV6.Client.ReceiveTimeout = timeout;
+
+                while (true) {
+                    try {
+                        IPEndPoint receivedEndPoint = new IPEndPoint(IPAddress.IPv6Any, 0);
+                        byte[] receivedData = clientV6.Receive(ref receivedEndPoint);
+
+                        (IpDiscoveryFrame.DiscoverItem item, bool error) = Parse(receivedData);
+                        if (!error) {
+                            list.Add(item);
+                        }
+                    }
+                    catch (SocketException ex) when (ex.SocketErrorCode == SocketError.TimedOut) {
+                        break;
+                    }
+                }
+            }
+            catch { }
+        }
 
         return list;
     }

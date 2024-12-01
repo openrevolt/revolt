@@ -25,7 +25,7 @@
 
     <ImplicitUsings>enable</ImplicitUsings>
     <Nullable>disable</Nullable>
-    <PublishAot>false</PublishAot>
+    <PublishAot>true</PublishAot>
     <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
 
     <WarningLevel>9999</WarningLevel>
