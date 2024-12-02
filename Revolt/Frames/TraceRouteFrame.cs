@@ -273,9 +273,9 @@ public sealed class TraceRouteFrame : Ui.Frame {
     private static async Task<string[]> TraceHost(string target, int timeout, int ttl) {
         using Ping ping = new Ping();
 
-        string host, domain, rtt;
-        domain = String.Empty;
-        rtt = String.Empty;
+        string host;
+        string domain = String.Empty;
+        string rtt = String.Empty;
 
         try {
             PingReply reply = await ping.SendPingAsync(target, timeout, Protocols.Icmp.ICMP_PAYLOAD, new PingOptions(ttl, true));
@@ -287,8 +287,8 @@ public sealed class TraceRouteFrame : Ui.Frame {
                 }
                 catch { }
 
-                reply = await ping.SendPingAsync(host, timeout, Protocols.Icmp.ICMP_PAYLOAD, new PingOptions(ttl, true));
-                rtt = $"{reply.RoundtripTime}ms";
+                PingReply rttReply = await ping.SendPingAsync(host, timeout, Protocols.Icmp.ICMP_PAYLOAD, new PingOptions(ttl, true));
+                rtt = $"{rttReply.RoundtripTime}ms";
             }
             else if (reply.Status == IPStatus.TimedOut) {
                 host = "--";

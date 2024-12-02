@@ -7,16 +7,29 @@ public sealed class MainMenu : Ui.Frame {
     public static MainMenu Instance { get; } = new MainMenu();
 
     public MainMenu() {
-        menu = [
-            "Ping",
-            "DNS lookup",
-            "Trace route",
-            "IP discovery",
-            "Packet sniffer",
-            null,
-            "Configuration",
-            "Quit"
-        ];
+        if (OperatingSystem.IsMacOS()) {
+            menu = [
+                "Ping",
+                "DNS lookup",
+                "IP discovery",
+                "Packet sniffer",
+                null,
+                "Configuration",
+                "Quit"
+            ];
+        }
+        else {
+            menu = [
+                "Ping",
+                "DNS lookup",
+                "Trace route",
+                "IP discovery",
+                "Packet sniffer",
+                null,
+                "Configuration",
+                "Quit"
+            ];    
+        }        
     }
 
     public override void Show(bool draw = true) {
