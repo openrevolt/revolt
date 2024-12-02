@@ -73,8 +73,7 @@ public static class Mdns {
                 Answer[] answer = ParseAnswers(response, senders[i], out _, out _, out _, includeAdditionalRrs);
 
                 foreach (Answer ans in answer) {
-                    if (type != RecordType.ANY && ans.type != type) continue;
-                    if (!includeAdditionalRrs && !ans.questionString.Equals(queryString, StringComparison.OrdinalIgnoreCase)) continue;
+                    if (answers.FindIndex(o => o.remote == ans.remote) > -1) continue;
                     answers.Add(ans);
                 }
             }

@@ -1,5 +1,4 @@
-﻿using System.Collections.Generic;
-using System.Net;
+﻿using System.Net;
 using System.Net.Sockets;
 using System.Text;
 using Revolt.Frames;
@@ -7,12 +6,11 @@ using Revolt.Frames;
 namespace Revolt.Proprietary;
 
 public class Ubiquiti {
-    private const           int       timeout          = 2000;
     private const           int       port             = 10001;
     private static readonly IPAddress multicastAddress = IPAddress.Parse("233.89.188.1");
     private static readonly byte[]    requestData      = [0x01, 0x00, 0x00, 0x00];
 
-    public static List<IpDiscoveryFrame.DiscoverItem> Discover(IPAddress localIpV4) {
+    public static List<IpDiscoveryFrame.DiscoverItem> Discover(IPAddress localIpV4, int timeout = 1000) {
         List<IpDiscoveryFrame.DiscoverItem> list = [];
 
         IPEndPoint localEndPointV4 = new IPEndPoint(localIpV4, 0);
@@ -20,20 +18,20 @@ public class Ubiquiti {
             EnableBroadcast = true
         };
 
-        SendAndReceive(client, list);
-
-        SendAndReceive(client, list);
+        SendAndReceive(client, list, timeout);
 
         list.Sort((a, b) => String.Compare(a.mac, b.mac));
 
         return list;
     }
 
-    private static void SendAndReceive(UdpClient client, List<IpDiscoveryFrame.DiscoverItem> list) {
+    private static void SendAndReceive(UdpClient client, List<IpDiscoveryFrame.DiscoverItem> list, int timeout) {
         IPEndPoint remoteEndPointA = new IPEndPoint(multicastAddress, port);
         IPEndPoint remoteEndPointB = new IPEndPoint(IPAddress.Broadcast, port);
 
         try {
+            client.Send(requestData, requestData.Length, remoteEndPointA);
+            client.Send(requestData, requestData.Length, remoteEndPointB);
             client.Send(requestData, requestData.Length, remoteEndPointA);
             client.Send(requestData, requestData.Length, remoteEndPointB);
             client.Client.ReceiveTimeout = timeout;
@@ -49,11 +47,11 @@ public class Ubiquiti {
                     if (list.FindIndex(o => o.mac == item.mac) > -1) continue;
 
                     list.Add(item);
-
                 }
                 catch (SocketException ex) when (ex.SocketErrorCode == SocketError.TimedOut) {
                     break;
                 }
+                catch (Exception) { }
             }
         }
         catch { }
@@ -84,6 +82,8 @@ public class Ubiquiti {
             byte size = data[index++];
 
             if (index + size > data.Length) return (default, true);
+
+            if (attributers.ContainsKey(type)) continue;
 
             attributers.Add(type, (index, size));
 
@@ -126,7 +126,15 @@ public class Ubiquiti {
 
             case 0x0C: {
                 string product = ExtractString(data, offset, size);
-                item.other = product;
+                if (String.IsNullOrEmpty(product)) break;
+                item.other = String.IsNullOrEmpty(item.other) ? product : $"{product} - {item.other}";
+                break;
+            }
+
+            case 0x0F: {
+                string model = ExtractString(data, offset, size);
+                if (String.IsNullOrEmpty(model)) break;
+                item.other = String.IsNullOrEmpty(item.other) ? model : $"{item.other} - {model}";
                 break;
             }
 

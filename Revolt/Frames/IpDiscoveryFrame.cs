@@ -118,17 +118,27 @@ public sealed class IpDiscoveryFrame : Ui.Frame {
             Ansi.Write(item.name.Length > nameWidth ? item.name[..(nameWidth - 1)] + Data.ELLIPSIS : item.name.PadRight(nameWidth));
         }
 
-        Ansi.Write(item.ip);
-        Ansi.Write(new String(' ', Math.Max(ipWidth - item.ip.Length, 0)));
+        if (String.IsNullOrEmpty(item.ip)) {
+            Ansi.Write(new String(' ', ipWidth));
+        }
+        else {
+            Ansi.Write(item.ip);
+            Ansi.Write(new String(' ', Math.Max(ipWidth - item.ip.Length, 0)));
+        }
 
-        Ansi.Write(item.mac);
-        Ansi.Write(new String(' ', Math.Max(macWidth - item.mac.Length, 0)));
+        if (String.IsNullOrEmpty(item.mac)) {
+            Ansi.Write(new String(' ', macWidth));
+        }
+        else {
+            Ansi.Write(item.mac);
+            Ansi.Write(new String(' ', Math.Max(macWidth - item.mac.Length, 0)));
+        }
 
 
         if (String.IsNullOrEmpty(item.other)) {
             Ansi.Write(new string(' ', otherWidth));
         }
-        else {
+        else if (otherWidth > 0) {
             Ansi.Write(item.other.Length > otherWidth ? item.other[..(otherWidth - 1)] + Data.ELLIPSIS : item.other.PadRight(otherWidth));
         }
 
@@ -154,9 +164,17 @@ public sealed class IpDiscoveryFrame : Ui.Frame {
         Tokens.dictionary.TryAdd(cancellationTokenSource, cancellationToken);
 
         if (ubiquiti) {
-            List<DiscoverItem> items = Proprietary.Ubiquiti.Discover(networkRange.Item1);
+            List<DiscoverItem> items = Proprietary.Ubiquiti.Discover(networkRange.Item1, 500);
             for (int i = 0; i < items.Count; i++) {
                 if (list.items.FindIndex(o => o.mac == items[i].mac) > -1) continue;
+                list.Add(items[i]);
+            }
+
+            list.Draw(true);
+
+            items = Proprietary.Ubiquiti.Discover(networkRange.Item1, 5000);
+            for (int i = 0; i < items.Count; i++) {
+                if (list.items.FindIndex(o => o.mac == items[i].mac && o.ip == items[i].ip) > -1) continue;
                 list.Add(items[i]);
             }
         }
@@ -171,7 +189,6 @@ public sealed class IpDiscoveryFrame : Ui.Frame {
         }
 
         list.Draw(true);
-
 
         while (!cancellationToken.IsCancellationRequested) {
             if (Renderer.ActiveFrame == this && Renderer.ActiveDialog is null) {

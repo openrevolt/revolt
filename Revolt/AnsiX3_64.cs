@@ -49,7 +49,8 @@ public static class Ansi {
     queue.Enqueue($"{text}{Environment.NewLine}");
 
     public static void ClearScreen() =>
-    queue.Enqueue("\x1b[2J");
+    Console.Clear();
+    //queue.Enqueue("\x1b[2J");
 
     public static void ClearLine() =>
     queue.Enqueue("\x1b[2K");
