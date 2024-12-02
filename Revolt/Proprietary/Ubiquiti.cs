@@ -62,12 +62,10 @@ public class Ubiquiti {
 
         byte type = data[0];
 
-        /*return type switch {
+        return type switch {
             1 => ParseType1(data),
             _ => (default, true),
-        };*/
-
-        return ParseType1(data);
+        };
     }
 
     private static (IpDiscoveryFrame.DiscoverItem, bool) ParseType1(byte[] data) {
@@ -125,16 +123,9 @@ public class Ubiquiti {
             }
 
             case 0x0C: {
-                string product = ExtractString(data, offset, size);
+                string product = ExtractString(data, offset, size).Trim();
                 if (String.IsNullOrEmpty(product)) break;
                 item.other = String.IsNullOrEmpty(item.other) ? product : $"{product} - {item.other}";
-                break;
-            }
-
-            case 0x0F: {
-                string model = ExtractString(data, offset, size);
-                if (String.IsNullOrEmpty(model)) break;
-                item.other = String.IsNullOrEmpty(item.other) ? model : $"{item.other} - {model}";
                 break;
             }
 

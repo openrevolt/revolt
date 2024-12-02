@@ -35,4 +35,8 @@
 
   </PropertyGroup>
 
+	<ItemGroup Condition="'$(Configuration)' == 'RELEASE'">
+		<ProjectReference Include="..\Revolt-MacLookupGenerator\Revolt-MacLookupGenerator.csproj" OutputItemType="Analyzer" />
+	</ItemGroup>
+
 </Project>

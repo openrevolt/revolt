@@ -21,9 +21,9 @@ public sealed class IpDiscoveryFrame : Ui.Frame {
     private CancellationTokenSource cancellationTokenSource;
     private CancellationToken cancellationToken;
 
-    private bool icmp     = true;
+    private bool icmp     = false;
     private bool mdns     = false;
-    private bool ubiquiti = false;
+    private bool ubiquiti = true;
 
     private (IPAddress, IPAddress, IPAddress) networkRange = (IPAddress.Loopback, IPAddress.Broadcast, IPAddress.IPv6None);
 
