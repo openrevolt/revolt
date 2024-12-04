@@ -41,7 +41,7 @@ public sealed class IpDiscoveryFrame : Ui.Frame {
             left              = 1,
             right             = 1,
             top               = 3,
-            bottom            = 1,
+            bottom            = 2,
             itemHeight        = 1,
             drawItemHandler   = DrawDiscoverItem,
             drawStatusHandler = DrawStatus
@@ -88,10 +88,11 @@ public sealed class IpDiscoveryFrame : Ui.Frame {
         int adjustedY = y + index - list.scrollOffset * list.itemHeight;
         if (adjustedY < y || adjustedY > Renderer.LastHeight) return;
 
-        int nameWidth = Math.Min(width / 3, 40);
-        int ipWidth = 18;
-        int macWidth = 20;
-        int otherWidth = width - nameWidth - ipWidth - macWidth;
+        int nameWidth         = Math.Min(width / 4, 40);
+        int ipWidth           = 18;
+        int macWidth          = 20;
+        int manufactorerWidth = Math.Min(width / 4, 40);
+        int otherWidth        = width - nameWidth - ipWidth - macWidth - manufactorerWidth;
 
         Ansi.SetCursorPosition(2, adjustedY);
 
@@ -134,6 +135,12 @@ public sealed class IpDiscoveryFrame : Ui.Frame {
             Ansi.Write(new String(' ', Math.Max(macWidth - item.mac.Length, 0)));
         }
 
+        if (String.IsNullOrEmpty(item.manufacturer)) {
+            Ansi.Write(new string(' ', manufactorerWidth));
+        }
+        else if (manufactorerWidth > 0) {
+            Ansi.Write(item.manufacturer.Length > manufactorerWidth ? item.manufacturer[..(manufactorerWidth - 1)] + Data.ELLIPSIS : item.manufacturer.PadRight(manufactorerWidth));
+        }
 
         if (String.IsNullOrEmpty(item.other)) {
             Ansi.Write(new string(' ', otherWidth));

@@ -81,12 +81,11 @@ public class Generator : IIncrementalGenerator {
 
         for (int i = 0; i < 256; i++) {
             builder.AppendLine("    [");
-            foreach (var (b, c, vendor) in array[i]) {
+            foreach ((byte b, byte c, string vendor) in array[i]) {
                 builder.AppendLine($"    ({b}, {c}, \"{vendor}\"),");
             }
             builder.AppendLine("    ],");
         }
-
     }
 
 }

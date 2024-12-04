@@ -2,6 +2,7 @@
 using System.Net.Sockets;
 using System.Text;
 using Revolt.Frames;
+using Revolt.Protocols;
 
 namespace Revolt.Proprietary;
 
@@ -130,6 +131,10 @@ public class Ubiquiti {
             }
 
             }
+        }
+
+        if (!String.IsNullOrEmpty(item.mac)) {
+            item.manufacturer = MacLookup.Lookup(item.mac);
         }
 
         return (item, false);

@@ -172,17 +172,17 @@ public sealed class DnsFrame : Ui.Frame {
         DnsItem item;
 
         if (answer.error > 0) {
-            string errorMessage = Dns.errorMessages.TryGetValue(answer.error, out var err) ? err : "unknown error";
+            string errorMessage = Dns.errorMessages.TryGetValue(answer.error, out string err) ? err : "unknown error";
             int questionTypeIndex = Array.IndexOf(Dns.types, questionType);
 
             item = new DnsItem() {
                 questionString = question,
-                questionType  = questionTypeIndex,
-                questionColor = Dns.typesColors[questionTypeIndex],
-                answerString  = errorMessage,
-                answerType    = -1,
-                answerColor   = [255, 255, 255],
-                ttl           = 0,
+                questionType   = questionTypeIndex,
+                questionColor  = Dns.typesColors[questionTypeIndex],
+                answerString   = errorMessage,
+                answerType     = -1,
+                answerColor    = [255, 255, 255],
+                ttl            = 0,
             };
         }
         else if (String.IsNullOrEmpty(answer.answerString)) {
@@ -191,12 +191,12 @@ public sealed class DnsFrame : Ui.Frame {
 
             item = new DnsItem() {
                 questionString = question,
-                questionType = questionTypeIndex,
-                questionColor = Dns.typesColors[questionTypeIndex],
-                answerString = errorMessage,
-                answerType = -1,
-                answerColor = [255, 255, 255],
-                ttl = 0,
+                questionType   = questionTypeIndex,
+                questionColor  = Dns.typesColors[questionTypeIndex],
+                answerString   = errorMessage,
+                answerType     = -1,
+                answerColor    = [255, 255, 255],
+                ttl            = 0,
             };
         }
         else {
