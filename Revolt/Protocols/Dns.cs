@@ -270,7 +270,7 @@ public static class Dns {
             DefaultVersionPolicy = HttpVersionPolicy.RequestVersionExact
         };
 
-        /*try*/ {
+        try {
             HttpResponseMessage response = await client.GetAsync(url);
             response.EnsureSuccessStatusCode();
 
@@ -278,9 +278,9 @@ public static class Dns {
 
             return ParseJsonAnswer(body);
         }
-        /*catch {
+        catch {
             return null;
-        }*/
+        }
     }
 
     private static byte[] ConstructQuery(string[] domainNames, RecordType type, bool isStandard, bool isInverse, bool isServerStatus, bool isTruncated, bool isRecursive) {
@@ -512,7 +512,6 @@ public static class Dns {
 
         int index = offset;
         while (index < labels.Length) {
-
             if (index > 0 && (labels[index] & 0xC0) != 0xc0) builder.Append('.');
 
             switch (labels[index]) {

@@ -171,32 +171,24 @@ public sealed class IpDiscoveryFrame : Ui.Frame {
         Tokens.dictionary.TryAdd(cancellationTokenSource, cancellationToken);
 
         if (ubiquiti) {
-            List<DiscoverItem> items = Proprietary.Ubiquiti.Discover(networkRange.Item1, 500);
-            for (int i = 0; i < items.Count; i++) {
-                if (list.items.FindIndex(o => o.mac == items[i].mac) > -1) continue;
-                list.Add(items[i]);
-            }
-
-            list.Draw(true);
-
-            items = Proprietary.Ubiquiti.Discover(networkRange.Item1, 5000);
-            for (int i = 0; i < items.Count; i++) {
-                if (list.items.FindIndex(o => o.mac == items[i].mac && o.ip == items[i].ip) > -1) continue;
-                list.Add(items[i]);
-            }
+            DiscoverUbiquiti(cancellationToken);
         }
 
         if (mdns) {
-            List<Mdns.Answer> answers = Mdns.Resolve(Mdns.anyDeviceQuery, 1000, Protocols.Dns.RecordType.ANY);
-            for (int i = 0; i < answers.Count; i++) {
-                list.Add(new DiscoverItem() {
-                     ip = answers[i].remote.ToString(),
-                });
-            }
+            DiscoverMdns();
         }
 
-        list.Draw(true);
+        if (icmp) {
+            await DiscoverIcmp(cancellationToken);
+        }
 
+        Tokens.dictionary.TryRemove(cancellationTokenSource, out _);
+        cancellationTokenSource.Dispose();
+
+        list.Draw(true);
+    }
+
+    private async Task DiscoverIcmp(CancellationToken cancellationToken) {
         while (!cancellationToken.IsCancellationRequested) {
             if (Renderer.ActiveFrame == this && Renderer.ActiveDialog is null) {
                 DrawStatus();
@@ -207,19 +199,27 @@ public sealed class IpDiscoveryFrame : Ui.Frame {
             if (Renderer.ActiveDialog is not null) continue;
             if (Renderer.ActiveFrame != this) continue;
         }
-
-        Tokens.dictionary.TryRemove(cancellationTokenSource, out _);
-        cancellationTokenSource.Dispose();
-
-        list.Draw(true);
     }
 
-    private void AddItem(string host) {
-        if (String.IsNullOrEmpty(host)) return;
+    private void DiscoverMdns() {
+        List<Mdns.Answer> answers = Mdns.Resolve(Mdns.anyDeviceQuery, 1000, Protocols.Dns.RecordType.ANY);
+        for (int i = 0; i < answers.Count; i++) {
+            list.Add(new DiscoverItem() {
+                 ip = answers[i].remote.ToString(),
+            });
+        }
 
-        list.Add(new DiscoverItem {
-            status = 0,
-        });
+       list.Draw(true);
+    }
+
+    private void DiscoverUbiquiti(CancellationToken cancellationToken) {
+        List<DiscoverItem> items = Proprietary.Ubiquiti.Discover(networkRange.Item1, cancellationToken);
+        for (int i = 0; i < items.Count; i++) {
+            if (list.items.FindIndex(o => o.mac == items[i].mac) > -1) continue;
+            list.Add(items[i]);
+        }
+
+        list.Draw(true);
     }
 
     private void Start() {

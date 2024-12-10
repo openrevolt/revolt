@@ -11,7 +11,7 @@ public class Ubiquiti {
     private static readonly IPAddress multicastAddress = IPAddress.Parse("233.89.188.1");
     private static readonly byte[]    requestData      = [0x01, 0x00, 0x00, 0x00];
 
-    public static List<IpDiscoveryFrame.DiscoverItem> Discover(IPAddress localIpV4, int timeout = 1000) {
+    public static List<IpDiscoveryFrame.DiscoverItem> Discover(IPAddress localIpV4, CancellationToken cancellationToken, int timeout = 3000) {
         List<IpDiscoveryFrame.DiscoverItem> list = [];
 
         IPEndPoint localEndPointV4 = new IPEndPoint(localIpV4, 0);
@@ -19,25 +19,27 @@ public class Ubiquiti {
             EnableBroadcast = true
         };
 
-        SendAndReceive(client, list, timeout);
+        SendAndReceive(client, list, timeout, cancellationToken);
 
         list.Sort((a, b) => String.Compare(a.mac, b.mac));
 
         return list;
     }
 
-    private static void SendAndReceive(UdpClient client, List<IpDiscoveryFrame.DiscoverItem> list, int timeout) {
+    private static void SendAndReceive(UdpClient client, List<IpDiscoveryFrame.DiscoverItem> list, int timeout, CancellationToken cancellationToken) {
         IPEndPoint remoteEndPointA = new IPEndPoint(multicastAddress, port);
         IPEndPoint remoteEndPointB = new IPEndPoint(IPAddress.Broadcast, port);
 
         try {
             client.Send(requestData, requestData.Length, remoteEndPointA);
-            client.Send(requestData, requestData.Length, remoteEndPointB);
             client.Send(requestData, requestData.Length, remoteEndPointA);
+            client.Send(requestData, requestData.Length, remoteEndPointB);
             client.Send(requestData, requestData.Length, remoteEndPointB);
             client.Client.ReceiveTimeout = timeout;
 
             while (true) {
+                if (cancellationToken.IsCancellationRequested) break;
+
                 try {
                     IPEndPoint receivedEndPoint = new IPEndPoint(IPAddress.Any, 0);
                     byte[] receivedData = client.Receive(ref receivedEndPoint);
@@ -98,7 +100,6 @@ public class Ubiquiti {
             (int offset, int size) = pair.Value;
 
             switch (type) {
-
             case 0x01: {
                 string mac = ExtractMac(data, offset);
                 item.mac = mac;

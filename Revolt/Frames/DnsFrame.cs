@@ -41,11 +41,11 @@ public sealed class DnsFrame : Ui.Frame {
         };
 
         list = new Ui.ListBox<DnsItem>(this) {
-            left              = 1,
-            right             = 1,
-            top               = 3,
-            bottom            = 1,
-            drawItemHandler   = DrawDnsItem
+            left            = 1,
+            right           = 1,
+            top             = 3,
+            bottom          = 1,
+            drawItemHandler = DrawDnsItem
         };
 
         elements.Add(toolbar);
