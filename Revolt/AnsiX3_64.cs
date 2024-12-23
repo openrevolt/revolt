@@ -5,7 +5,12 @@ namespace Revolt;
 
 public static class Ansi {
     private static readonly ConcurrentQueue<string> queue = new ConcurrentQueue<string>();
+
+#if NET9_0_OR_GREATER
+    private static readonly Lock mutex = new Lock();
+#else
     private static readonly object mutex = new object();
+#endif
 
     public static void Push() {
         if (queue.IsEmpty) return;
