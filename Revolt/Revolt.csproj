@@ -1,10 +1,6 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk">
 
   <PropertyGroup>
-    <OutputType>Exe</OutputType>
-    <TargetFramework>net9.0</TargetFramework>
-    <LangVersion>13</LangVersion>
-
     <Product>Revolt</Product>
     <AssemblyName>revolt</AssemblyName>
     <Company>veniware</Company>
@@ -14,29 +10,35 @@
     <Description></Description>
     <ApplicationIcon>revolt.ico</ApplicationIcon>
 
-    <AppendTargetFrameworkToOutputPath>false</AppendTargetFrameworkToOutputPath>
-    <AppendRuntimeIdentifierToOutputPath>false</AppendRuntimeIdentifierToOutputPath>
-    
+    <OutputType>Exe</OutputType>
+    <LangVersion>13</LangVersion>
+    <TargetFrameworks>net8.0;net9.0</TargetFrameworks>
+
+    <ImplicitUsings>enable</ImplicitUsings>
+    <Nullable>disable</Nullable>
+    <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
+
+    <NoWarn>IDE0090, IDE0305</NoWarn>
+    <WarningLevel>9999</WarningLevel>
+    <TreatWarningsAsErrors>true</TreatWarningsAsErrors>
+
     <verYear>$([System.DateTime]::UtcNow.ToString(yyyy))</verYear>
     <verDoty>$([System.DateTime]::UtcNow.DayOfYear)</verDoty>
     <VersionPrefix>0.1.$(verYear).$(verDoty)</VersionPrefix>
     <AssemblyVersion>$(VersionPrefix)</AssemblyVersion>
     <Version>$(VersionPrefix)</Version>
 
-    <ImplicitUsings>enable</ImplicitUsings>
-    <Nullable>disable</Nullable>
     <PublishAot>true</PublishAot>
-    <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
 
-    <WarningLevel>9999</WarningLevel>
-    <TreatWarningsAsErrors>true</TreatWarningsAsErrors>
+    <AppendTargetFrameworkToOutputPath>true</AppendTargetFrameworkToOutputPath>
+    <AppendRuntimeIdentifierToOutputPath>true</AppendRuntimeIdentifierToOutputPath>
 
-    <NoWarn>IDE0090, IDE0305</NoWarn>
-
+    <RunAnalyzersDuringLiveAnalysis>False</RunAnalyzersDuringLiveAnalysis>
+    <RunAnalyzersDuringBuild>True</RunAnalyzersDuringBuild>
   </PropertyGroup>
 
-	<ItemGroup Condition="'$(Configuration)' == 'RELEASE'">
-		<ProjectReference Include="..\Revolt-MacLookupGenerator\Revolt-MacLookupGenerator.csproj" OutputItemType="Analyzer" />
-	</ItemGroup>
+  <ItemGroup Condition="'$(Configuration)' == 'RELEASE'">
+    <ProjectReference Include="..\Revolt-MacLookupGenerator\Revolt-MacLookupGenerator.csproj" OutputItemType="Analyzer" />
+  </ItemGroup>
 
 </Project>

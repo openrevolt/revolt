@@ -12,6 +12,9 @@ public static class Ansi {
     private static readonly object mutex = new object();
 #endif
 
+    public static bool colorMode256 = false;
+    static Ansi() => colorMode256 = OperatingSystem.IsMacOS();
+
     public static void Push() {
         if (queue.IsEmpty) return;
 
@@ -25,9 +28,9 @@ public static class Ansi {
     }
 
     private static int Basic256Color(byte[] rgb) {
-        if (rgb[0]== rgb[1] && rgb[1] == rgb[2]) {
-            if (rgb[1]< 8) return 16;
-            if (rgb[1]> 248) return 231;
+        if (rgb[0] == rgb[1] && rgb[1] == rgb[2]) {
+            if (rgb[1] < 8) return 16;
+            if (rgb[1] > 248) return 231;
             return 232 + (rgb[1] - 8) / 10;
         }
         
@@ -76,7 +79,7 @@ public static class Ansi {
     queue.Enqueue($"\x1b[{(value ? 4 : 24)}m");
 
     public static void SetFgColor(byte r, byte g, byte b) {
-        if (OperatingSystem.IsMacOS()) {
+        if (colorMode256) {
             queue.Enqueue($"\x1b[38;5;{Basic256Color(r, g, b)}m");
         }
         else {
@@ -85,7 +88,7 @@ public static class Ansi {
     }
 
     public static void SetFgColor(byte[] rgb) {
-        if (OperatingSystem.IsMacOS()) {
+        if (colorMode256) {
             queue.Enqueue($"\x1b[38;5;{Basic256Color(rgb)}m");
         }
         else {
@@ -94,7 +97,7 @@ public static class Ansi {
     }
 
     public static void SetBgColor(byte r, byte g, byte b) {
-        if (OperatingSystem.IsMacOS()) {
+        if (colorMode256) {
             queue.Enqueue($"\x1b[48;5;{Basic256Color(r, g, b)}m");
         }
         else {
@@ -103,7 +106,7 @@ public static class Ansi {
     }
 
     public static void SetBgColor(byte[] rgb) {
-        if (OperatingSystem.IsMacOS()) {
+        if (colorMode256) {
             queue.Enqueue($"\x1b[48;5;{Basic256Color(rgb)}m");
         }
         else {

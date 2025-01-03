@@ -3,7 +3,7 @@ using Revolt.Protocols;
 
 namespace Revolt.Frames;
 
-public sealed class IpDiscoveryFrame : Ui.Frame {
+public sealed class NetMapperFrame : Ui.Frame {
     public struct DiscoverItem {
         public int    status;
         public string name;
@@ -13,7 +13,7 @@ public sealed class IpDiscoveryFrame : Ui.Frame {
         public string other;
     }
 
-    public static IpDiscoveryFrame Instance { get; } = new IpDiscoveryFrame();
+    public static NetMapperFrame Instance { get; } = new NetMapperFrame();
 
     public Ui.Toolbar toolbar;
     public Ui.ListBox<DiscoverItem> list;
@@ -27,7 +27,7 @@ public sealed class IpDiscoveryFrame : Ui.Frame {
 
     private (IPAddress, IPAddress, IPAddress) networkRange = (IPAddress.Loopback, IPAddress.Broadcast, IPAddress.IPv6None);
 
-    public IpDiscoveryFrame() {
+    public NetMapperFrame() {
         toolbar = new Ui.Toolbar(this) {
             left  = 1,
             right = 1,
@@ -91,8 +91,8 @@ public sealed class IpDiscoveryFrame : Ui.Frame {
         int nameWidth         = Math.Min(width / 4, 40);
         int ipWidth           = 18;
         int macWidth          = 20;
-        int manufactorerWidth = Math.Min(width / 4, 40);
-        int otherWidth        = width - nameWidth - ipWidth - macWidth - manufactorerWidth;
+        int manufacturerWidth = Math.Min(width / 4, 40);
+        int otherWidth        = width - nameWidth - ipWidth - macWidth - manufacturerWidth;
 
         Ansi.SetCursorPosition(2, adjustedY);
 
@@ -136,10 +136,10 @@ public sealed class IpDiscoveryFrame : Ui.Frame {
         }
 
         if (String.IsNullOrEmpty(item.manufacturer)) {
-            Ansi.Write(new string(' ', manufactorerWidth));
+            Ansi.Write(new string(' ', manufacturerWidth));
         }
-        else if (manufactorerWidth > 0) {
-            Ansi.Write(item.manufacturer.Length > manufactorerWidth ? item.manufacturer[..(manufactorerWidth - 1)] + Data.ELLIPSIS : item.manufacturer.PadRight(manufactorerWidth));
+        else if (manufacturerWidth > 0) {
+            Ansi.Write(item.manufacturer.Length > manufacturerWidth ? item.manufacturer[..(manufacturerWidth - 1)] + Data.ELLIPSIS : item.manufacturer.PadRight(manufacturerWidth));
         }
 
         if (String.IsNullOrEmpty(item.other)) {
@@ -194,7 +194,7 @@ public sealed class IpDiscoveryFrame : Ui.Frame {
                 DrawStatus();
                 Ansi.Push();
             }
-            await Task.Delay(500);
+            await Task.Delay(500, cancellationToken);
 
             if (Renderer.ActiveDialog is not null) continue;
             if (Renderer.ActiveFrame != this) continue;

@@ -11,8 +11,8 @@ public class Mndp {
     private static readonly IPAddress multicastAddress = IPAddress.Parse("239.255.255.255");
     private static readonly byte[]    requestData = [0x00, 0x00, 0x00, 0x00];
 
-    public static List<IpDiscoveryFrame.DiscoverItem> Discover(IPAddress localIpV4, IPAddress localIpV6) {
-        List<IpDiscoveryFrame.DiscoverItem> list = [];
+    public static List<NetMapperFrame.DiscoverItem> Discover(IPAddress localIpV4, IPAddress localIpV6) {
+        List<NetMapperFrame.DiscoverItem> list = [];
 
         IPEndPoint localEndPointV4 = new IPEndPoint(localIpV4, 0);
 
@@ -20,8 +20,8 @@ public class Mndp {
             EnableBroadcast = true
         };
 
-        IPEndPoint broadcastEndpoint   = new(IPAddress.Broadcast, port);
-        IPEndPoint multicastEndpoint   = new(multicastAddress, port);
+        IPEndPoint broadcastEndpoint = new(IPAddress.Broadcast, port);
+        IPEndPoint multicastEndpoint = new(multicastAddress, port);
 
         try {
             client.Send(requestData, requestData.Length, broadcastEndpoint);
@@ -33,7 +33,7 @@ public class Mndp {
                     IPEndPoint receivedEndPoint = new IPEndPoint(IPAddress.Any, 0);
                     byte[] receivedData = client.Receive(ref receivedEndPoint);
 
-                    (IpDiscoveryFrame.DiscoverItem item, bool error) = Parse(receivedData);
+                    (NetMapperFrame.DiscoverItem item, bool error) = Parse(receivedData);
                     if (!error) {
                         list.Add(item);
                     }
@@ -63,7 +63,7 @@ public class Mndp {
                         IPEndPoint receivedEndPoint = new IPEndPoint(IPAddress.IPv6Any, 0);
                         byte[] receivedData = clientV6.Receive(ref receivedEndPoint);
 
-                        (IpDiscoveryFrame.DiscoverItem item, bool error) = Parse(receivedData);
+                        (NetMapperFrame.DiscoverItem item, bool error) = Parse(receivedData);
                         if (!error) {
                             list.Add(item);
                         }
@@ -79,7 +79,7 @@ public class Mndp {
         return list;
     }
 
-    private static (IpDiscoveryFrame.DiscoverItem, bool) Parse(byte[] data) {
+    private static (NetMapperFrame.DiscoverItem, bool) Parse(byte[] data) {
         int index = 4;
         Dictionary<short, (int, int)> attributers = [];
 
@@ -97,7 +97,7 @@ public class Mndp {
 
         if (attributers.Count == 0) return (default, true);
 
-        IpDiscoveryFrame.DiscoverItem item = new IpDiscoveryFrame.DiscoverItem();
+        NetMapperFrame.DiscoverItem item = new NetMapperFrame.DiscoverItem();
 
         string softwareId    = String.Empty;
         string board         = String.Empty;

@@ -7,11 +7,12 @@ public sealed class MainMenu : Ui.Frame {
     public static MainMenu Instance { get; } = new MainMenu();
 
     public MainMenu() {
-        if (OperatingSystem.IsMacOS()) {
+        if (OperatingSystem.IsWindows()) {
             menu = [
                 "Ping",
                 "DNS lookup",
-                "IP discovery",
+                "Trace route",
+                "Network mapper",
                 "Packet sniffer",
                 null,
                 "Configuration",
@@ -22,8 +23,7 @@ public sealed class MainMenu : Ui.Frame {
             menu = [
                 "Ping",
                 "DNS lookup",
-                "Trace route",
-                "IP discovery",
+                "Network mapper",
                 "Packet sniffer",
                 null,
                 "Configuration",
@@ -128,8 +128,8 @@ public sealed class MainMenu : Ui.Frame {
             TraceRouteFrame.Instance.Show();
             return true;
 
-        case "IP discovery":
-            IpDiscoveryFrame.Instance.Show();
+        case "Network mapper":
+            NetMapperFrame.Instance.Show();
             return true;
 
         case "Quit":

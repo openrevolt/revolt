@@ -11,8 +11,8 @@ public class Ubiquiti {
     private static readonly IPAddress multicastAddress = IPAddress.Parse("233.89.188.1");
     private static readonly byte[]    requestData      = [0x01, 0x00, 0x00, 0x00];
 
-    public static List<IpDiscoveryFrame.DiscoverItem> Discover(IPAddress localIpV4, CancellationToken cancellationToken, int timeout = 3000) {
-        List<IpDiscoveryFrame.DiscoverItem> list = [];
+    public static List<NetMapperFrame.DiscoverItem> Discover(IPAddress localIpV4, CancellationToken cancellationToken, int timeout = 3000) {
+        List<NetMapperFrame.DiscoverItem> list = [];
 
         IPEndPoint localEndPointV4 = new IPEndPoint(localIpV4, 0);
         using UdpClient client = new UdpClient(localEndPointV4) {
@@ -26,7 +26,7 @@ public class Ubiquiti {
         return list;
     }
 
-    private static void SendAndReceive(UdpClient client, List<IpDiscoveryFrame.DiscoverItem> list, int timeout, CancellationToken cancellationToken) {
+    private static void SendAndReceive(UdpClient client, List<NetMapperFrame.DiscoverItem> list, int timeout, CancellationToken cancellationToken) {
         IPEndPoint remoteEndPointA = new IPEndPoint(multicastAddress, port);
         IPEndPoint remoteEndPointB = new IPEndPoint(IPAddress.Broadcast, port);
 
@@ -44,7 +44,7 @@ public class Ubiquiti {
                     IPEndPoint receivedEndPoint = new IPEndPoint(IPAddress.Any, 0);
                     byte[] receivedData = client.Receive(ref receivedEndPoint);
 
-                    (IpDiscoveryFrame.DiscoverItem item, bool error) = Parse(receivedData);
+                    (NetMapperFrame.DiscoverItem item, bool error) = Parse(receivedData);
                     if (error) continue;
 
                     if (list.FindIndex(o => o.mac == item.mac) > -1) continue;
@@ -60,7 +60,7 @@ public class Ubiquiti {
         catch { }
     }
 
-    private static (IpDiscoveryFrame.DiscoverItem, bool) Parse(byte[] data) {
+    private static (NetMapperFrame.DiscoverItem, bool) Parse(byte[] data) {
         if (data.Length < 4) return (default, true);
 
         byte type = data[0];
@@ -71,7 +71,7 @@ public class Ubiquiti {
         };
     }
 
-    private static (IpDiscoveryFrame.DiscoverItem, bool) ParseType1(byte[] data) {
+    private static (NetMapperFrame.DiscoverItem, bool) ParseType1(byte[] data) {
         int index = 4;
         Dictionary<byte, (int, int)> attributers = [];
 
@@ -93,7 +93,7 @@ public class Ubiquiti {
 
         if (attributers.Count == 0) return (default, true);
 
-        IpDiscoveryFrame.DiscoverItem item = new IpDiscoveryFrame.DiscoverItem();
+        NetMapperFrame.DiscoverItem item = new NetMapperFrame.DiscoverItem();
 
         foreach (KeyValuePair<byte, (int, int)> pair in attributers) {
             byte type = pair.Key;
