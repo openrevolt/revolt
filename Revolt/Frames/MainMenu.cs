@@ -1,36 +1,19 @@
 ﻿namespace Revolt.Frames;
 
 public sealed class MainMenu : Ui.Frame {
-    public string[] menu;
     public int index;
 
-    public static MainMenu Instance { get; } = new MainMenu();
+    public string[] menu = [
+        "Ping",
+        "DNS lookup",
+        "Network mapper",
+        "Packet sniffer",
+        null,
+        "Configuration",
+        "Quit"
+    ];
 
-    public MainMenu() {
-        if (OperatingSystem.IsWindows()) {
-            menu = [
-                "Ping",
-                "DNS lookup",
-                "Trace route",
-                "Network mapper",
-                "Packet sniffer",
-                null,
-                "Configuration",
-                "Quit"
-            ];
-        }
-        else {
-            menu = [
-                "Ping",
-                "DNS lookup",
-                "Network mapper",
-                "Packet sniffer",
-                null,
-                "Configuration",
-                "Quit"
-            ];    
-        }        
-    }
+    public static MainMenu Instance { get; } = new MainMenu();
 
     public override void Show(bool draw = true) {
         Ansi.HideCursor();
@@ -122,10 +105,6 @@ public sealed class MainMenu : Ui.Frame {
 
         case "DNS lookup":
             DnsFrame.Instance.Show();
-            return true;
-
-        case "Trace route":
-            TraceRouteFrame.Instance.Show();
             return true;
 
         case "Network mapper":

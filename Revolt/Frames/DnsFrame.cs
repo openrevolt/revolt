@@ -19,15 +19,15 @@ public sealed class DnsFrame : Ui.Frame {
     public Ui.ListBox<DnsItem> list;
 
     private readonly List<string> queryHistory = [];
-    private Dns.RecordType      type             = Dns.RecordType.A;
-    private Dns.TransportMethod transport        = Dns.TransportMethod.Auto;
-    private string              server           = null;
-    private int                 timeout          = 2000;
-    private bool                isStandard       = false;
-    private bool                isInverse        = false;
-    private bool                showServerStatus = false;
-    private bool                isTruncated      = false;
-    private bool                isRecursive      = true;
+    private Dns.RecordType        type             = Dns.RecordType.A;
+    private Dns.TransportMethod   transport        = Dns.TransportMethod.Auto;
+    private string                server           = null;
+    private int                   timeout          = 2000;
+    private bool                  isStandard       = false;
+    private bool                  isInverse        = false;
+    private bool                  showServerStatus = false;
+    private bool                  isTruncated      = false;
+    private bool                  isRecursive      = true;
 
     public DnsFrame() {
         toolbar = new Ui.Toolbar(this) {
