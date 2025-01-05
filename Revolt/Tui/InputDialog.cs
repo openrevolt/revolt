@@ -1,4 +1,4 @@
-﻿namespace Revolt.Ui;
+﻿namespace Revolt.Tui;
 
 public sealed class InputDialog : DialogBox {
     public string text;

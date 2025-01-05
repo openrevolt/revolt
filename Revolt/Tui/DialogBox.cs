@@ -1,4 +1,4 @@
-﻿namespace Revolt.Ui;
+﻿namespace Revolt.Tui;
 
 public class DialogBox : Frame {
     public Button okButton;

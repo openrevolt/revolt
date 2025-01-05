@@ -1,4 +1,4 @@
-﻿namespace Revolt.Ui;
+﻿namespace Revolt.Tui;
 
 public sealed class Toggle(Frame parentFrame, string text) : Element(parentFrame) {
     public string text = text;

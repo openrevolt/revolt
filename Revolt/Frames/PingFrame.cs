@@ -3,7 +3,7 @@ using Revolt.Protocols;
 
 namespace Revolt.Frames;
 
-public sealed class PingFrame : Ui.Frame {
+public sealed class PingFrame : Tui.Frame {
     const int HISTORY_LEN = 160;
  
     enum MoveOption : int {
@@ -15,13 +15,14 @@ public sealed class PingFrame : Ui.Frame {
 
     public static PingFrame Instance { get; } = new PingFrame();
 
-    public Ui.Toolbar toolbar;
-    public Ui.ListBox<PingItem> list;
+    public Tui.ListBox<PingItem> list;
+    public Tui.Toolbar toolbar;
 
     private CancellationTokenSource cancellationTokenSource;
     private CancellationToken cancellationToken;
 
     private readonly List<string> queryHistory = [];
+
     private int        ringIndex = 0;
     private bool       status    = true;
     private int        timeout   = 1000;
@@ -29,31 +30,32 @@ public sealed class PingFrame : Ui.Frame {
     private MoveOption move      = MoveOption.Never;
 
     public PingFrame() {
-        toolbar = new Ui.Toolbar(this) {
-            left  = 1,
-            right = 1,
-            items = [
-                new Ui.Toolbar.ToolbarItem() { text="Add",     action=AddDialog},
-                new Ui.Toolbar.ToolbarItem() { text="Pause",   action=ToggleStatus },
-                new Ui.Toolbar.ToolbarItem() { text="Clear",   action=Clear },
-                new Ui.Toolbar.ToolbarItem() { text="Options", action=OptionsDialog },
-            ]
-        };
-
-        list = new Ui.ListBox<PingItem>(this) {
+        list = new Tui.ListBox<PingItem>(this) {
             left              = 1,
             right             = 1,
-            top               = 3,
-            bottom            = 1,
+            top               = 1,
+            bottom            = 3,
             itemHeight        = 2,
             drawItemHandler   = DrawPingItem,
             drawStatusHandler = DrawStatus
         };
 
-        elements.Add(toolbar);
-        elements.Add(list);
+        toolbar = new Tui.Toolbar(this) {
+            left  = 0,
+            right = 0,
+            items = [
+                new Tui.Toolbar.ToolbarItem() { text="Add",     key="INS", action=AddDialog},
+                new Tui.Toolbar.ToolbarItem() { text="Remove",  key="DEL", action=RemoveSelected},
+                new Tui.Toolbar.ToolbarItem() { text="Pause",   key="F2",  action=ToggleStatus },
+                new Tui.Toolbar.ToolbarItem() { text="Clear",   key="F3",  action=Clear },
+                new Tui.Toolbar.ToolbarItem() { text="Options", key="F4",  action=OptionsDialog },
+            ]
+        };
 
-        defaultElement = toolbar;
+        elements.Add(list);
+        elements.Add(toolbar);
+
+        defaultElement = list;
         FocusNext();
 
         if (status) {
@@ -81,7 +83,19 @@ public sealed class PingFrame : Ui.Frame {
             break;
 
         case ConsoleKey.Delete:
-            list.RemoveSelected()?.Dispose();
+            RemoveSelected();
+            break;
+
+        case ConsoleKey.F2:
+            ToggleStatus();
+            break;
+
+        case ConsoleKey.F3:
+            Clear();
+            break;
+
+        case ConsoleKey.F4:
+            OptionsDialog();
             break;
 
         default:
@@ -118,9 +132,7 @@ public sealed class PingFrame : Ui.Frame {
         Ansi.SetCursorPosition(2, y);
         Ansi.Write(item.host.Length > 23 ? item.host[..22] + Data.ELLIPSIS : item.host.PadRight(23));
 
-        Ansi.SetFgColor(index == list.index && list.isFocused ? Data.SELECT_COLOR : Data.SELECT_COLOR_LIGHT);
-        Ansi.SetBgColor(index == list.index ? Data.SELECT_COLOR_LIGHT : Data.DARK_COLOR);
-        Ansi.Write(index == list.index && list.isFocused ? Data.BIG_RIGHT_TRIANGLE : ' ');
+        Ansi.Write(' ');
     }
 
     private void UpdatePingItem(int index, int x, int y, int width) {
@@ -158,26 +170,26 @@ public sealed class PingFrame : Ui.Frame {
         int total = list.items.Count;
         int unreachable = list.items.Count(o=> o.status < 0);
 
-        Ansi.SetCursorPosition(2, Renderer.LastHeight);
+        string reachableString = $" {total - unreachable} ";
+        string unreachableString = unreachable > 0 ? $" {unreachable} " : String.Empty;
+        string totalString = $" {total} ";
+
+        int w = reachableString.Length + unreachableString.Length + totalString.Length - 1;
+        Ansi.SetCursorPosition(Renderer.LastWidth - w, Math.Max(Renderer.LastHeight - 1, 0));
 
         Ansi.SetFgColor([16, 16, 16]);
         Ansi.SetBgColor([128, 224, 48]);
-        Ansi.Write($" {total - unreachable} ");
+        Ansi.Write(reachableString);
 
         if (unreachable > 0) {
-
             Ansi.SetFgColor([16, 16, 16]);
             Ansi.SetBgColor([240, 32, 32]);
-            Ansi.Write($" {unreachable} ");
+            Ansi.Write(unreachableString);
         }
 
         Ansi.SetFgColor([16, 16, 16]);
         Ansi.SetBgColor(Data.LIGHT_COLOR);
-        Ansi.Write($" {total} ");
-
-        Ansi.SetFgColor(Data.LIGHT_COLOR);
-        Ansi.SetBgColor(Data.DARK_COLOR);
-        Ansi.Write(new String(' ', 8));
+        Ansi.Write(totalString);
     }
 
     private static byte[] DetermineRttColor(short rtt) => rtt switch {
@@ -235,7 +247,7 @@ public sealed class PingFrame : Ui.Frame {
 
                 bool shouldMoveToTop = lastStatus != Icmp.UNDEFINED && move switch {
                     MoveOption.OnRiseAndFall => lastStatus < 0 != status < 0,
-                    MoveOption.OnRise        => lastStatus < 0  && status >= 0,
+                    MoveOption.OnRise        => lastStatus < 0 && status >= 0,
                     MoveOption.OnFall        => lastStatus >= 0 && status < 0,
                     _ => false
                 };
@@ -391,7 +403,7 @@ public sealed class PingFrame : Ui.Frame {
         cancellationTokenSource?.Cancel();
 
     private void AddDialog() {
-        Ui.InputDialog dialog = new Ui.InputDialog() {
+        Tui.InputDialog dialog = new Tui.InputDialog() {
             text = "Enter IP, domain or hostname:",
         };
 
@@ -407,6 +419,10 @@ public sealed class PingFrame : Ui.Frame {
         };
 
         dialog.Show(true);
+    }
+
+    private void RemoveSelected() {
+        list.RemoveSelected()?.Dispose();
     }
 
     private void Clear() {
@@ -443,11 +459,11 @@ public sealed class PingFrame : Ui.Frame {
 
         if (status) {
             Start();
-            toolbar.items[1].text = "Pause";
+            toolbar.items[2].text = "Pause";
         }
         else {
             Stop();
-            toolbar.items[1].text = "Start";
+            toolbar.items[2].text = "Start";
         }
 
         toolbar.Draw(true);
@@ -480,11 +496,11 @@ public sealed class PingFrame : Ui.Frame {
     }
 }
 
-file sealed class ClearDialog : Ui.DialogBox {
-    public Ui.SelectBox clearSelectBox;
+file sealed class ClearDialog : Tui.DialogBox {
+    public Tui.SelectBox clearSelectBox;
 
     public ClearDialog() {
-        clearSelectBox = new Ui.SelectBox(this) {
+        clearSelectBox = new Tui.SelectBox(this) {
             options = ["Clear all", "Remove reachable", "Remove unreachable"],
         };
 
@@ -569,25 +585,25 @@ file sealed class ClearDialog : Ui.DialogBox {
     }
 }
 
-file sealed class OptionsDialog : Ui.DialogBox {
-    public Ui.IntegerBox timeoutTextbox;
-    public Ui.IntegerBox intervalTextbox;
-    public Ui.SelectBox moveSelectBox;
+file sealed class OptionsDialog : Tui.DialogBox {
+    public Tui.IntegerBox timeoutTextbox;
+    public Tui.IntegerBox intervalTextbox;
+    public Tui.SelectBox moveSelectBox;
 
     public OptionsDialog() {
-        timeoutTextbox = new Ui.IntegerBox(this) {
+        timeoutTextbox = new Tui.IntegerBox(this) {
             backColor = Data.PANE_COLOR,
             min = 50,
             max = 5_000
         };
 
-        intervalTextbox = new Ui.IntegerBox(this) {
+        intervalTextbox = new Tui.IntegerBox(this) {
             backColor = Data.PANE_COLOR,
             min = 100,
             max = 10_000
         };
 
-        moveSelectBox = new Ui.SelectBox(this) {
+        moveSelectBox = new Tui.SelectBox(this) {
             options = ["Never", "On rise", "On fall", "On rise and fall"],
         };
 

@@ -4,8 +4,8 @@ public static class Renderer {
     const int MAX_WIDTH = 240, MAX_HEIGHT = 60;
     public static int LastWidth { get; set; }
     public static int LastHeight { get; set; }
-    public static Ui.Frame ActiveFrame { get; set; }
-    public static Ui.DialogBox ActiveDialog { get; set; }
+    public static Tui.Frame ActiveFrame { get; set; }
+    public static Tui.DialogBox ActiveDialog { get; set; }
 
     private static bool isRunning;
 
@@ -81,7 +81,7 @@ public static class Renderer {
     }
 
     private static void QuitDialog() {
-        Ui.ConfirmDialog dialog = new Ui.ConfirmDialog() {
+        Tui.ConfirmDialog dialog = new Tui.ConfirmDialog() {
             text = "Are you sure you want to quit?"
         };
 

@@ -13,8 +13,7 @@ public static class Data {
     public const char ELLIPSIS = '\u2026';
 
     public const char UPPER_1_8TH_BLOCK = '\u2594';
-    public const char UPPER_4_8TH_BLOCK = '\u2580';
-
+    
     public const char LOWER_1_8TH_BLOCK = '\u2581';
     public const char LOWER_2_8TH_BLOCK = '\u2582';
     public const char LOWER_3_8TH_BLOCK = '\u2583';
@@ -28,9 +27,6 @@ public static class Data {
     public const char RIGHT_TRIANGLE = '\u25B8';
 
     public const char TOGGLE_BOX = '\u25A0';
-    
-    public const char BIG_RIGHT_TRIANGLE = '\uE0B0';
-    public const char BIG_LEFT_TRIANGLE = '\uE0B2';
 
     public const char PING_CELL = '\x258C';
 }

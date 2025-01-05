@@ -2,7 +2,7 @@
 
 namespace Revolt.Frames;
 
-public sealed class DnsFrame : Ui.Frame {
+public sealed class DnsFrame : Tui.Frame {
     public struct DnsItem {
         public string questionString;
         public int    questionType;
@@ -15,8 +15,8 @@ public sealed class DnsFrame : Ui.Frame {
 
     public static DnsFrame Instance { get; } = new DnsFrame();
 
-    public Ui.Toolbar toolbar;
-    public Ui.ListBox<DnsItem> list;
+    public Tui.ListBox<DnsItem> list;
+    public Tui.Toolbar toolbar;
 
     private readonly List<string> queryHistory = [];
     private Dns.RecordType        type             = Dns.RecordType.A;
@@ -30,28 +30,28 @@ public sealed class DnsFrame : Ui.Frame {
     private bool                  isRecursive      = true;
 
     public DnsFrame() {
-        toolbar = new Ui.Toolbar(this) {
-            left  = 1,
-            right = 1,
-            items = [
-                new Ui.Toolbar.ToolbarItem() { text="Add",     action=AddDialog},
-                new Ui.Toolbar.ToolbarItem() { text="Clear",   action=Clear },
-                new Ui.Toolbar.ToolbarItem() { text="Options", action=OptionsDialog },
-            ]
-        };
-
-        list = new Ui.ListBox<DnsItem>(this) {
+        list = new Tui.ListBox<DnsItem>(this) {
             left            = 1,
             right           = 1,
-            top             = 3,
-            bottom          = 1,
+            top             = 1,
+            bottom          = 3,
             drawItemHandler = DrawDnsItem
         };
 
-        elements.Add(toolbar);
-        elements.Add(list);
+        toolbar = new Tui.Toolbar(this) {
+            left  = 0,
+            right = 0,
+            items = [
+                new Tui.Toolbar.ToolbarItem() { text="Add",     key="INS", action=AddDialog},
+                new Tui.Toolbar.ToolbarItem() { text="Clear",   key="F3", action=Clear },
+                new Tui.Toolbar.ToolbarItem() { text="Options", key="F4", action=OptionsDialog },
+            ]
+        };
 
-        defaultElement = toolbar;
+        elements.Add(list);
+        elements.Add(toolbar);
+
+        defaultElement = list;
         FocusNext();
     }
 
@@ -76,6 +76,14 @@ public sealed class DnsFrame : Ui.Frame {
 
         case ConsoleKey.Delete:
             list.RemoveSelected();
+            break;
+
+        case ConsoleKey.F3:
+            Clear();
+            break;
+
+        case ConsoleKey.F4:
+            OptionsDialog();
             break;
 
         default:
@@ -132,9 +140,8 @@ public sealed class DnsFrame : Ui.Frame {
         Ansi.SetFgColor(foreColor);
         Ansi.Write(item.questionString.Length > adjustedQuestionWidth ? item.questionString[..(adjustedQuestionWidth-1)] + Data.ELLIPSIS : item.questionString.PadRight(adjustedQuestionWidth));
 
-        Ansi.SetFgColor(backColor);
         Ansi.SetBgColor(isSelected ? Data.SELECT_COLOR_LIGHT : Data.DARK_COLOR);
-        Ansi.Write(isSelected ? Data.BIG_RIGHT_TRIANGLE : ' ');
+        Ansi.Write(' ');
 
         if (item.answerType >= 0) {
             string answerTypeString = Dns.typeStrings[item.answerType];
@@ -294,16 +301,16 @@ public sealed class DnsFrame : Ui.Frame {
     }
 }
 
-file sealed class AddDialog : Ui.DialogBox {
-    public Ui.Textbox nameTextbox;
-    public Ui.SelectBox typeSelectBox;
+file sealed class AddDialog : Tui.DialogBox {
+    public Tui.Textbox nameTextbox;
+    public Tui.SelectBox typeSelectBox;
 
     public AddDialog() {
-        nameTextbox = new Ui.Textbox(this) {
+        nameTextbox = new Tui.Textbox(this) {
             backColor = Data.PANE_COLOR,
         };
 
-        typeSelectBox = new Ui.SelectBox(this) {
+        typeSelectBox = new Tui.SelectBox(this) {
             options = Dns.typeFullNames
         };
 
@@ -425,38 +432,38 @@ file sealed class AddDialog : Ui.DialogBox {
     }
 }
 
-file sealed class OptionsDialog : Ui.DialogBox {
-    public Ui.Textbox serverTextbox;
-    public Ui.IntegerBox timeoutTextbox;
-    public Ui.SelectBox transportSelectBox;
+file sealed class OptionsDialog : Tui.DialogBox {
+    public Tui.Textbox serverTextbox;
+    public Tui.IntegerBox timeoutTextbox;
+    public Tui.SelectBox transportSelectBox;
 
-    public Ui.Toggle standardToggle;
-    public Ui.Toggle inverseLookupToggle;
-    public Ui.Toggle serverStatusToggle;
-    public Ui.Toggle truncatedToggle;
-    public Ui.Toggle recursiveToggle;
+    public Tui.Toggle standardToggle;
+    public Tui.Toggle inverseLookupToggle;
+    public Tui.Toggle serverStatusToggle;
+    public Tui.Toggle truncatedToggle;
+    public Tui.Toggle recursiveToggle;
 
     public OptionsDialog() {
-        serverTextbox = new Ui.Textbox(this) {
+        serverTextbox = new Tui.Textbox(this) {
             backColor = Data.PANE_COLOR,
             placeholder = "System default"
         };
 
-        timeoutTextbox = new Ui.IntegerBox(this) {
+        timeoutTextbox = new Tui.IntegerBox(this) {
             backColor = Data.PANE_COLOR,
             min = 50,
             max = 5_000
         };
 
-        transportSelectBox = new Ui.SelectBox(this) {
+        transportSelectBox = new Tui.SelectBox(this) {
             options = ["Auto", "UDP", "TCP", "TCP over TLS", "HTTPS"] //TODO: "QUIC"
         };
 
-        standardToggle      = new Ui.Toggle(this, "Standard");
-        inverseLookupToggle = new Ui.Toggle(this, "Inverse lookup");
-        serverStatusToggle  = new Ui.Toggle(this, "Request server status");
-        truncatedToggle     = new Ui.Toggle(this, "Truncated");
-        recursiveToggle     = new Ui.Toggle(this, "Recursive");
+        standardToggle      = new Tui.Toggle(this, "Standard");
+        inverseLookupToggle = new Tui.Toggle(this, "Inverse lookup");
+        serverStatusToggle  = new Tui.Toggle(this, "Request server status");
+        truncatedToggle     = new Tui.Toggle(this, "Truncated");
+        recursiveToggle     = new Tui.Toggle(this, "Recursive");
 
         elements.Add(serverTextbox);
         elements.Add(timeoutTextbox);

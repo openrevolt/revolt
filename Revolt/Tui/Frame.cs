@@ -1,6 +1,6 @@
 ﻿using System.Text;
 
-namespace Revolt.Ui;
+namespace Revolt.Tui;
 
 public abstract class Frame {
     protected List<Element> elements = [];

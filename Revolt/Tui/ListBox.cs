@@ -1,4 +1,4 @@
-﻿namespace Revolt.Ui;
+﻿namespace Revolt.Tui;
 
 public sealed class ListBox<T>(Frame parentFrame) : Element(parentFrame) {
     public SynchronizedList<T> items = [];

@@ -1,4 +1,4 @@
-﻿namespace Revolt.Ui;
+﻿namespace Revolt.Tui;
 
 public sealed class SelectBox(Frame parentFrame) : Element(parentFrame) {
     public string[] options;

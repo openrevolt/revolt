@@ -1,4 +1,4 @@
-﻿namespace Revolt.Ui;
+﻿namespace Revolt.Tui;
 
 public sealed class ConfirmDialog : DialogBox {
     public string text;

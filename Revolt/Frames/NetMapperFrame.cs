@@ -3,7 +3,7 @@ using Revolt.Protocols;
 
 namespace Revolt.Frames;
 
-public sealed class NetMapperFrame : Ui.Frame {
+public sealed class NetMapperFrame : Tui.Frame {
     public struct DiscoverItem {
         public int    status;
         public string name;
@@ -15,8 +15,8 @@ public sealed class NetMapperFrame : Ui.Frame {
 
     public static NetMapperFrame Instance { get; } = new NetMapperFrame();
 
-    public Ui.Toolbar toolbar;
-    public Ui.ListBox<DiscoverItem> list;
+    public Tui.ListBox<DiscoverItem> list;
+    public Tui.Toolbar toolbar;
 
     private CancellationTokenSource cancellationTokenSource;
     private CancellationToken cancellationToken;
@@ -28,29 +28,29 @@ public sealed class NetMapperFrame : Ui.Frame {
     private (IPAddress, IPAddress, IPAddress) networkRange = (IPAddress.Loopback, IPAddress.Broadcast, IPAddress.IPv6None);
 
     public NetMapperFrame() {
-        toolbar = new Ui.Toolbar(this) {
-            left  = 1,
-            right = 1,
-            items = [
-                new Ui.Toolbar.ToolbarItem() { text="Discover", action=Start },
-                new Ui.Toolbar.ToolbarItem() { text="Clear",    action=Clear },
-            ]
-        };
-
-        list = new Ui.ListBox<DiscoverItem>(this) {
+        list = new Tui.ListBox<DiscoverItem>(this) {
             left              = 1,
             right             = 1,
-            top               = 3,
-            bottom            = 2,
+            top               = 1,
+            bottom            = 3,
             itemHeight        = 1,
             drawItemHandler   = DrawDiscoverItem,
             drawStatusHandler = DrawStatus
+        }; 
+        
+        toolbar = new Tui.Toolbar(this) {
+            left  = 0,
+            right = 0,
+            items = [
+                new Tui.Toolbar.ToolbarItem() { text="Discover", key="F2", action=Start },
+                new Tui.Toolbar.ToolbarItem() { text="Clear",    key="F3", action=Clear },
+            ]
         };
 
-        elements.Add(toolbar);
         elements.Add(list);
+        elements.Add(toolbar);
 
-        defaultElement = toolbar;
+        defaultElement = list;
         FocusNext();
     }
 
@@ -71,6 +71,14 @@ public sealed class NetMapperFrame : Ui.Frame {
 
         case ConsoleKey.Delete:
             list.RemoveSelected();
+            break;
+
+        case ConsoleKey.F2:
+            Start();
+            break;
+
+        case ConsoleKey.F3:
+            Clear();
             break;
 
         default:
@@ -154,12 +162,13 @@ public sealed class NetMapperFrame : Ui.Frame {
 
     private void DrawStatus() {
         int total = list.items.Count;
+        string totalString = $" {total} ";
 
-        Ansi.SetCursorPosition(2, Renderer.LastHeight);
+        Ansi.SetCursorPosition(Renderer.LastWidth - totalString.Length + 1, Math.Max(Renderer.LastHeight - 1, 0));
 
         Ansi.SetFgColor([16, 16, 16]);
         Ansi.SetBgColor(Data.LIGHT_COLOR);
-        Ansi.Write($" {total} ");
+        Ansi.Write(totalString);
 
         Ansi.SetBgColor(Data.DARK_COLOR);
     }
@@ -250,11 +259,11 @@ public sealed class NetMapperFrame : Ui.Frame {
     }
 }
 
-file sealed class OptionsDialog : Ui.DialogBox {
-    public Ui.SelectBox rangeSelectBox;
-    public Ui.Toggle    icmpToggle;
-    public Ui.Toggle    mdnsToggle;
-    public Ui.Toggle    ubiquitiToggle;
+file sealed class OptionsDialog : Tui.DialogBox {
+    public Tui.SelectBox rangeSelectBox;
+    public Tui.Toggle    icmpToggle;
+    public Tui.Toggle    mdnsToggle;
+    public Tui.Toggle    ubiquitiToggle;
 
     public (IPAddress, IPAddress, IPAddress)[] networks;
 
@@ -271,13 +280,13 @@ file sealed class OptionsDialog : Ui.DialogBox {
 
         okButton.text = "  Start  ";
 
-        rangeSelectBox = new Ui.SelectBox(this) {
+        rangeSelectBox = new Tui.SelectBox(this) {
             options = networksString
         };
 
-        icmpToggle     = new Ui.Toggle(this, "ICMP");
-        mdnsToggle     = new Ui.Toggle(this, "mDNS");
-        ubiquitiToggle = new Ui.Toggle(this, "Ubiquiti discover");
+        icmpToggle     = new Tui.Toggle(this, "ICMP");
+        mdnsToggle     = new Tui.Toggle(this, "mDNS");
+        ubiquitiToggle = new Tui.Toggle(this, "Ubiquiti discover");
 
         elements.Add(rangeSelectBox);
 

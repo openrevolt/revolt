@@ -1,6 +1,6 @@
 ﻿namespace Revolt.Frames;
 
-public sealed class MainMenu : Ui.Frame {
+public sealed class MainMenu : Tui.Frame {
     public int index;
 
     public string[] menu = [

@@ -1,4 +1,4 @@
-﻿namespace Revolt.Ui;
+﻿namespace Revolt.Tui;
 
 public abstract class Element(Frame parentFrame) {
     public float left = 0, right = 0, top = 0, bottom = 0;

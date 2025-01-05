@@ -1,6 +1,6 @@
-﻿namespace Revolt.Ui;
+﻿namespace Revolt.Tui;
 
-public sealed class IntegerBox(Frame parentFrame) : Element(parentFrame) {
+public sealed class Textbox(Frame parentFrame) : Element(parentFrame) {
     const int scrollInterval = 16;
 
     public byte[] backColor = Data.DARK_COLOR;
@@ -10,8 +10,6 @@ public sealed class IntegerBox(Frame parentFrame) : Element(parentFrame) {
     private int index = 0;
     private int offset = 0;
 
-    public int min = 0;
-    public int max = int.MaxValue;
     public bool enableHistory = false;
     public List<string> history = [];
     private int historyIndex = -1;
@@ -40,7 +38,6 @@ public sealed class IntegerBox(Frame parentFrame) : Element(parentFrame) {
         Ansi.SetFgColor(isFocused ? Data.SELECT_COLOR : Data.INPUT_COLOR);
         Ansi.SetBgColor(backColor);
         Ansi.SetCursorPosition(left, top + 1);
-
         Ansi.Write(new String(Data.UPPER_1_8TH_BLOCK, usableWidth));
 
         DrawValue();
@@ -56,9 +53,11 @@ public sealed class IntegerBox(Frame parentFrame) : Element(parentFrame) {
         Ansi.SetCursorPosition(left, top);
 
         if (!String.IsNullOrEmpty(placeholder) && _value.Length == 0) {
-            Ansi.SetFgColor([64, 64, 64]);
+            Ansi.SetFgColor([128, 128, 128]);
+            //Ansi.SetFaint(true);
             Ansi.Write(placeholder);
             Ansi.Write(new String(' ', usableWidth - placeholder.Length));
+            //Ansi.SetFaint(false);
             Ansi.SetCursorPosition(left + index, top);
             Ansi.Push();
             return;
@@ -210,20 +209,10 @@ public sealed class IntegerBox(Frame parentFrame) : Element(parentFrame) {
 
         default:
             byte asci = (byte)key.KeyChar;
-            if (asci > 47 && asci < 58) {
+            if (asci > 31 && asci < 127) {
                 _value = _value[..index] + key.KeyChar + _value[index..];
                 index++;
             }
-
-            if (_value.Length > max.ToString().Length) {
-                _value = max.ToString();
-                index = _value.Length;
-            }
-            else if (_value.Length == 0) {
-                _value = "0";
-                index = 1;
-            }
-
             break;
         }
 
@@ -238,16 +227,6 @@ public sealed class IntegerBox(Frame parentFrame) : Element(parentFrame) {
 
     public override void Blur(bool draw = true) {
         base.Blur(draw);
-
-        if (int.TryParse(_value, out int number)) {
-            _value = Math.Clamp(number, min, max).ToString();
-        }
-        else {
-            _value = min.ToString();
-            index = _value.Length;
-        }
-        this.DrawValue();
-
         Ansi.HideCursor();
         Ansi.Push();
     }
