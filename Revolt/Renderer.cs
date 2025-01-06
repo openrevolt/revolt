@@ -29,7 +29,13 @@ public static class Renderer {
 
     public static void HandleKeys() {
         while (isRunning) {
-            ConsoleKeyInfo key = Console.ReadKey(true);
+            ConsoleKeyInfo key;
+            try {
+                key = Console.ReadKey(true);
+            }
+            catch (InvalidOperationException) {
+                continue;
+            }
 
             if (ActiveFrame is null) continue;
 
