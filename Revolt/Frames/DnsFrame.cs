@@ -235,7 +235,7 @@ public sealed class DnsFrame : Tui.Frame {
 
         dialog.okButton.action = () => {
             type = Dns.types[dialog.typeSelectBox.index];
-            
+
             string question = dialog.nameTextbox.Value.Trim();
             if (String.IsNullOrEmpty(question)) return;
 
@@ -258,7 +258,7 @@ public sealed class DnsFrame : Tui.Frame {
         };
 
         dialog.typeSelectBox.index = Array.IndexOf(Dns.types, type);
-        
+
 
 
         dialog.Show();
