@@ -18,46 +18,42 @@ public class Ubiquiti {
         using UdpClient client = new UdpClient(localEndPointV4) {
             EnableBroadcast = true
         };
+        client.Client.ReceiveTimeout = timeout;
 
-        SendAndReceive(client, list, timeout, cancellationToken);
+        SendAndReceive(client, list, cancellationToken);
+
 
         list.Sort((a, b) => String.Compare(a.mac, b.mac));
 
         return list;
     }
 
-    private static void SendAndReceive(UdpClient client, List<NetMapperFrame.DiscoverItem> list, int timeout, CancellationToken cancellationToken) {
+    private static void SendAndReceive(UdpClient client, List<NetMapperFrame.DiscoverItem> list, CancellationToken cancellationToken) {
         IPEndPoint remoteEndPointA = new IPEndPoint(multicastAddress, port);
         IPEndPoint remoteEndPointB = new IPEndPoint(IPAddress.Broadcast, port);
 
-        try {
-            client.Send(requestData, requestData.Length, remoteEndPointA);
-            //client.Send(requestData, requestData.Length, remoteEndPointA);
-            client.Send(requestData, requestData.Length, remoteEndPointB);
-            //client.Send(requestData, requestData.Length, remoteEndPointB);
-            client.Client.ReceiveTimeout = timeout;
+        client.Send(requestData, requestData.Length, remoteEndPointA);
+        client.Send(requestData, requestData.Length, remoteEndPointB);
 
-            while (true) {
-                if (cancellationToken.IsCancellationRequested) break;
+        while (true) {
+            if (cancellationToken.IsCancellationRequested) break;
 
-                try {
-                    IPEndPoint receivedEndPoint = new IPEndPoint(IPAddress.Any, 0);
-                    byte[] receivedData = client.Receive(ref receivedEndPoint);
+            try {
+                IPEndPoint receivedEndPoint = new IPEndPoint(IPAddress.Any, 0);
+                byte[] receivedData = client.Receive(ref receivedEndPoint);
 
-                    (NetMapperFrame.DiscoverItem item, bool error) = Parse(receivedData);
-                    if (error) continue;
+                (NetMapperFrame.DiscoverItem item, bool error) = Parse(receivedData);
+                if (error) continue;
 
-                    if (list.FindIndex(o => o.mac == item.mac) > -1) continue;
+                if (list.FindIndex(o => o.mac == item.mac) > -1) continue;
 
-                    list.Add(item);
-                }
-                catch (SocketException ex) when (ex.SocketErrorCode == SocketError.TimedOut) {
-                    break;
-                }
-                catch (Exception) { }
+                list.Add(item);
             }
+            catch (SocketException ex) when (ex.SocketErrorCode == SocketError.TimedOut) {
+                break;
+            }
+            catch (Exception) { }
         }
-        catch (Exception) { }
     }
 
     private static (NetMapperFrame.DiscoverItem, bool) Parse(byte[] data) {
