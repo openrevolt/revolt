@@ -1,11 +1,14 @@
 ﻿namespace Revolt.Protocols;
 
 public static partial class MacLookup {
+
 #if DEBUG
     public static readonly (byte, byte, string)[][] table = [];
 #endif
 
     public static string Lookup(string mac) {
+        if (table.Length == 0) return String.Empty;
+
         mac = mac.Replace("-", "").Replace(":", "").Replace(" ", "").Replace(".", "");
         if (!byte.TryParse(mac[0..2], System.Globalization.NumberStyles.HexNumber, null, out byte a)) return String.Empty;
         if (!byte.TryParse(mac[2..4], System.Globalization.NumberStyles.HexNumber, null, out byte b)) return String.Empty;
@@ -14,7 +17,7 @@ public static partial class MacLookup {
         return Lookup([a, b, c]);
     }
 
-    public static string Lookup(byte[] mac) {
+    private static string Lookup(byte[] mac) {
         byte a = mac[0];
         byte b = mac[1];
         byte c = mac[2];

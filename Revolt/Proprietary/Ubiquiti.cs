@@ -32,9 +32,9 @@ public class Ubiquiti {
 
         try {
             client.Send(requestData, requestData.Length, remoteEndPointA);
-            client.Send(requestData, requestData.Length, remoteEndPointA);
+            //client.Send(requestData, requestData.Length, remoteEndPointA);
             client.Send(requestData, requestData.Length, remoteEndPointB);
-            client.Send(requestData, requestData.Length, remoteEndPointB);
+            //client.Send(requestData, requestData.Length, remoteEndPointB);
             client.Client.ReceiveTimeout = timeout;
 
             while (true) {
@@ -57,7 +57,7 @@ public class Ubiquiti {
                 catch (Exception) { }
             }
         }
-        catch { }
+        catch (Exception) { }
     }
 
     private static (NetMapperFrame.DiscoverItem, bool) Parse(byte[] data) {
