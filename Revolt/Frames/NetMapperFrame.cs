@@ -1,4 +1,5 @@
 ﻿using System.Net;
+using System.Threading;
 using Protest.Protocols;
 using Revolt.Protocols;
 
@@ -24,7 +25,7 @@ public sealed class NetMapperFrame : Tui.Frame {
     private CancellationToken cancellationToken;
 
     private bool icmp     = true;
-    private bool mdns     = false;
+    private bool mdns     = true;
     private bool ubiquiti = false;
 
     private int lastStatusLength = 0;
@@ -45,7 +46,6 @@ public sealed class NetMapperFrame : Tui.Frame {
             left  = 0,
             right = 0,
             items = [
-                new Tui.Toolbar.ToolbarItem() { text="Remove",   key="DEL", action=RemoveSelected},
                 new Tui.Toolbar.ToolbarItem() { text="Discover", key="F2", action=Start },
                 new Tui.Toolbar.ToolbarItem() { text="Clear",    key="F3", action=Clear }
             ],
@@ -81,10 +81,6 @@ public sealed class NetMapperFrame : Tui.Frame {
 
         case ConsoleKey.Escape:
             MainMenu.Instance.Show();
-            break;
-
-        case ConsoleKey.Delete:
-            RemoveSelected();
             break;
 
         case ConsoleKey.F2:
@@ -192,37 +188,40 @@ public sealed class NetMapperFrame : Tui.Frame {
         Ansi.SetBgColor(Data.DARK_COLOR);
     }
 
-    private void RemoveSelected() {
-        list.RemoveSelected();
-        DrawStatus();
-        Ansi.Push();
-    }
-
     private async Task Discover() {
         cancellationTokenSource = new CancellationTokenSource();
         cancellationToken = cancellationTokenSource.Token;
 
         Tokens.dictionary.TryAdd(cancellationTokenSource, cancellationToken);
 
-        if (ubiquiti) {
-            DiscoverUbiquiti(cancellationToken);
-        }
+        list.Clear();
 
         if (mdns) {
             DiscoverMdns();
         }
 
+        if (ubiquiti) {
+            DiscoverUbiquiti(cancellationToken);
+        }
+
+        HashSet<uint> discovered = new HashSet<uint>();
+        for (int i = 0; i < list.items.Count; i++) {
+            discovered.Add(list.items[i].ipInt);
+        }
+
         if (icmp) {
-            await DiscoverIcmp(cancellationToken);
+            await DiscoverIcmp(discovered, cancellationToken);
         }
 
         Tokens.dictionary.TryRemove(cancellationTokenSource, out _);
         cancellationTokenSource.Dispose();
 
+        cancellationTokenSource = null;
+
         list.Draw(true);
     }
 
-    private async Task DiscoverIcmp(CancellationToken cancellationToken) {
+    private async Task DiscoverIcmp(HashSet<uint> discovered, CancellationToken cancellationToken) {
         await Task.Delay(500, cancellationToken);
 
         uint gate = networkRange.Item1.ToUInt32();
@@ -237,40 +236,51 @@ public sealed class NetMapperFrame : Tui.Frame {
             pingInstances[i] = new System.Net.NetworkInformation.Ping();
         }
 
-        for (uint j = start; j <= end; j += batchSize) {
-            List<Task<short>> tasks = new List<Task<short>>();
+        try {
+            for (uint j = start; j <= end; j += batchSize) {
+                List<Task<short>> tasks = new List<Task<short>>();
 
-            for (uint i = j; i <= Math.Min(j + batchSize - 1, end); i++) {
-                uint index = i - j;
-                tasks.Add(Icmp.PingAsync(IPAddress.Parse(i.ToString()).ToString(), 250, pingInstances[index]));
+                for (uint i = j; i <= Math.Min(j + batchSize - 1, end); i++) {
+                    if (discovered.Contains(i)) {
+                        tasks.Add(Task.FromResult((short)-1));
+                    }
+                    else {
+                        uint index = i - j;
+                        tasks.Add(Icmp.PingAsync(IPAddress.Parse(i.ToString()).ToString(), 250, pingInstances[index]));
+                    }
+                }
+
+                short[] result = await Task.WhenAll(tasks);
+                for (uint i = 0; i < result.Length; i++) {
+                    if (result[i] < 0) continue;
+
+                    uint ipInt = i + j;
+                    string ipString = IPAddress.Parse(ipInt.ToString()).ToString();
+
+                    string mac = Arp.ArpRequest(ipString);
+
+                    list.Add(new DiscoverItem() {
+                        ip           = ipString,
+                        ipInt        = ipInt,
+                        mac          = mac,
+                        manufacturer = MacLookup.Lookup(mac)
+                    });
+                }
+
+                if (Renderer.ActiveDialog is not null) continue;
+                if (Renderer.ActiveFrame != this) continue;
+
+                DrawStatus();
+                list.Draw(true);
             }
-
-            short[] result = await Task.WhenAll(tasks);
-            for (uint i = 0; i < result.Length; i++) {
-                if (result[i] < 0) continue;
-
-                uint ipInt = i + j;
-                string ipString = IPAddress.Parse(ipInt.ToString()).ToString();
-
-                string mac = Arp.ArpRequest(ipString);
-
-                list.Add(new DiscoverItem() {
-                    ip    = ipString,
-                    ipInt = ipInt,
-                    mac = mac,
-                    manufacturer = MacLookup.Lookup(mac)
-                });
-            }
-
-            if (Renderer.ActiveDialog is not null) continue;
-            if (Renderer.ActiveFrame != this) continue;
-
-            DrawStatus();
-            list.Draw(true);
         }
-
-        for (int i = 0; i < batchSize; i++) {
-            pingInstances[i].Dispose();
+        catch (Exception ex) {
+            Console.WriteLine(ex);
+        }
+        finally {
+            for (int i = 0; i < batchSize; i++) {
+                pingInstances[i].Dispose();
+            }
         }
     }
 
@@ -306,6 +316,10 @@ public sealed class NetMapperFrame : Tui.Frame {
     }
 
     private void Start() {
+        if (cancellationTokenSource is not null && cancellationToken.CanBeCanceled) {
+            return;
+        }
+
         OptionsDialog dialog = new OptionsDialog();
 
         dialog.okButton.action = () => {
@@ -317,7 +331,6 @@ public sealed class NetMapperFrame : Tui.Frame {
 
             dialog.Close();
             Task.Run(Discover);
-            //Discover().GetAwaiter().GetResult();
         };
 
         dialog.Show(true);
@@ -330,6 +343,10 @@ public sealed class NetMapperFrame : Tui.Frame {
     private void Stop() => cancellationTokenSource?.Cancel();
 
     private void Clear() {
+        if (cancellationTokenSource is not null && cancellationToken.CanBeCanceled) {
+            return;
+        }
+
         list.Clear();
     }
 }
