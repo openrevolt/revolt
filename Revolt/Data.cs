@@ -10,6 +10,8 @@ public static class Data {
     public static readonly byte[] SELECT_COLOR       = [255, 192, 0];
     public static readonly byte[] SELECT_COLOR_LIGHT = [48, 48, 48];
 
+    public static ushort BRAILLE_BASE = 0x2800;
+
     public const char ELLIPSIS = '\u2026';
 
     public const char UPPER_1_8TH_BLOCK = '\u2594';

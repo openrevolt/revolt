@@ -22,8 +22,7 @@ public class Ubiquiti {
 
         SendAndReceive(client, list, cancellationToken);
 
-
-        list.Sort((a, b) => String.Compare(a.mac, b.mac));
+        list.Sort((a, b) => b.ipInt.CompareTo(a.ipInt));
 
         return list;
     }
@@ -106,6 +105,7 @@ public class Ubiquiti {
                 (string mac, string ip) = ExtractMacIpPair(data, offset);
                 item.mac = mac;
                 item.ip = ip;
+                item.ipInt = IPAddress.TryParse(ip, out IPAddress address) ? address.ToUInt32() : 0;
                 break;
             }
 

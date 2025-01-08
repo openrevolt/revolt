@@ -49,32 +49,15 @@ public static class NetTools {
         return filtered.ToArray();
     }
 
-    /*public static List<string> GetNetworkInterfaces() {
-        List<string> filtered = [];
+    public static uint ToUInt32(this IPAddress address) {
+        byte[] bytes = address.GetAddressBytes();
 
-        NetworkInterface[] interfaces = NetworkInterface.GetAllNetworkInterfaces();
-        foreach (NetworkInterface nic in interfaces) {
-            UnicastIPAddressInformationCollection unicast = nic.GetIPProperties().UnicastAddresses;
-
-            if (unicast.Count == 0) continue;
-
-            IPAddress localIpV4 = null;
-            IPAddress subnetMask = null;
-
-            foreach (UnicastIPAddressInformation address in unicast) {
-                if (address.Address.AddressFamily == AddressFamily.InterNetwork) {
-                    localIpV4 = address.Address;
-                    subnetMask = address.IPv4Mask;
-                }
-            }
-
-            if (localIpV4 is null || IPAddress.IsLoopback(localIpV4) || localIpV4.IsApipa()) continue;
-
-            filtered.Add($"{localIpV4}/{Data.SubnetMaskToCidr(subnetMask)}");
+        if (BitConverter.IsLittleEndian) {
+            Array.Reverse(bytes);
         }
 
-        return filtered;
-    }*/
+        return  BitConverter.ToUInt32(bytes, 0);
+    }
 
     public static IPAddress GetLocalDnsAddress(bool forceIPv4 = false) {
         NetworkInterface[] networkInterfaces = NetworkInterface.GetAllNetworkInterfaces();

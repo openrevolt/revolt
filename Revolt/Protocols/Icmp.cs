@@ -35,7 +35,7 @@ public static class Icmp {
         return result;
     }
 
-    private static async Task<short> PingAsync(PingItem host, int timeout) {
+    public static async Task<short> PingAsync(PingItem host, int timeout) {
         try {
             PingReply reply = await host.ping.SendPingAsync(host.host, timeout, ICMP_PAYLOAD);
 
@@ -58,6 +58,44 @@ public static class Icmp {
         }
         catch (Exception) {
             return UNKNOWN;
+        }
+    }
+
+    public static async Task<short> PingAsync(string host, int timeout, Ping ping = null) {
+        bool cleanOnExit = false;
+        if (ping is null) {
+            cleanOnExit = true;
+            ping = new Ping();
+        }
+
+        try {
+            PingReply reply = await ping.SendPingAsync(host, timeout, ICMP_PAYLOAD);
+
+            return (int)reply.Status switch
+            {
+                (int)IPStatus.DestinationUnreachable or
+                (int)IPStatus.DestinationHostUnreachable or
+                (int)IPStatus.DestinationNetworkUnreachable => UNREACHABLE,
+
+                (int)IPStatus.Success => (short)reply.RoundtripTime,
+                (int)IPStatus.TimedOut => TIMEDOUT,
+                11050 => GENERAL_FAILURE,
+                _ => UNKNOWN,
+            };
+        }
+        catch (ArgumentException) {
+            return INVALID_ADDRESS;
+        }
+        catch (PingException) {
+            return ERROR;
+        }
+        catch (Exception) {
+            return UNKNOWN;
+        }
+        finally {
+            if (cleanOnExit) {
+                ping.Dispose();
+            }
         }
     }
 }

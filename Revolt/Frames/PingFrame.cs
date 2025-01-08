@@ -36,8 +36,7 @@ public sealed class PingFrame : Tui.Frame {
             top               = 1,
             bottom            = 3,
             itemHeight        = 2,
-            drawItemHandler   = DrawPingItem,
-            drawStatusHandler = DrawStatus
+            drawItemHandler   = DrawPingItem
         };
 
         toolbar = new Tui.Toolbar(this) {
@@ -285,7 +284,6 @@ public sealed class PingFrame : Tui.Frame {
             }
 
             if (Renderer.ActiveFrame == this && Renderer.ActiveDialog is null) {
-                DrawStatus();
                 Ansi.Push();
             }
 

@@ -9,8 +9,6 @@ public sealed class ListBox<T>(Frame parentFrame) : Element(parentFrame) {
     public delegate void DrawItemDelegate(int i, int x, int y, int width);
     public DrawItemDelegate drawItemHandler;
 
-    public Action drawStatusHandler;
-
     public override void Draw(bool push) {
         (int left, int top, int width, int height) = GetBounding();
         int visibleItems = height / itemHeight;
@@ -28,10 +26,6 @@ public sealed class ListBox<T>(Frame parentFrame) : Element(parentFrame) {
                 Ansi.SetCursorPosition(left, top + i);
                 Ansi.Write(blank);
             }
-        }
-
-        if (drawStatusHandler is not null) {
-            drawStatusHandler();
         }
 
         if (push) {

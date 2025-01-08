@@ -43,8 +43,9 @@ public sealed class DnsFrame : Tui.Frame {
             right = 0,
             items = [
                 new Tui.Toolbar.ToolbarItem() { text="Add",     key="INS", action=AddDialog},
-                new Tui.Toolbar.ToolbarItem() { text="Clear",   key="F3", action=Clear },
-                new Tui.Toolbar.ToolbarItem() { text="Options", key="F4", action=OptionsDialog },
+                new Tui.Toolbar.ToolbarItem() { text="Remove",  key="DEL", action=()=> list.RemoveSelected()},
+                new Tui.Toolbar.ToolbarItem() { text="Clear",   key="F3",  action=Clear },
+                new Tui.Toolbar.ToolbarItem() { text="Options", key="F4",  action=OptionsDialog },
             ]
         };
 

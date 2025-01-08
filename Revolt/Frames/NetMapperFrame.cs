@@ -11,6 +11,7 @@ public sealed class NetMapperFrame : Tui.Frame {
         public string mac;
         public string manufacturer;
         public string other;
+        public uint   ipInt;
     }
 
     public static NetMapperFrame Instance { get; } = new NetMapperFrame();
@@ -21,9 +22,9 @@ public sealed class NetMapperFrame : Tui.Frame {
     private CancellationTokenSource cancellationTokenSource;
     private CancellationToken cancellationToken;
 
-    private bool icmp     = false;
+    private bool icmp     = true;
     private bool mdns     = false;
-    private bool ubiquiti = true;
+    private bool ubiquiti = false;
 
     private (IPAddress, IPAddress, IPAddress) networkRange = (IPAddress.Loopback, IPAddress.Broadcast, IPAddress.IPv6None);
 
@@ -31,11 +32,10 @@ public sealed class NetMapperFrame : Tui.Frame {
         list = new Tui.ListBox<DiscoverItem>(this) {
             left              = 1,
             right             = 1,
-            top               = 1,
+            top               = 2,
             bottom            = 3,
             itemHeight        = 1,
-            drawItemHandler   = DrawDiscoverItem,
-            drawStatusHandler = DrawStatus
+            drawItemHandler   = DrawDiscoverItem
         }; 
         
         toolbar = new Tui.Toolbar(this) {
@@ -43,7 +43,7 @@ public sealed class NetMapperFrame : Tui.Frame {
             right = 0,
             items = [
                 new Tui.Toolbar.ToolbarItem() { text="Discover", key="F2", action=Start },
-                new Tui.Toolbar.ToolbarItem() { text="Clear",    key="F3", action=Clear },
+                new Tui.Toolbar.ToolbarItem() { text="Clear",    key="F3", action=Clear }
             ]
         };
 
@@ -52,6 +52,15 @@ public sealed class NetMapperFrame : Tui.Frame {
 
         defaultElement = list;
         FocusNext();
+    }
+
+    public override void Draw(int width, int height) {
+        base.Draw(width, height);
+
+        Ansi.SetCursorPosition(2, 0);
+        Ansi.SetBgColor([192, 192, 192]);
+        Ansi.Write(new String((char)(Data.BRAILLE_BASE | 0xFF), width - 2));
+        Ansi.Push();
     }
 
     public override bool HandleKey(ConsoleKeyInfo key) {
@@ -160,19 +169,6 @@ public sealed class NetMapperFrame : Tui.Frame {
         Ansi.SetBgColor(Data.DARK_COLOR);
     }
 
-    private void DrawStatus() {
-        int total = list.items.Count;
-        string totalString = $" {total} ";
-
-        Ansi.SetCursorPosition(Renderer.LastWidth - totalString.Length + 1, Math.Max(Renderer.LastHeight - 1, 0));
-
-        Ansi.SetFgColor([16, 16, 16]);
-        Ansi.SetBgColor(Data.LIGHT_COLOR);
-        Ansi.Write(totalString);
-
-        Ansi.SetBgColor(Data.DARK_COLOR);
-    }
-
     private async Task Discover() {
         cancellationTokenSource = new CancellationTokenSource();
         cancellationToken = cancellationTokenSource.Token;
@@ -198,23 +194,62 @@ public sealed class NetMapperFrame : Tui.Frame {
     }
 
     private async Task DiscoverIcmp(CancellationToken cancellationToken) {
-        while (!cancellationToken.IsCancellationRequested) {
-            if (Renderer.ActiveFrame == this && Renderer.ActiveDialog is null) {
-                DrawStatus();
-                Ansi.Push();
+        await Task.Delay(500, cancellationToken);
+
+        uint gate = networkRange.Item1.ToUInt32();
+        uint mask = networkRange.Item2.ToUInt32();
+
+        uint start = gate & mask;
+        uint end   = gate | ~mask;
+
+        const uint batchSize = 32;
+        System.Net.NetworkInformation.Ping[] pingInstances = new System.Net.NetworkInformation.Ping[batchSize];
+        for (int i = 0; i < batchSize; i++) {
+            pingInstances[i] = new System.Net.NetworkInformation.Ping();
+        }
+
+        for (uint j = start; j <= end; j += batchSize) {
+            List<Task<short>> tasks = new List<Task<short>>();
+
+            for (uint i = j; i <= Math.Min(j + batchSize - 1, end); i++) {
+                uint index = i - j;
+                tasks.Add(Icmp.PingAsync(IPAddress.Parse(i.ToString()).ToString(), 250, pingInstances[index]));
             }
-            await Task.Delay(500, cancellationToken);
+
+            short[] result = await Task.WhenAll(tasks);
+            for (uint i = 0; i < result.Length; i++) {
+                if (result[i] < 0) continue;
+                
+                uint address = i + j;
+                list.Add(new DiscoverItem() {
+                    ip    = IPAddress.Parse(address.ToString()).ToString(),
+                    ipInt = address
+                });
+            }
 
             if (Renderer.ActiveDialog is not null) continue;
             if (Renderer.ActiveFrame != this) continue;
+            list.Draw(true);
+        }
+
+        for (int i = 0; i < batchSize; i++) {
+            pingInstances[i].Dispose();
         }
     }
 
     private void DiscoverMdns() {
-        List<Mdns.Answer> answers = Mdns.Resolve(Mdns.anyDeviceQuery, 1000, Protocols.Dns.RecordType.ANY);
+        List<Mdns.Answer> answers;
+        try {
+            answers = Mdns.Resolve(Mdns.anyDeviceQuery, 1000, Protocols.Dns.RecordType.ANY);
+        }
+        catch {
+            return;
+        }
+
         for (int i = 0; i < answers.Count; i++) {
             list.Add(new DiscoverItem() {
-                 ip = answers[i].remote.ToString(),
+                 ip     = answers[i].remote.ToString(),
+                 ipInt = answers[i].remote.ToUInt32()
             });
         }
 
@@ -242,7 +277,8 @@ public sealed class NetMapperFrame : Tui.Frame {
             networkRange = dialog.networks[dialog.rangeSelectBox.index];
 
             dialog.Close();
-            Task.Run(Discover);
+            //Task.Run(Discover);
+            Discover().GetAwaiter().GetResult();
         };
 
         dialog.Show(true);

@@ -12,7 +12,7 @@ public static class Ansi {
     private static readonly object mutex = new object();
 #endif
 
-    public static bool colorMode256 = false;
+    public static bool colorMode256 = true;
     static Ansi() => colorMode256 = OperatingSystem.IsMacOS();
 
     public static void Push() {
