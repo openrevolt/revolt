@@ -11,6 +11,8 @@ public sealed class Toolbar(Frame parentFrame) : Element(parentFrame) {
     public ToolbarItem[] items;
     public int index = 0;
 
+    public Action drawStatus;
+
     public override void Draw(bool push) {
         (int left, _, int width, int height) = GetBounding();
         int offset = 0;
@@ -31,6 +33,10 @@ public sealed class Toolbar(Frame parentFrame) : Element(parentFrame) {
         int gap = width - offset;
         if (gap > 0) {
             Ansi.Write(new String(' ', gap));
+        }
+
+        if (drawStatus is not null) {
+            drawStatus();
         }
 
         Ansi.Push();

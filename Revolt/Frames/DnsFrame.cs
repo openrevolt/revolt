@@ -29,6 +29,8 @@ public sealed class DnsFrame : Tui.Frame {
     private bool                  isTruncated      = false;
     private bool                  isRecursive      = true;
 
+    private int lastStatusLength = 0;
+
     public DnsFrame() {
         list = new Tui.ListBox<DnsItem>(this) {
             left            = 1,
@@ -43,10 +45,11 @@ public sealed class DnsFrame : Tui.Frame {
             right = 0,
             items = [
                 new Tui.Toolbar.ToolbarItem() { text="Add",     key="INS", action=AddDialog},
-                new Tui.Toolbar.ToolbarItem() { text="Remove",  key="DEL", action=()=> list.RemoveSelected()},
+                new Tui.Toolbar.ToolbarItem() { text="Remove",  key="DEL", action=RemoveSelected},
                 new Tui.Toolbar.ToolbarItem() { text="Clear",   key="F3",  action=Clear },
                 new Tui.Toolbar.ToolbarItem() { text="Options", key="F4",  action=OptionsDialog },
-            ]
+            ],
+            drawStatus = DrawStatus
         };
 
         elements.Add(list);
@@ -76,7 +79,7 @@ public sealed class DnsFrame : Tui.Frame {
             break;
 
         case ConsoleKey.Delete:
-            list.RemoveSelected();
+            RemoveSelected();
             break;
 
         case ConsoleKey.F3:
@@ -176,6 +179,24 @@ public sealed class DnsFrame : Tui.Frame {
         Ansi.SetBgColor(Data.DARK_COLOR);
     }
 
+    private void DrawStatus() {
+        int total = list.items.Count;
+        string totalString = $" {total} ";
+        int statusLength = totalString.Length;
+
+        if (statusLength != lastStatusLength) {
+            Ansi.SetCursorPosition(Renderer.LastWidth - lastStatusLength, Math.Max(Renderer.LastHeight, 0));
+            Ansi.SetBgColor(Data.TOOLBAR_COLOR);
+            Ansi.Write(new String(' ', lastStatusLength));
+        }
+
+        Ansi.SetCursorPosition(Renderer.LastWidth - totalString.Length + 1, Math.Max(Renderer.LastHeight, 0));
+        Ansi.SetFgColor([16, 16, 16]);
+        Ansi.SetBgColor(Data.LIGHT_COLOR);
+        Ansi.Write(totalString);
+        Ansi.SetBgColor(Data.DARK_COLOR);
+    }
+
     private void AddItem(string question, Dns.RecordType questionType, Dns.Answer answer) {
         DnsItem item;
 
@@ -265,8 +286,16 @@ public sealed class DnsFrame : Tui.Frame {
         dialog.Show();
     }
 
+    private void RemoveSelected() {
+        list.RemoveSelected();
+        DrawStatus();
+        Ansi.Push();
+    }
+
     private void Clear() {
         list.Clear();
+        DrawStatus();
+        Ansi.Push();
     }
 
     private void OptionsDialog() {

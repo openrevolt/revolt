@@ -98,6 +98,37 @@ public static class NetTools {
         return false;
     }
 
+    public static bool OnSameBroadcastDomain(this IPAddress address) {
+        foreach (NetworkInterface adapter in NetworkInterface.GetAllNetworkInterfaces()) {
+            IPInterfaceProperties properties = adapter.GetIPProperties();
+
+            for (int i = 0; i < properties.UnicastAddresses.Count; i++) {
+                if (properties.UnicastAddresses[i].Address.AddressFamily != AddressFamily.InterNetwork) continue;
+
+                IPAddress local = properties.UnicastAddresses[i].Address;
+                IPAddress mask = properties.UnicastAddresses[i].IPv4Mask;
+
+                IPAddress localNetwork = GetNetworkAddress(local, mask);
+                IPAddress hostNetwork = GetNetworkAddress(address, mask);
+
+                if (localNetwork.Equals(hostNetwork)) return true;
+            }
+        }
+
+        return false;
+    }
+    public static IPAddress GetNetworkAddress(IPAddress ip, IPAddress mask) {
+        byte[] bIp = ip.GetAddressBytes();
+        byte[] bMask = mask.GetAddressBytes();
+        byte[] bNetwork = new byte[4];
+
+        for (int i = 0; i < 4; i++) {
+            bNetwork[i] = (byte)(bIp[i] & bMask[i]);
+        }
+
+        return new IPAddress(bNetwork);
+    }
+
     public static int SubnetMaskToCidr(IPAddress subnetMask) {
         byte[] bytes = subnetMask.GetAddressBytes();
 

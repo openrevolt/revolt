@@ -29,6 +29,8 @@ public sealed class PingFrame : Tui.Frame {
     private int        interval  = 1000;
     private MoveOption move      = MoveOption.Never;
 
+    private int lastStatusLength = 0;
+
     public PingFrame() {
         list = new Tui.ListBox<PingItem>(this) {
             left              = 1,
@@ -48,7 +50,8 @@ public sealed class PingFrame : Tui.Frame {
                 new Tui.Toolbar.ToolbarItem() { text="Pause",   key="F2",  action=ToggleStatus },
                 new Tui.Toolbar.ToolbarItem() { text="Clear",   key="F3",  action=Clear },
                 new Tui.Toolbar.ToolbarItem() { text="Options", key="F4",  action=OptionsDialog },
-            ]
+            ],
+            drawStatus = DrawStatus
         };
 
         elements.Add(list);
@@ -173,8 +176,16 @@ public sealed class PingFrame : Tui.Frame {
         string unreachableString = unreachable > 0 ? $" {unreachable} " : String.Empty;
         string totalString = $" {total} ";
 
+        int statusLength = reachableString.Length + unreachableString.Length + totalString.Length;
+
+        if (statusLength != lastStatusLength) {
+            Ansi.SetCursorPosition(Renderer.LastWidth - lastStatusLength, Math.Max(Renderer.LastHeight, 0));
+            Ansi.SetBgColor(Data.TOOLBAR_COLOR);
+            Ansi.Write(new String(' ', lastStatusLength));
+        }
+
         int w = reachableString.Length + unreachableString.Length + totalString.Length - 1;
-        Ansi.SetCursorPosition(Renderer.LastWidth - w, Math.Max(Renderer.LastHeight - 1, 0));
+        Ansi.SetCursorPosition(Renderer.LastWidth - w, Math.Max(Renderer.LastHeight, 0));
 
         Ansi.SetFgColor([16, 16, 16]);
         Ansi.SetBgColor([128, 224, 48]);
@@ -189,6 +200,8 @@ public sealed class PingFrame : Tui.Frame {
         Ansi.SetFgColor([16, 16, 16]);
         Ansi.SetBgColor(Data.LIGHT_COLOR);
         Ansi.Write(totalString);
+
+        lastStatusLength = statusLength;
     }
 
     private static byte[] DetermineRttColor(short rtt) => rtt switch {
@@ -284,6 +297,7 @@ public sealed class PingFrame : Tui.Frame {
             }
 
             if (Renderer.ActiveFrame == this && Renderer.ActiveDialog is null) {
+                DrawStatus();
                 Ansi.Push();
             }
 
@@ -421,6 +435,8 @@ public sealed class PingFrame : Tui.Frame {
 
     private void RemoveSelected() {
         list.RemoveSelected()?.Dispose();
+        DrawStatus();
+        Ansi.Push();
     }
 
     private void Clear() {

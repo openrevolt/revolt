@@ -1,4 +1,5 @@
 ﻿using System.Net;
+using Protest.Protocols;
 using Revolt.Protocols;
 
 namespace Revolt.Frames;
@@ -26,6 +27,8 @@ public sealed class NetMapperFrame : Tui.Frame {
     private bool mdns     = false;
     private bool ubiquiti = false;
 
+    private int lastStatusLength = 0;
+
     private (IPAddress, IPAddress, IPAddress) networkRange = (IPAddress.Loopback, IPAddress.Broadcast, IPAddress.IPv6None);
 
     public NetMapperFrame() {
@@ -42,9 +45,11 @@ public sealed class NetMapperFrame : Tui.Frame {
             left  = 0,
             right = 0,
             items = [
+                new Tui.Toolbar.ToolbarItem() { text="Remove",   key="DEL", action=RemoveSelected},
                 new Tui.Toolbar.ToolbarItem() { text="Discover", key="F2", action=Start },
                 new Tui.Toolbar.ToolbarItem() { text="Clear",    key="F3", action=Clear }
-            ]
+            ],
+            drawStatus = DrawStatus
         };
 
         elements.Add(list);
@@ -79,7 +84,7 @@ public sealed class NetMapperFrame : Tui.Frame {
             break;
 
         case ConsoleKey.Delete:
-            list.RemoveSelected();
+            RemoveSelected();
             break;
 
         case ConsoleKey.F2:
@@ -96,6 +101,24 @@ public sealed class NetMapperFrame : Tui.Frame {
         }
 
         return true;
+    }
+
+    private void DrawStatus() {
+        int total = list.items.Count;
+        string totalString = $" {total} ";
+        int statusLength = totalString.Length;
+
+        if (statusLength != lastStatusLength) {
+            Ansi.SetCursorPosition(Renderer.LastWidth - lastStatusLength, Math.Max(Renderer.LastHeight, 0));
+            Ansi.SetBgColor(Data.TOOLBAR_COLOR);
+            Ansi.Write(new String(' ', lastStatusLength));
+        }
+
+        Ansi.SetCursorPosition(Renderer.LastWidth - totalString.Length + 1, Math.Max(Renderer.LastHeight, 0));
+        Ansi.SetFgColor([16, 16, 16]);
+        Ansi.SetBgColor(Data.LIGHT_COLOR);
+        Ansi.Write(totalString);
+        Ansi.SetBgColor(Data.DARK_COLOR);
     }
 
     private void DrawDiscoverItem(int index, int x, int y, int width) {
@@ -129,13 +152,6 @@ public sealed class NetMapperFrame : Tui.Frame {
         Ansi.SetBgColor(backColor);
         Ansi.SetFgColor(foreColor);
         
-        if (String.IsNullOrEmpty(item.name)) {
-            Ansi.Write(new string(' ', nameWidth));
-        }
-        else {
-            Ansi.Write(item.name.Length > nameWidth ? item.name[..(nameWidth - 1)] + Data.ELLIPSIS : item.name.PadRight(nameWidth));
-        }
-
         if (String.IsNullOrEmpty(item.ip)) {
             Ansi.Write(new String(' ', ipWidth));
         }
@@ -159,7 +175,14 @@ public sealed class NetMapperFrame : Tui.Frame {
             Ansi.Write(item.manufacturer.Length > manufacturerWidth ? item.manufacturer[..(manufacturerWidth - 1)] + Data.ELLIPSIS : item.manufacturer.PadRight(manufacturerWidth));
         }
 
-        if (String.IsNullOrEmpty(item.other)) {
+        if (String.IsNullOrEmpty(item.name)) {
+            Ansi.Write(new string(' ', nameWidth));
+        }
+        else {
+            Ansi.Write(item.name.Length > nameWidth ? item.name[..(nameWidth - 1)] + Data.ELLIPSIS : item.name.PadRight(nameWidth));
+        }
+
+        if (String.IsNullOrEmpty(item.other) && otherWidth > 0) {
             Ansi.Write(new string(' ', otherWidth));
         }
         else if (otherWidth > 0) {
@@ -167,6 +190,12 @@ public sealed class NetMapperFrame : Tui.Frame {
         }
 
         Ansi.SetBgColor(Data.DARK_COLOR);
+    }
+
+    private void RemoveSelected() {
+        list.RemoveSelected();
+        DrawStatus();
+        Ansi.Push();
     }
 
     private async Task Discover() {
@@ -219,16 +248,24 @@ public sealed class NetMapperFrame : Tui.Frame {
             short[] result = await Task.WhenAll(tasks);
             for (uint i = 0; i < result.Length; i++) {
                 if (result[i] < 0) continue;
-                
-                uint address = i + j;
+
+                uint ipInt = i + j;
+                string ipString = IPAddress.Parse(ipInt.ToString()).ToString();
+
+                string mac = Arp.ArpRequest(ipString);
+
                 list.Add(new DiscoverItem() {
-                    ip    = IPAddress.Parse(address.ToString()).ToString(),
-                    ipInt = address
+                    ip    = ipString,
+                    ipInt = ipInt,
+                    mac = mac,
+                    manufacturer = MacLookup.Lookup(mac)
                 });
             }
 
             if (Renderer.ActiveDialog is not null) continue;
             if (Renderer.ActiveFrame != this) continue;
+
+            DrawStatus();
             list.Draw(true);
         }
 
@@ -253,7 +290,8 @@ public sealed class NetMapperFrame : Tui.Frame {
             });
         }
 
-       list.Draw(true);
+        DrawStatus();
+        list.Draw(true);
     }
 
     private void DiscoverUbiquiti(CancellationToken cancellationToken) {
@@ -263,6 +301,7 @@ public sealed class NetMapperFrame : Tui.Frame {
             list.Add(items[i]);
         }
 
+        DrawStatus();
         list.Draw(true);
     }
 
@@ -277,8 +316,8 @@ public sealed class NetMapperFrame : Tui.Frame {
             networkRange = dialog.networks[dialog.rangeSelectBox.index];
 
             dialog.Close();
-            //Task.Run(Discover);
-            Discover().GetAwaiter().GetResult();
+            Task.Run(Discover);
+            //Discover().GetAwaiter().GetResult();
         };
 
         dialog.Show(true);
