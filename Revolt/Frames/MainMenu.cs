@@ -7,6 +7,7 @@ public sealed class MainMenu : Tui.Frame {
         "Ping",
         "DNS lookup",
         "Network mapper",
+        //"Relay server",
         "Packet sniffer",
         null,
         "Configuration",

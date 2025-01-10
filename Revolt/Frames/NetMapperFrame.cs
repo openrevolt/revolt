@@ -1,4 +1,6 @@
-﻿using System.Net;
+﻿using System.Collections.Concurrent;
+using System.Net;
+using System.Net.NetworkInformation;
 using System.Threading;
 using Protest.Protocols;
 using Revolt.Protocols;
@@ -24,22 +26,24 @@ public sealed class NetMapperFrame : Tui.Frame {
     private CancellationTokenSource cancellationTokenSource;
     private CancellationToken cancellationToken;
 
+    private ConcurrentBag<uint> discovered = new ConcurrentBag<uint>();
+
     private bool icmp     = true;
     private bool mdns     = true;
     private bool ubiquiti = false;
 
-    private int lastStatusLength = 0;
+    private int  lastStatusLength = 0;
 
     private (IPAddress, IPAddress, IPAddress) networkRange = (IPAddress.Loopback, IPAddress.Broadcast, IPAddress.IPv6None);
 
     public NetMapperFrame() {
         list = new Tui.ListBox<DiscoverItem>(this) {
-            left              = 1,
-            right             = 1,
-            top               = 2,
-            bottom            = 3,
-            itemHeight        = 1,
-            drawItemHandler   = DrawDiscoverItem
+            left            = 1,
+            right           = 1,
+            top             = 1,
+            bottom          = 4,
+            itemHeight      = 1,
+            drawItemHandler = DrawDiscoverItem
         }; 
         
         toolbar = new Tui.Toolbar(this) {
@@ -61,10 +65,7 @@ public sealed class NetMapperFrame : Tui.Frame {
 
     public override void Draw(int width, int height) {
         base.Draw(width, height);
-
-        Ansi.SetCursorPosition(2, 0);
-        Ansi.SetBgColor([192, 192, 192]);
-        Ansi.Write(new String((char)(Data.BRAILLE_BASE | 0xFF), width - 2));
+        DrawMap(width, height);
         Ansi.Push();
     }
 
@@ -99,6 +100,49 @@ public sealed class NetMapperFrame : Tui.Frame {
         return true;
     }
 
+    private void DrawMap(int width, int height) {
+        uint gate  = networkRange.Item1.ToUInt32();
+        uint mask  = networkRange.Item2.ToUInt32();
+        uint start = gate & mask;
+        uint end   = gate | ~mask;
+        uint span  = end - start;
+
+        uint actualWidth  = Math.Max((uint)width - 4, 1);
+        uint hostPerDot   = Math.Max(span / actualWidth / 8, 1);
+        uint hostPerGlyph = hostPerDot * 8;
+
+        Ansi.SetCursorPosition(3, Math.Max(height - 2, 0));
+        Ansi.SetBgColor(Data.TOOLBAR_COLOR);
+        Ansi.SetFgColor(Data.LIGHT_COLOR);
+
+        if (discovered.IsEmpty) {
+            Ansi.SetBgColor([40, 40, 40]);
+            Ansi.Write(new string(' ', (int)actualWidth));
+            return;
+        }
+
+        uint i;
+        for (i = 0; i < actualWidth; i++) {
+            if (start + i * hostPerGlyph > end) break;
+
+            byte braille = 0x00;
+
+            for (uint j = 0; j < 8; j++) {
+                for (uint k = 0; k < hostPerDot; k++) {
+                    uint address = start + i * hostPerGlyph + j + k;
+                    if (!discovered.Contains(address)) continue;
+                    braille |= (byte)(1 << (byte)j);
+                    break;
+                }
+            }
+
+            Ansi.Write((char)(Data.BRAILLE_BASE | braille));
+        }
+
+        Ansi.SetBgColor([40, 40, 40]);
+        Ansi.Write(new String(' ', (int)(actualWidth - i)));
+    }
+
     private void DrawStatus() {
         int total = list.items.Count;
         string totalString = $" {total} ";
@@ -108,13 +152,13 @@ public sealed class NetMapperFrame : Tui.Frame {
             Ansi.SetCursorPosition(Renderer.LastWidth - lastStatusLength, Math.Max(Renderer.LastHeight, 0));
             Ansi.SetBgColor(Data.TOOLBAR_COLOR);
             Ansi.Write(new String(' ', lastStatusLength));
-        }
 
-        Ansi.SetCursorPosition(Renderer.LastWidth - totalString.Length + 1, Math.Max(Renderer.LastHeight, 0));
-        Ansi.SetFgColor([16, 16, 16]);
-        Ansi.SetBgColor(Data.LIGHT_COLOR);
-        Ansi.Write(totalString);
-        Ansi.SetBgColor(Data.DARK_COLOR);
+            Ansi.SetCursorPosition(Renderer.LastWidth - totalString.Length + 1, Math.Max(Renderer.LastHeight, 0));
+            Ansi.SetFgColor([16, 16, 16]);
+            Ansi.SetBgColor(Data.LIGHT_COLOR);
+            Ansi.Write(totalString);
+            Ansi.SetBgColor(Data.DARK_COLOR);
+        }
     }
 
     private void DrawDiscoverItem(int index, int x, int y, int width) {
@@ -194,23 +238,29 @@ public sealed class NetMapperFrame : Tui.Frame {
 
         Tokens.dictionary.TryAdd(cancellationTokenSource, cancellationToken);
 
-        list.Clear();
-
-        if (mdns) {
-            DiscoverMdns();
+        for (int i = 0; i < list.items.Count; i++) {
+            if (discovered.Contains(list.items[i].ipInt)) continue;
+            discovered.Add(list.items[i].ipInt);
         }
 
         if (ubiquiti) {
             DiscoverUbiquiti(cancellationToken);
+            for (int i = 0; i < list.items.Count; i++) {
+                if (discovered.Contains(list.items[i].ipInt)) continue;
+                discovered.Add(list.items[i].ipInt);
+            }
         }
 
-        HashSet<uint> discovered = new HashSet<uint>();
-        for (int i = 0; i < list.items.Count; i++) {
-            discovered.Add(list.items[i].ipInt);
+        if (mdns) {
+            DiscoverMdns();
+            for (int i = 0; i < list.items.Count; i++) {
+                if (discovered.Contains(list.items[i].ipInt)) continue;
+                discovered.Add(list.items[i].ipInt);
+            }
         }
 
         if (icmp) {
-            await DiscoverIcmp(discovered, cancellationToken);
+            await DiscoverIcmp(cancellationToken);
         }
 
         Tokens.dictionary.TryRemove(cancellationTokenSource, out _);
@@ -218,10 +268,13 @@ public sealed class NetMapperFrame : Tui.Frame {
 
         cancellationTokenSource = null;
 
+        if (Renderer.ActiveDialog is not null) return;
+        if (Renderer.ActiveFrame != this) return;
+
         list.Draw(true);
     }
 
-    private async Task DiscoverIcmp(HashSet<uint> discovered, CancellationToken cancellationToken) {
+    private async Task DiscoverIcmp(CancellationToken cancellationToken) {
         await Task.Delay(500, cancellationToken);
 
         uint gate = networkRange.Item1.ToUInt32();
@@ -237,8 +290,13 @@ public sealed class NetMapperFrame : Tui.Frame {
         }
 
         try {
+            List<Task<short>> tasks = new List<Task<short>>();
+
             for (uint j = start; j <= end; j += batchSize) {
-                List<Task<short>> tasks = new List<Task<short>>();
+                if (cancellationToken.IsCancellationRequested) {
+                    break;
+                }
+                tasks.Clear();
 
                 for (uint i = j; i <= Math.Min(j + batchSize - 1, end); i++) {
                     if (discovered.Contains(i)) {
@@ -259,6 +317,8 @@ public sealed class NetMapperFrame : Tui.Frame {
 
                     string mac = Arp.ArpRequest(ipString);
 
+                    discovered.Add(ipInt);
+
                     list.Add(new DiscoverItem() {
                         ip           = ipString,
                         ipInt        = ipInt,
@@ -271,6 +331,7 @@ public sealed class NetMapperFrame : Tui.Frame {
                 if (Renderer.ActiveFrame != this) continue;
 
                 DrawStatus();
+                DrawMap(Renderer.LastWidth, Renderer.LastHeight);
                 list.Draw(true);
             }
         }
@@ -278,6 +339,10 @@ public sealed class NetMapperFrame : Tui.Frame {
             Console.WriteLine(ex);
         }
         finally {
+            toolbar.items[0].text = "Discover";
+            toolbar.items[1].disabled = false;
+            toolbar.Draw(true);
+
             for (int i = 0; i < batchSize; i++) {
                 pingInstances[i].Dispose();
             }
@@ -294,11 +359,18 @@ public sealed class NetMapperFrame : Tui.Frame {
         }
 
         for (int i = 0; i < answers.Count; i++) {
+            uint ipInt = answers[i].remote.ToUInt32();
+            
+            if (discovered.Contains(ipInt)) continue;
+
             list.Add(new DiscoverItem() {
-                 ip     = answers[i].remote.ToString(),
-                 ipInt = answers[i].remote.ToUInt32()
+                 ip    = answers[i].remote.ToString(),
+                 ipInt = ipInt
             });
         }
+
+        if (Renderer.ActiveDialog is not null) return;
+        if (Renderer.ActiveFrame != this) return;
 
         DrawStatus();
         list.Draw(true);
@@ -311,12 +383,16 @@ public sealed class NetMapperFrame : Tui.Frame {
             list.Add(items[i]);
         }
 
+        if (Renderer.ActiveDialog is not null) return;
+        if (Renderer.ActiveFrame != this) return;
+
         DrawStatus();
         list.Draw(true);
     }
 
     private void Start() {
         if (cancellationTokenSource is not null && cancellationToken.CanBeCanceled) {
+            Stop();
             return;
         }
 
@@ -329,6 +405,9 @@ public sealed class NetMapperFrame : Tui.Frame {
 
             networkRange = dialog.networks[dialog.rangeSelectBox.index];
 
+            toolbar.items[0].text = "Stop";
+            toolbar.items[1].disabled = true;
+
             dialog.Close();
             Task.Run(Discover);
         };
@@ -340,14 +419,27 @@ public sealed class NetMapperFrame : Tui.Frame {
         dialog.ubiquitiToggle.Value = ubiquiti;
     }
 
-    private void Stop() => cancellationTokenSource?.Cancel();
+    private void Stop() {
+        Tui.ConfirmDialog dialog = new Tui.ConfirmDialog() {
+            text = "Are you sure you want to stop the mapping?"
+        };
+
+        dialog.okButton.action = () => {
+            cancellationTokenSource?.Cancel();
+            dialog.Close();
+        };
+
+        dialog.Show();
+    }
 
     private void Clear() {
         if (cancellationTokenSource is not null && cancellationToken.CanBeCanceled) {
             return;
         }
 
+        discovered.Clear();
         list.Clear();
+        DrawMap(Renderer.LastWidth, Renderer.LastHeight);
     }
 }
 

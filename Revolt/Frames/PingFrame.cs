@@ -200,6 +200,8 @@ public sealed class PingFrame : Tui.Frame {
         Ansi.SetFgColor([16, 16, 16]);
         Ansi.SetBgColor(Data.LIGHT_COLOR);
         Ansi.Write(totalString);
+        
+        Ansi.SetBgColor(Data.DARK_COLOR);
 
         lastStatusLength = statusLength;
     }
