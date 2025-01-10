@@ -116,7 +116,7 @@ public sealed class NetMapperFrame : Tui.Frame {
         Ansi.SetFgColor(Data.LIGHT_COLOR);
 
         if (discovered.IsEmpty) {
-            Ansi.SetBgColor([40, 40, 40]);
+            Ansi.SetBgColor([48, 48, 48]);
             Ansi.Write(new string(' ', (int)actualWidth));
             return;
         }
@@ -129,7 +129,7 @@ public sealed class NetMapperFrame : Tui.Frame {
 
             for (uint j = 0; j < 8; j++) {
                 for (uint k = 0; k < hostPerDot; k++) {
-                    uint address = start + i * hostPerGlyph + j + k;
+                    uint address = start + i * hostPerGlyph + j * hostPerDot + k;
                     if (!discovered.Contains(address)) continue;
                     braille |= (byte)(1 << (byte)j);
                     break;
@@ -139,7 +139,7 @@ public sealed class NetMapperFrame : Tui.Frame {
             Ansi.Write((char)(Data.BRAILLE_BASE | braille));
         }
 
-        Ansi.SetBgColor([40, 40, 40]);
+        Ansi.SetBgColor([48, 48, 48]);
         Ansi.Write(new String(' ', (int)(actualWidth - i)));
     }
 
