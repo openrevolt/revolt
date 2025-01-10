@@ -373,6 +373,7 @@ public sealed class NetMapperFrame : Tui.Frame {
         if (Renderer.ActiveFrame != this) return;
 
         DrawStatus();
+        DrawMap(Renderer.LastWidth, Renderer.LastHeight);
         list.Draw(true);
     }
 
@@ -387,6 +388,7 @@ public sealed class NetMapperFrame : Tui.Frame {
         if (Renderer.ActiveFrame != this) return;
 
         DrawStatus();
+        DrawMap(Renderer.LastWidth, Renderer.LastHeight);
         list.Draw(true);
     }
 
@@ -439,7 +441,9 @@ public sealed class NetMapperFrame : Tui.Frame {
 
         discovered.Clear();
         list.Clear();
+
         DrawMap(Renderer.LastWidth, Renderer.LastHeight);
+        Ansi.Push();
     }
 }
 
