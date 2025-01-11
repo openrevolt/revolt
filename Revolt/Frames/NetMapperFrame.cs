@@ -235,38 +235,43 @@ public sealed class NetMapperFrame : Tui.Frame {
     private async Task Discover() {
         cancellationTokenSource = new CancellationTokenSource();
         cancellationToken = cancellationTokenSource.Token;
-
         Tokens.dictionary.TryAdd(cancellationTokenSource, cancellationToken);
 
-        for (int i = 0; i < list.items.Count; i++) {
-            if (discovered.Contains(list.items[i].ipInt)) continue;
-            discovered.Add(list.items[i].ipInt);
-        }
-
-        if (ubiquiti) {
-            DiscoverUbiquiti(cancellationToken);
+        try {
             for (int i = 0; i < list.items.Count; i++) {
                 if (discovered.Contains(list.items[i].ipInt)) continue;
                 discovered.Add(list.items[i].ipInt);
             }
-        }
 
-        if (mdns) {
-            DiscoverMdns();
-            for (int i = 0; i < list.items.Count; i++) {
-                if (discovered.Contains(list.items[i].ipInt)) continue;
-                discovered.Add(list.items[i].ipInt);
+            if (ubiquiti) {
+                DiscoverUbiquiti(cancellationToken);
+                for (int i = 0; i < list.items.Count; i++) {
+                    if (discovered.Contains(list.items[i].ipInt)) continue;
+                    discovered.Add(list.items[i].ipInt);
+                }
+            }
+
+            if (mdns) {
+                DiscoverMdns();
+                for (int i = 0; i < list.items.Count; i++) {
+                    if (discovered.Contains(list.items[i].ipInt)) continue;
+                    discovered.Add(list.items[i].ipInt);
+                }
+            }
+
+            if (icmp) {
+                await DiscoverIcmp(cancellationToken);
             }
         }
+        finally {
+            Tokens.dictionary.TryRemove(cancellationTokenSource, out _);
+            cancellationTokenSource.Dispose();
+            cancellationTokenSource = null;
 
-        if (icmp) {
-            await DiscoverIcmp(cancellationToken);
+            toolbar.items[0].text = "Discover";
+            toolbar.items[1].disabled = false;
+            toolbar.Draw(true);
         }
-
-        Tokens.dictionary.TryRemove(cancellationTokenSource, out _);
-        cancellationTokenSource.Dispose();
-
-        cancellationTokenSource = null;
 
         if (Renderer.ActiveDialog is not null) return;
         if (Renderer.ActiveFrame != this) return;
@@ -339,10 +344,6 @@ public sealed class NetMapperFrame : Tui.Frame {
             Console.WriteLine(ex);
         }
         finally {
-            toolbar.items[0].text = "Discover";
-            toolbar.items[1].disabled = false;
-            toolbar.Draw(true);
-
             for (int i = 0; i < batchSize; i++) {
                 pingInstances[i].Dispose();
             }

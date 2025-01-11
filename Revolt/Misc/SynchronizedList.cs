@@ -116,4 +116,3 @@ public sealed class SynchronizedList<T> : IList<T> where T : notnull {
         }
     }
 }
-

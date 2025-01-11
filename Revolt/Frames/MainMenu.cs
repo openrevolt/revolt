@@ -112,6 +112,10 @@ public sealed class MainMenu : Tui.Frame {
             NetMapperFrame.Instance.Show();
             return true;
 
+        case "Packet sniffer":
+            SnifferFrame.Instance.Show();
+            return true;
+
         case "Quit":
              return false;
 
