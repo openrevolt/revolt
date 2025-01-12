@@ -1,11 +1,26 @@
-﻿namespace Revolt.Frames;
+﻿using System.Collections.Generic;
+
+namespace Revolt.Frames;
 
 internal class SnifferFrame : Tui.Frame {
 
     public static SnifferFrame Instance { get; } = new SnifferFrame();
 
-    public override void Draw(int width, int height) {
-        base.Draw(width, height);
+    public Tui.Toolbar toolbar;
+
+    public SnifferFrame() {
+        toolbar = new Tui.Toolbar(this) {
+            left = 0,
+            right = 0,
+            items = [
+                new Tui.Toolbar.ToolbarItem() { text="Start", key="F2", action=Start},
+            ],
+        };
+
+        elements.Add(toolbar);
+
+        defaultElement = toolbar;
+        FocusNext();
     }
 
     public override bool HandleKey(ConsoleKeyInfo key) {
@@ -30,5 +45,12 @@ internal class SnifferFrame : Tui.Frame {
 
         return true;
     }
+
+    public override void Draw(int width, int height) {
+        base.Draw(width, height);
+    }
+
+    private void Start() { }
+    private void Stop() { }
 
 }
