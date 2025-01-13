@@ -12,12 +12,10 @@ public sealed partial class Sniffer {
         public ushort    size;
         public byte      ttl;
         public byte      protocol;
-        
         public IPAddress source;
         public IPAddress destination;
-
-        public ushort sourcePort;
-        public ushort destinationPort;
+        public ushort    sourcePort;
+        public ushort    destinationPort;
     }
 
     public bool analyzeL3 = true;
@@ -32,12 +30,13 @@ public sealed partial class Sniffer {
 
     public void Start(IPAddress address) {
         AddressFamily ipFamily = address.AddressFamily;
-        SocketOptionLevel socketLevel = ipFamily == AddressFamily.InterNetwork ? SocketOptionLevel.IP : SocketOptionLevel.IPv6;
 
         using Socket socket = new Socket(ipFamily, SocketType.Raw, ProtocolType.IP);
-
         socket.Bind(new IPEndPoint(address, 0));
-        socket.SetSocketOption(socketLevel, SocketOptionName.HeaderIncluded, true);
+
+        byte[] inValue = new byte[4] { 1, 0, 0, 0 }; //promiscuous mode
+        byte[] outValue = new byte[4];
+        socket.IOControl((IOControlCode)2550136833, inValue, outValue);
 
         byte[] buffer = new byte[65535];
 
@@ -45,25 +44,27 @@ public sealed partial class Sniffer {
         cancellationToken = cancellationTokenSource.Token;
 
         if (ipFamily == AddressFamily.InterNetwork) {
+            socket.SetSocketOption(SocketOptionLevel.IP, SocketOptionName.HeaderIncluded, true);
+
             while (!cancellationToken.IsCancellationRequested) {
                 int bytesRead = socket.Receive(buffer);
                 HandleV4Packet(buffer, bytesRead);
 
                 //Interlocked.Add(ref totalBytesRx, bytesRead);
                 //Interlocked.Increment(ref totalPacketsRx);
-                
                 totalBytesRx += bytesRead;
                 totalPacketsRx++;
             }
         }
         else if (ipFamily == AddressFamily.InterNetworkV6) {
+            socket.SetSocketOption(SocketOptionLevel.IPv6, SocketOptionName.HeaderIncluded, true);
+
             while (!cancellationToken.IsCancellationRequested) {
                 int bytesRead = socket.Receive(buffer);
                 HandleV6Packet(buffer, bytesRead);
 
                 //Interlocked.Add(ref totalBytesRx, bytesRead);
                 //Interlocked.Increment(ref totalPacketsRx);
-
                 totalBytesRx += bytesRead;
                 totalPacketsRx++;
             }
@@ -81,9 +82,9 @@ public sealed partial class Sniffer {
         if (length < 20) return; //invalid traffic
 
         ushort size     = (ushort)(buffer[2] << 8 | buffer[3]);
-        byte   ttl      = buffer[4];
-        byte   protocol = buffer[5];
-        //ushort checksum = (ushort)(buffer[6] << 8 | buffer[7]);
+        byte   ttl      = buffer[8];
+        byte   protocol = buffer[9];
+        //ushort checksum = (ushort)(buffer[10] << 8 | buffer[11]);
 
         //if (size != length) return; //size mismatch
 
@@ -132,7 +133,7 @@ public sealed partial class Sniffer {
     }
 
     private void HandleL4(byte[] buffer, int transportIndex) {
-        
+        //TODO:
     }
 
 }
