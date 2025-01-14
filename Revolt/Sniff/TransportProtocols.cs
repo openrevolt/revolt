@@ -1,7 +1,7 @@
 ﻿namespace Revolt.Sniff;
 
 public sealed partial class Sniffer {
-    public static readonly string[] transferProtocolsNames = [
+    public static readonly string[] transferProtocolNames = [
         "HOPOPT",          //0
         "ICMP",            //1
         "IGMP",            //2
