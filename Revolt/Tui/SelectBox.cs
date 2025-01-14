@@ -2,6 +2,8 @@
 
 public sealed class SelectBox(Frame parentFrame) : Element(parentFrame) {
     public string[] options;
+    public string placeholder;
+
     public int index = 0;
     public Action afterChange;
     
@@ -11,22 +13,44 @@ public sealed class SelectBox(Frame parentFrame) : Element(parentFrame) {
 
         byte[] foreColor = isFocused ? [16, 16, 16] : Data.LIGHT_COLOR;
         byte[] backColor = isFocused ? Data.SELECT_COLOR : Data.INPUT_COLOR;
-        string selected = options[index];
+        string selectedString = options.Length == 0 ? placeholder : options[index];
 
-        Ansi.SetFgColor(foreColor);
         Ansi.SetBgColor(backColor);
         Ansi.SetCursorPosition(left, top);
 
+        if (options.Length == 0) {
+            Ansi.SetFgColor([128, 128, 128]);
+            Ansi.Write(' ');
+            Ansi.Write(Data.LEFT_TRIANGLE);
+            Ansi.Write(' ');
+
+            Ansi.Write(placeholder.Length < usableWidth - 6 ? placeholder : placeholder[..(usableWidth - 7)] + Data.ELLIPSIS);
+            Ansi.Write(new string(' ', Math.Max(usableWidth - placeholder.Length - 6, 0)));
+
+            Ansi.Write(' ');
+            Ansi.Write(Data.RIGHT_TRIANGLE);
+            Ansi.Write(' ');
+
+            if (push) {
+                Ansi.Push();
+            }
+
+            return;
+        }
+
         if (index == 0) {
             Ansi.SetFgColor([128, 128, 128]);
+        }
+        else {
+            Ansi.SetFgColor(foreColor);
         }
         Ansi.Write(' ');
         Ansi.Write(Data.LEFT_TRIANGLE);
         Ansi.Write(' ');
 
         Ansi.SetFgColor(foreColor);
-        Ansi.Write(selected.Length < usableWidth - 6 ? selected : selected[..(usableWidth - 7)] + Data.ELLIPSIS);
-        Ansi.Write(new string(' ', Math.Max(usableWidth - selected.Length - 6, 0)));
+        Ansi.Write(selectedString.Length < usableWidth - 6 ? selectedString : selectedString[..(usableWidth - 7)] + Data.ELLIPSIS);
+        Ansi.Write(new string(' ', Math.Max(usableWidth - selectedString.Length - 6, 0)));
 
         if (index == options.Length - 1) {
             Ansi.SetFgColor([128, 128, 128]);

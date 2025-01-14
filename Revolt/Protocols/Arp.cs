@@ -1,5 +1,4 @@
 ﻿using Revolt;
-using System.IO;
 using System.Net;
 using System.Runtime.InteropServices;
 using System.Runtime.Versioning;

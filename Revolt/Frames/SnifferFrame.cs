@@ -1,9 +1,4 @@
-﻿using System.Collections.Generic;
-using System.Net;
-using Revolt.Proprietary;
-using Revolt.Protocols;
-using System.Threading;
-using SharpPcap;
+﻿using SharpPcap;
 using Revolt.Sniff;
 
 namespace Revolt.Frames;
@@ -25,8 +20,8 @@ internal class SnifferFrame : Tui.Frame {
             left = 0,
             right = 0,
             items = [
-                new Tui.Toolbar.ToolbarItem() { text="Start",  key="F2", action=Start},
-                //new Tui.Toolbar.ToolbarItem() { text="Filter", key="F4", action=Start},
+                new Tui.Toolbar.ToolbarItem() { text="Start",  key="F2", action=StartDialog },
+                new Tui.Toolbar.ToolbarItem() { text="Filter", key="F4", action=FiltersDialog },
             ],
         };
 
@@ -52,11 +47,11 @@ internal class SnifferFrame : Tui.Frame {
             break;
 
         case ConsoleKey.F2:
-            Start();
+            StartDialog();
             break;
 
         case ConsoleKey.F4:
-            //TODO: implement
+            FiltersDialog();
             break;
 
         default:
@@ -71,9 +66,9 @@ internal class SnifferFrame : Tui.Frame {
         base.Draw(width, height);
     }
 
-    private void Start() {
+    private void StartDialog() {
         if (captureDevice is not null && captureDevice.Started) {
-            Stop();
+            StopDialog();
             return;
         }
 
@@ -115,7 +110,7 @@ internal class SnifferFrame : Tui.Frame {
         dialog.l4Toggle.Value = analyzeL4;
     }
 
-    private void Stop() {
+    private void StopDialog() {
         Tui.ConfirmDialog dialog = new Tui.ConfirmDialog() {
             text = "Are you sure you want to stop?"
         };
@@ -133,6 +128,9 @@ internal class SnifferFrame : Tui.Frame {
         dialog.Show();
     }
 
+    private void FiltersDialog() {
+
+    }
 }
 
 file sealed class StartDialog : Tui.DialogBox {
@@ -146,19 +144,28 @@ file sealed class StartDialog : Tui.DialogBox {
     public StartDialog() {
         CaptureDeviceList captureDevices = CaptureDeviceList.Instance;
 
-        devices = new List<ILiveDevice>();
-        List<string> strings = new List<string>();
+        devices = [];
+        List<string> strings = [];
 
         for (int i = 0; i < captureDevices.Count; i++) {
             if (captureDevices[i].MacAddress is null) continue;
             devices.Add(captureDevices[i]);
-            strings.Add(captureDevices[i].Description);
+
+            string macString = string.Join(':', captureDevices[i].MacAddress.GetAddressBytes().Select(b => b.ToString("X2")));
+
+            if (captureDevices[i].Description is null) {
+                strings.Add($"{macString} - {captureDevices[i].Name}");
+            }
+            else {
+                strings.Add($"{macString} - {captureDevices[i].Description}");
+            }
         }
 
         okButton.text = "  Start  ";
 
         rangeSelectBox = new Tui.SelectBox(this) {
-            options = strings.ToArray()
+            options     = strings.ToArray(),
+            placeholder = "no nic found"
         };
 
         l2Toggle = new Tui.Toggle(this, "Analyze frames header");

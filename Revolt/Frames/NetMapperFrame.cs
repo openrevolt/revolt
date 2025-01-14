@@ -1,7 +1,5 @@
 ﻿using System.Collections.Concurrent;
 using System.Net;
-using System.Net.NetworkInformation;
-using System.Threading;
 using Protest.Protocols;
 using Revolt.Protocols;
 
@@ -466,7 +464,7 @@ file sealed class OptionsDialog : Tui.DialogBox {
 
         string[] networksString;
         if (networks.Length == 0) {
-            networksString = [String.Empty];
+            networksString = [];
         }
         else {
             networksString = networks.Select(o => $"{o.Item1}/{NetTools.SubnetMaskToCidr(o.Item2)}").ToArray(); ;
@@ -475,7 +473,8 @@ file sealed class OptionsDialog : Tui.DialogBox {
         okButton.text = "  Start  ";
 
         rangeSelectBox = new Tui.SelectBox(this) {
-            options = networksString
+            options     = networksString,
+            placeholder = "no nic found"
         };
 
         icmpToggle     = new Tui.Toggle(this, "ICMP");
