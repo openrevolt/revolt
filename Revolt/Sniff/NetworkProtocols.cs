@@ -43,6 +43,6 @@ public sealed partial class Sniffer {
     }.ToFrozenDictionary();
 
     public static string GetNetworkProtocolName(ushort etherType) =>
-        networkProtocolNames.TryGetValue(etherType, out var name) ? name : "unknown";
+        networkProtocolNames.TryGetValue(etherType, out string name) ? name : "--";
 
 }
