@@ -37,10 +37,17 @@
 
     <RunAnalyzersDuringLiveAnalysis>False</RunAnalyzersDuringLiveAnalysis>
     <RunAnalyzersDuringBuild>True</RunAnalyzersDuringBuild>
+
+    <SuppressTrimAnalysisWarnings>true</SuppressTrimAnalysisWarnings>
   </PropertyGroup>
 
   <ItemGroup Condition="'$(Configuration)' == 'RELEASE'">
     <ProjectReference Include="..\Revolt-MacLookupGenerator\Revolt-MacLookupGenerator.csproj" OutputItemType="Analyzer" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <PackageReference Include="SharpPcap" Version="6.3.0" />
+    <TrimmerRootAssembly Include="SharpPcap" />
   </ItemGroup>
 
 </Project>

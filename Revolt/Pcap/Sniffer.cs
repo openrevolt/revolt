@@ -1,81 +1,74 @@
 ﻿using System.Diagnostics;
 using System.Net;
-using System.Net.Sockets;
+using System.Net.NetworkInformation;
+using SharpPcap;
 
-namespace Revolt.Pcap;
+namespace Revolt.Sniff;
 
-public sealed partial class Sniffer {
+public sealed partial class Sniffer : IDisposable {
 
-    public struct Packet {
-        public long      timestamp;
-        public bool      isIPv6;
-        public ushort    size;
-        public byte      ttl;
-        public byte      protocol;
-        public IPAddress source;
-        public IPAddress destination;
-        public ushort    sourcePort;
-        public ushort    destinationPort;
+    //[StructLayout(LayoutKind.Auto)]
+    public struct Frame {
+        public long            timestamp;
+        public ushort          size;
+
+        public PhysicalAddress sourceMac;
+        public PhysicalAddress destinationMac;
+        public byte            networkProtocol;
+
+        public IPAddress       sourceIP;
+        public IPAddress       destinationIP;
+        public byte            ttl;
+        public byte            transportProtocol;
+
+        public ushort          sourcePort;
+        public ushort          destinationPort;
     }
 
+    public bool analyzeL2 = true;
     public bool analyzeL3 = true;
     public bool analyzeL4 = true;
 
-    public List<Packet> packets = new List<Packet>();
-    public long totalBytesRx = 0;
-    public long totalPacketsRx = 0;
+    public List<Frame> capture = new List<Frame>();
+    public long bytesRx, bytesTx = 0;
+    public long packetsRx, packetsTx = 0;
 
-    public CancellationTokenSource cancellationTokenSource;
-    public CancellationToken cancellationToken;
+    private ICaptureDevice device;
+    private PhysicalAddress deviceMac;
 
-    public void Start(IPAddress address) {
-        AddressFamily ipFamily = address.AddressFamily;
-
-        using Socket socket = new Socket(ipFamily, SocketType.Raw, ProtocolType.IP);
-        socket.Bind(new IPEndPoint(address, 0));
-
-        byte[] inValue = new byte[4] { 1, 0, 0, 0 }; //promiscuous mode
-        byte[] outValue = new byte[4];
-        socket.IOControl((IOControlCode)2550136833, inValue, outValue);
-
-        byte[] buffer = new byte[65535];
-
-        cancellationTokenSource = new CancellationTokenSource();
-        cancellationToken = cancellationTokenSource.Token;
-
-        if (ipFamily == AddressFamily.InterNetwork) {
-            socket.SetSocketOption(SocketOptionLevel.IP, SocketOptionName.HeaderIncluded, true);
-
-            while (!cancellationToken.IsCancellationRequested) {
-                int bytesRead = socket.Receive(buffer);
-                HandleV4Packet(buffer, bytesRead);
-
-                //Interlocked.Add(ref totalBytesRx, bytesRead);
-                //Interlocked.Increment(ref totalPacketsRx);
-                totalBytesRx += bytesRead;
-                totalPacketsRx++;
-            }
+    public Sniffer(ICaptureDevice device) {
+        if (device.MacAddress is null) {
+            throw new Exception("no mac address");
         }
-        else if (ipFamily == AddressFamily.InterNetworkV6) {
-            socket.SetSocketOption(SocketOptionLevel.IPv6, SocketOptionName.HeaderIncluded, true);
 
-            while (!cancellationToken.IsCancellationRequested) {
-                int bytesRead = socket.Receive(buffer);
-                HandleV6Packet(buffer, bytesRead);
+        this.device = device;
+        deviceMac = device.MacAddress;
+    }
 
-                //Interlocked.Add(ref totalBytesRx, bytesRead);
-                //Interlocked.Increment(ref totalPacketsRx);
-                totalBytesRx += bytesRead;
-                totalPacketsRx++;
-            }
-        }
-        else {
-            throw new NotSupportedException("Unsupported network protocol");
-        }
+    public void Start() {
+        device.OnPacketArrival += Device_onPacketArrival;
+        device.Open();
+        device.StartCapture();
+    }
+
+    private void Device_onPacketArrival(object sender, SharpPcap.PacketCapture e) {
+        RawCapture rawPacket = e.GetPacket();
+        byte[] data = rawPacket.Data;
+        //HandleFrames(data, data.Length);
     }
 
     public void Stop() {
-        cancellationTokenSource?.Cancel();
+        if (device is null) return;
+        device!.StopCapture();
+        device!.Close();
+        device = null;
+    }
+
+    private void HandleFrames(byte[] buffer, int length) {
+        Interlocked.Add(ref bytesRx, length);
+        Interlocked.Increment(ref packetsRx);
+
+        //TODO:
     }
 
     private void HandleV4Packet(byte[] buffer, int length) {
@@ -88,21 +81,21 @@ public sealed partial class Sniffer {
 
         //if (size != length) return; //size mismatch
 
-        Packet packet = new Packet() {
-            timestamp   = Stopwatch.GetTimestamp(),
-            isIPv6      = false,
-            size        = size,
-            ttl         = ttl,
-            protocol    = protocol,
-            source      = new IPAddress(buffer.AsSpan(12, 4)),
-            destination = new IPAddress(buffer.AsSpan(16, 4))
+        Frame packet = new Frame() {
+            timestamp         = Stopwatch.GetTimestamp(),
+            networkProtocol   = 0,
+            size              = size,
+            ttl               = ttl,
+            transportProtocol = protocol,
+            sourceIP          = new IPAddress(buffer.AsSpan(12, 4)),
+            destinationIP     = new IPAddress(buffer.AsSpan(16, 4))
         };
 
-        packets.Add(packet);
+        capture.Add(packet);
 
         if (analyzeL4) {
             byte ihl = (byte)(buffer[0] & 0x0F << 2);
-            HandleL4(buffer, ihl);
+            HandleSegment(buffer, ihl);
         }
     }
 
@@ -115,25 +108,30 @@ public sealed partial class Sniffer {
 
         //if (size != length) return; //size mismatch
 
-        Packet packet = new Packet() {
-            timestamp   = Stopwatch.GetTimestamp(),
-            isIPv6      = true,
-            size        = size,
-            ttl         = ttl,
-            protocol    = protocol,
-            source      = new IPAddress(buffer.AsSpan(8, 16)),
-            destination = new IPAddress(buffer.AsSpan(24, 16))
+        Frame packet = new Frame() {
+            timestamp         = Stopwatch.GetTimestamp(),
+            networkProtocol   = 0,
+            size              = size,
+            ttl               = ttl,
+            transportProtocol = protocol,
+            sourceIP          = new IPAddress(buffer.AsSpan(8, 16)),
+            destinationIP     = new IPAddress(buffer.AsSpan(24, 16))
         };
 
-        packets.Add(packet);
+        capture.Add(packet);
 
         if (analyzeL4) {
-            HandleL4(buffer, 40);
+            HandleSegment(buffer, 40);
         }
     }
 
-    private void HandleL4(byte[] buffer, int transportIndex) {
-        //TODO:
+    private void HandleSegment(byte[] buffer, int offset) {
+        //TODO: handle layer 4 header
     }
 
+    public void Dispose() {
+        Stop();
+        capture.Clear();
+        device?.Dispose();
+    }
 }

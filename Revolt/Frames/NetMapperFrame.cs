@@ -136,7 +136,12 @@ public sealed class NetMapperFrame : Tui.Frame {
                 }
             }
 
-            Ansi.Write((char)(Data.BRAILLE_BASE | braille));
+            if (braille == 0) {
+                Ansi.Write(' ');
+            }
+            else {
+                Ansi.Write((char)(Data.BRAILLE_BASE | braille));
+            }
         }
 
         Ansi.SetBgColor([48, 48, 48]);
@@ -424,7 +429,7 @@ public sealed class NetMapperFrame : Tui.Frame {
 
     private void Stop() {
         Tui.ConfirmDialog dialog = new Tui.ConfirmDialog() {
-            text = "Are you sure you want to stop the mapping?"
+            text = "Are you sure you want to stop?"
         };
 
         dialog.okButton.action = () => {

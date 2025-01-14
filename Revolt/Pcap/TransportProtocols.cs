@@ -1,4 +1,4 @@
-﻿namespace Revolt.Pcap;
+﻿namespace Revolt.Sniff;
 
 public sealed partial class Sniffer {
     public static string[] transferProtocolsNames = {

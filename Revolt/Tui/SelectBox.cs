@@ -25,7 +25,7 @@ public sealed class SelectBox(Frame parentFrame) : Element(parentFrame) {
         Ansi.Write(' ');
 
         Ansi.SetFgColor(foreColor);
-        Ansi.Write(selected);
+        Ansi.Write(selected.Length < usableWidth - 6 ? selected : selected[..(usableWidth - 7)] + Data.ELLIPSIS);
         Ansi.Write(new string(' ', Math.Max(usableWidth - selected.Length - 6, 0)));
 
         if (index == options.Length - 1) {
