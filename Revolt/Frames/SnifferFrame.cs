@@ -51,7 +51,7 @@ internal class SnifferFrame : Tui.Frame {
         elements.Add(list);
         elements.Add(toolbar);
 
-        defaultElement = tabs;
+        defaultElement = list;
         FocusNext();
     }
 
@@ -88,6 +88,12 @@ internal class SnifferFrame : Tui.Frame {
 
     public override void Draw(int width, int height) {
         base.Draw(width, height);
+
+        Ansi.SetCursorPosition(2, height - 1);
+        Ansi.SetBgColor(Data.DARK_COLOR);
+        Ansi.SetFgColor(Data.PANE_COLOR);
+        Ansi.Write(new String(Data.UPPER_4_8TH_BLOCK, width - 2));
+        Ansi.Push();
     }
 
     private void StartDialog() {

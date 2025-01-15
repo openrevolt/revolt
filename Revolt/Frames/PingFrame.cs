@@ -172,7 +172,7 @@ public sealed class PingFrame : Tui.Frame {
         int total = list.items.Count;
         int unreachable = list.items.Count(o=> o.status < 0);
 
-        string reachableString = $" {total - unreachable} ";
+        string reachableString = total > 0 ? $" {total - unreachable} " : String.Empty;
         string unreachableString = unreachable > 0 ? $" {unreachable} " : String.Empty;
         string totalString = $" {total} ";
 
@@ -184,8 +184,7 @@ public sealed class PingFrame : Tui.Frame {
             Ansi.Write(new String(' ', lastStatusLength));
         }
 
-        int w = reachableString.Length + unreachableString.Length + totalString.Length - 1;
-        Ansi.SetCursorPosition(Renderer.LastWidth - w, Math.Max(Renderer.LastHeight, 0));
+        Ansi.SetCursorPosition(Renderer.LastWidth - statusLength + 1, Math.Max(Renderer.LastHeight, 0));
 
         Ansi.SetFgColor([16, 16, 16]);
         Ansi.SetBgColor([128, 224, 48]);

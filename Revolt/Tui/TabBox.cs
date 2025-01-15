@@ -37,7 +37,7 @@ public sealed class TabBox(Frame parentFrame) : Element(parentFrame) {
     private int DrawItem(int i, int offset, int top, bool isFocused) {
         int keyIndex = items[i].text.IndexOf(items[i].key, StringComparison.OrdinalIgnoreCase);
 
-        byte[] backgroundColor = i == index ? Data.PANE_COLOR : [36, 36, 36];
+        byte[] backgroundColor = i == index ? Data.PANE_COLOR : [24, 24, 24];
 
         Ansi.SetCursorPosition(offset, top);
 
