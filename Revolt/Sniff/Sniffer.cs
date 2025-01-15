@@ -25,11 +25,12 @@ public sealed partial class Sniffer : IDisposable {
         public ushort          destinationPort;
     }
 
-    public bool analyzeL2 = true;
-    public bool analyzeL3 = true;
     public bool analyzeL4 = true;
 
     public List<Frame> capture = new List<Frame>();
+
+
+
     public long bytesRx, bytesTx = 0;
     public long packetsRx, packetsTx = 0;
 
@@ -54,7 +55,7 @@ public sealed partial class Sniffer : IDisposable {
     private void Device_onPacketArrival(object sender, SharpPcap.PacketCapture e) {
         RawCapture rawPacket = e.GetPacket();
         byte[] data = rawPacket.Data;
-        //HandleFrames(data, data.Length);
+        HandleFrames(data, data.Length);
     }
 
     public void Stop() {

@@ -21,7 +21,7 @@ public abstract class Element(Frame parentFrame) {
     public abstract void HandleKey(ConsoleKeyInfo key);
 
     public virtual void Focus(bool draw = true) {
-        parentFrame?.focusedElement?.Blur();
+        //parentFrame?.focusedElement?.Blur();
 
         isFocused = true;
         if (draw) {

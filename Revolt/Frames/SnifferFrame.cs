@@ -8,7 +8,7 @@ internal class SnifferFrame : Tui.Frame {
 
     public static SnifferFrame Instance { get; } = new SnifferFrame();
 
-    public Tui.TabBox tabs;
+    public Tui.Tabs tabs;
     public Tui.ListBox<string> list;
     public Tui.Toolbar toolbar;
 
@@ -17,16 +17,17 @@ internal class SnifferFrame : Tui.Frame {
     private bool analyzeL4 = true;
 
     public SnifferFrame() {
-        tabs = new Tui.TabBox(this) {
+        tabs = new Tui.Tabs(this) {
             left  = 1,
             right = 1,
             top   = 0,
             items = [
-                new Tui.TabBox.TabBoxItem() { text="Hosts",    key="H" },
-                new Tui.TabBox.TabBoxItem() { text="Frames",   key="F" },
-                new Tui.TabBox.TabBoxItem() { text="Packets",  key="P" },
-                new Tui.TabBox.TabBoxItem() { text="Segments", key="S" },
-                new Tui.TabBox.TabBoxItem() { text="Summary",  key="U" },
+                new Tui.Tabs.TabItem() { text="Hosts",    key="H" },
+                new Tui.Tabs.TabItem() { text="Frames",   key="F" },
+                new Tui.Tabs.TabItem() { text="Packets",  key="P" },
+                new Tui.Tabs.TabItem() { text="Segments", key="S" },
+                new Tui.Tabs.TabItem() { text="Summary",  key="U" },
+                new Tui.Tabs.TabItem() { text="Issues",   key="I" },
             ]
         };
 
