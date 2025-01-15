@@ -1,7 +1,7 @@
 ﻿namespace Revolt;
 
 public static class Renderer {
-    const int MAX_WIDTH = 240, MAX_HEIGHT = 60;
+    const int MAX_WIDTH = 320, MAX_HEIGHT = 80;
     public static int LastWidth { get; set; }
     public static int LastHeight { get; set; }
     public static Tui.Frame ActiveFrame { get; set; }

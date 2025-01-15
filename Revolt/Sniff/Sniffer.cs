@@ -95,7 +95,7 @@ public sealed partial class Sniffer : IDisposable {
 
         if (analyzeL4) {
             byte ihl = (byte)(buffer[0] & 0x0F << 2);
-            HandleSegment(buffer, ihl);
+            HandleLayer4(buffer, ihl);
         }
     }
 
@@ -121,11 +121,11 @@ public sealed partial class Sniffer : IDisposable {
         capture.Add(packet);
 
         if (analyzeL4) {
-            HandleSegment(buffer, 40);
+            HandleLayer4(buffer, 40);
         }
     }
 
-    private void HandleSegment(byte[] buffer, int offset) {
+    private void HandleLayer4(byte[] buffer, int offset) {
         //TODO: handle layer 4 header
     }
 

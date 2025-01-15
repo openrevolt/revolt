@@ -1,5 +1,6 @@
 ﻿using SharpPcap;
 using Revolt.Sniff;
+using System.Collections.Generic;
 
 namespace Revolt.Frames;
 
@@ -7,17 +8,38 @@ internal class SnifferFrame : Tui.Frame {
 
     public static SnifferFrame Instance { get; } = new SnifferFrame();
 
+    public Tui.TabBox tabs;
+    public Tui.ListBox<string> list;
     public Tui.Toolbar toolbar;
 
     private ICaptureDevice captureDevice;
     private Sniffer sniffer;
-    private bool analyzeL2 = true;
-    private bool analyzeL3 = true;
     private bool analyzeL4 = true;
 
     public SnifferFrame() {
+        tabs = new Tui.TabBox(this) {
+            left  = 1,
+            right = 1,
+            top   = 0,
+            items = [
+                new Tui.TabBox.TabBoxItem() { text="Hosts",    key="H" },
+                new Tui.TabBox.TabBoxItem() { text="Frames",   key="F" },
+                new Tui.TabBox.TabBoxItem() { text="Packets",  key="P" },
+                new Tui.TabBox.TabBoxItem() { text="Segments", key="S" },
+                new Tui.TabBox.TabBoxItem() { text="Summary",  key="U" },
+            ]
+        };
+
+        list = new Tui.ListBox<string>(this) {
+            left            = 1,
+            right           = 1,
+            top             = 3,
+            bottom          = 1,
+            backgroundColor = Data.PANE_COLOR
+        };
+
         toolbar = new Tui.Toolbar(this) {
-            left = 0,
+            left  = 0,
             right = 0,
             items = [
                 new Tui.Toolbar.ToolbarItem() { text="Start",  key="F2", action=StartDialog },
@@ -25,9 +47,11 @@ internal class SnifferFrame : Tui.Frame {
             ],
         };
 
+        elements.Add(tabs);
+        elements.Add(list);
         elements.Add(toolbar);
 
-        defaultElement = toolbar;
+        defaultElement = tabs;
         FocusNext();
     }
 
@@ -76,16 +100,12 @@ internal class SnifferFrame : Tui.Frame {
 
         dialog.okButton.action = () => {
             captureDevice = dialog.devices[dialog.rangeSelectBox.index];
-            analyzeL2 = dialog.l2Toggle.Value;
-            analyzeL3 = dialog.l3Toggle.Value;
             analyzeL4 = dialog.l4Toggle.Value;
 
             dialog.Close();
 
             try {
                 sniffer = new Revolt.Sniff.Sniffer(captureDevice) {
-                    analyzeL2 = dialog.l2Toggle.Value,
-                    analyzeL3 = dialog.l3Toggle.Value,
                     analyzeL4 = dialog.l4Toggle.Value,
                 };
 
@@ -104,9 +124,6 @@ internal class SnifferFrame : Tui.Frame {
         };
 
         dialog.Show(true);
-
-        dialog.l2Toggle.Value = analyzeL2;
-        dialog.l3Toggle.Value = analyzeL3;
         dialog.l4Toggle.Value = analyzeL4;
     }
 
@@ -135,8 +152,6 @@ internal class SnifferFrame : Tui.Frame {
 
 file sealed class StartDialog : Tui.DialogBox {
     public Tui.SelectBox rangeSelectBox;
-    public Tui.Toggle    l2Toggle;
-    public Tui.Toggle    l3Toggle;
     public Tui.Toggle    l4Toggle;
 
     public List<ILiveDevice> devices;
@@ -151,13 +166,12 @@ file sealed class StartDialog : Tui.DialogBox {
             if (captureDevices[i].MacAddress is null) continue;
             devices.Add(captureDevices[i]);
 
-            string macString = string.Join(':', captureDevices[i].MacAddress.GetAddressBytes().Select(b => b.ToString("X2")));
-
             if (captureDevices[i].Description is null) {
+                string macString = string.Join(':', captureDevices[i].MacAddress.GetAddressBytes().Select(b => b.ToString("X2")));
                 strings.Add($"{macString} - {captureDevices[i].Name}");
             }
             else {
-                strings.Add($"{macString} - {captureDevices[i].Description}");
+                strings.Add(captureDevices[i].Description);
             }
         }
 
@@ -168,14 +182,9 @@ file sealed class StartDialog : Tui.DialogBox {
             placeholder = "no nic found"
         };
 
-        l2Toggle = new Tui.Toggle(this, "Analyze frames header");
-        l3Toggle = new Tui.Toggle(this, "Analyze packets header");
-        l4Toggle = new Tui.Toggle(this, "Analyze segments header");
+        l4Toggle = new Tui.Toggle(this, "Analyze Layer-4 header");
 
         elements.Add(rangeSelectBox);
-
-        elements.Add(l2Toggle);
-        elements.Add(l3Toggle);
         elements.Add(l4Toggle);
 
         defaultElement = rangeSelectBox;
@@ -188,26 +197,16 @@ file sealed class StartDialog : Tui.DialogBox {
         string blank = new String(' ', width);
 
         Ansi.SetFgColor([16, 16, 16]);
-        Ansi.SetBgColor(Data.PANE_COLOR);
+        Ansi.SetBgColor(Data.DIALOG_COLOR);
 
         Ansi.SetCursorPosition(left, top);
         Ansi.Write(blank);
 
         WriteLabel("NIC:", left, ++top, width);
-        rangeSelectBox.left = left + 6;
+        rangeSelectBox.left = left + 5;
         rangeSelectBox.right = Renderer.LastWidth - width - left + 2;
         rangeSelectBox.top = top++ - 1;
 
-        Ansi.SetCursorPosition(left, top++);
-        Ansi.Write(blank);
-
-        l2Toggle.left = left;
-        l2Toggle.top = top - 1;
-        Ansi.SetCursorPosition(left, top++);
-        Ansi.Write(blank);
-
-        l3Toggle.left = left;
-        l3Toggle.top = top - 1;
         Ansi.SetCursorPosition(left, top++);
         Ansi.Write(blank);
 

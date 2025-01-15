@@ -532,7 +532,7 @@ file sealed class ClearDialog : Tui.DialogBox {
         string blank = new String(' ', width);
 
         Ansi.SetFgColor([16, 16, 16]);
-        Ansi.SetBgColor(Data.PANE_COLOR);
+        Ansi.SetBgColor(Data.DIALOG_COLOR);
 
         Ansi.SetCursorPosition(left, top);
         Ansi.Write(blank);
@@ -608,13 +608,13 @@ file sealed class OptionsDialog : Tui.DialogBox {
 
     public OptionsDialog() {
         timeoutTextbox = new Tui.IntegerBox(this) {
-            backColor = Data.PANE_COLOR,
+            backColor = Data.DIALOG_COLOR,
             min = 50,
             max = 5_000
         };
 
         intervalTextbox = new Tui.IntegerBox(this) {
-            backColor = Data.PANE_COLOR,
+            backColor = Data.DIALOG_COLOR,
             min = 100,
             max = 10_000
         };
@@ -637,7 +637,7 @@ file sealed class OptionsDialog : Tui.DialogBox {
         string blank = new String(' ', width);
 
         Ansi.SetFgColor([16, 16, 16]);
-        Ansi.SetBgColor(Data.PANE_COLOR);
+        Ansi.SetBgColor(Data.DIALOG_COLOR);
 
         Ansi.SetCursorPosition(left, top);
         Ansi.Write(blank);

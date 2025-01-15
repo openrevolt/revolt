@@ -3,10 +3,12 @@
 public static class Data {
     public static readonly byte[] LIGHT_COLOR        = [192, 192, 192];
     public static readonly byte[] DARK_COLOR         = [24, 24, 24];
-    public static readonly byte[] TOOLBAR_COLOR      = [64, 64, 64];
+    public static readonly byte[] PANE_COLOR         = [44, 44, 44];
+    public static readonly byte[] TOOLBAR_COLOR      = [56, 56, 56];
     public static readonly byte[] CONTROL_COLOR      = [72, 72, 72];
     public static readonly byte[] INPUT_COLOR        = [96, 96, 96];
-    public static readonly byte[] PANE_COLOR         = [160, 160, 160];
+    public static readonly byte[] DIALOG_COLOR       = [160, 160, 160];
+
     public static readonly byte[] SELECT_COLOR       = [255, 192, 0];
     public static readonly byte[] SELECT_COLOR_LIGHT = [48, 48, 48];
 
@@ -15,7 +17,8 @@ public static class Data {
     public const char ELLIPSIS = '\u2026';
 
     public const char UPPER_1_8TH_BLOCK = '\u2594';
-    
+    public const char UPPER_4_8TH_BLOCK = '\u2580';
+
     public const char LOWER_1_8TH_BLOCK = '\u2581';
     public const char LOWER_2_8TH_BLOCK = '\u2582';
     public const char LOWER_3_8TH_BLOCK = '\u2583';

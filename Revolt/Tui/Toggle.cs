@@ -18,11 +18,11 @@ public sealed class Toggle(Frame parentFrame, string text) : Element(parentFrame
     public override void Draw(bool push) {
         (int left, int top, _, _) = GetBounding();
 
-        byte[] backColor = isFocused ? Data.SELECT_COLOR : Data.PANE_COLOR;
+        byte[] backColor = isFocused ? Data.SELECT_COLOR : Data.DIALOG_COLOR;
 
         DrawValue(false);
 
-        Ansi.SetBgColor(Data.PANE_COLOR);
+        Ansi.SetBgColor(Data.DIALOG_COLOR);
         Ansi.Write(' ');
 
         Ansi.SetFgColor(Data.DARK_COLOR);

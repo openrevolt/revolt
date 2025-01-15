@@ -19,9 +19,7 @@ public sealed class Toolbar(Frame parentFrame) : Element(parentFrame) {
         int offset = 0;
 
         for (int i = 0; i < items.Length; i++) {
-            if (offset + items[i].key.Length + items[i].text.Length + 4 > width) {
-                break;
-            }
+            if (offset + items[i].key.Length + items[i].text.Length + 4 > width) break;
 
             offset += DrawItem(i, left + offset, height, isFocused && i == index);
             if (left + offset >= width) break;
@@ -40,7 +38,9 @@ public sealed class Toolbar(Frame parentFrame) : Element(parentFrame) {
             drawStatus();
         }
 
-        Ansi.Push();
+        if (push) {
+            Ansi.Push();
+        }
     }
 
     private int DrawItem(int i, int offset, int height, bool isFocused) {
@@ -58,11 +58,12 @@ public sealed class Toolbar(Frame parentFrame) : Element(parentFrame) {
 
         Ansi.SetBgColor(this.isFocused && i == index ? Data.SELECT_COLOR : Data.TOOLBAR_COLOR);
 
-        Ansi.SetBold(true);
-        Ansi.Write($" {items[i].key}:");
-        Ansi.SetBold(false);
+        Ansi.Write(' ');
+        Ansi.SetUnderline(true);
+        Ansi.Write(items[i].key);
+        Ansi.SetUnderline(false);
 
-        Ansi.Write($"{items[i].text} ");
+        Ansi.Write($":{items[i].text} ");
 
         return items[i].key.Length + items[i].text.Length + 4;
     }

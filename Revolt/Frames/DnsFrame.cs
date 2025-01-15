@@ -337,7 +337,7 @@ file sealed class AddDialog : Tui.DialogBox {
 
     public AddDialog() {
         nameTextbox = new Tui.Textbox(this) {
-            backColor = Data.PANE_COLOR,
+            backColor = Data.DIALOG_COLOR,
         };
 
         typeSelectBox = new Tui.SelectBox(this) {
@@ -357,7 +357,7 @@ file sealed class AddDialog : Tui.DialogBox {
         string blank = new String(' ', width);
 
         Ansi.SetFgColor([16, 16, 16]);
-        Ansi.SetBgColor(Data.PANE_COLOR);
+        Ansi.SetBgColor(Data.DIALOG_COLOR);
 
         Ansi.SetCursorPosition(left, top);
         Ansi.Write(blank);
@@ -407,7 +407,7 @@ file sealed class AddDialog : Tui.DialogBox {
             Ansi.Write(text);
             Ansi.Write(padding);
 
-            Ansi.SetBgColor(Data.PANE_COLOR);
+            Ansi.SetBgColor(Data.DIALOG_COLOR);
             if (text.Length % 2 == 0) {
                 Ansi.Write(' ');
             }
@@ -475,12 +475,12 @@ file sealed class OptionsDialog : Tui.DialogBox {
 
     public OptionsDialog() {
         serverTextbox = new Tui.Textbox(this) {
-            backColor = Data.PANE_COLOR,
+            backColor = Data.DIALOG_COLOR,
             placeholder = "System default"
         };
 
         timeoutTextbox = new Tui.IntegerBox(this) {
-            backColor = Data.PANE_COLOR,
+            backColor = Data.DIALOG_COLOR,
             min = 50,
             max = 5_000
         };
@@ -514,7 +514,7 @@ file sealed class OptionsDialog : Tui.DialogBox {
         string blank = new String(' ', width);
 
         Ansi.SetFgColor([16, 16, 16]);
-        Ansi.SetBgColor(Data.PANE_COLOR);
+        Ansi.SetBgColor(Data.DIALOG_COLOR);
 
         Ansi.SetCursorPosition(left, top);
         Ansi.Write(blank);

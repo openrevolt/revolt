@@ -17,7 +17,7 @@ public sealed class Button(Frame parentFrame, string text) : Element(parentFrame
         Ansi.Write(text);
 
         Ansi.SetFgColor(backColor);
-        Ansi.SetBgColor(Data.PANE_COLOR);
+        Ansi.SetBgColor(Data.DIALOG_COLOR);
         Ansi.SetCursorPosition(left, top + 1);
 
         Ansi.Write(new String(Data.UPPER_1_8TH_BLOCK, text.Length));

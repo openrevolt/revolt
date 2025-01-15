@@ -5,6 +5,7 @@ public sealed class ListBox<T>(Frame parentFrame) : Element(parentFrame) {
     public int itemHeight   = 1;
     public int index        = -1;
     public int scrollOffset = 0;
+    public byte[] backgroundColor = Data.DARK_COLOR;
 
     public delegate void DrawItemDelegate(int i, int x, int y, int width);
     public DrawItemDelegate drawItemHandler;
@@ -21,7 +22,7 @@ public sealed class ListBox<T>(Frame parentFrame) : Element(parentFrame) {
 
         if (items.Count * itemHeight < height - 1) {
             string blank = new String(' ', width);
-            Ansi.SetBgColor(Data.DARK_COLOR);
+            Ansi.SetBgColor(this.backgroundColor);
             for (int i = items.Count * itemHeight; i < height - 1; i++) {
                 Ansi.SetCursorPosition(left, top + i);
                 Ansi.Write(blank);
