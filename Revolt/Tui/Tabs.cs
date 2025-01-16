@@ -7,7 +7,7 @@ public sealed class Tabs(Frame parentFrame) : Element(parentFrame) {
     public struct TabItem {
         public string text;
         public string key;
-        public string counter;
+        public string label;
     }
 
     public TabItem[] items;
@@ -39,7 +39,7 @@ public sealed class Tabs(Frame parentFrame) : Element(parentFrame) {
 
         byte[] backgroundColor = i == index ? Data.PANE_COLOR : [24, 24, 24];
 
-        int length = items[i].text.Length + 2 + (String.IsNullOrEmpty(items[i].counter) ? 0 : items[i].counter.Length + 1);
+        int length = items[i].text.Length + 2 + (String.IsNullOrEmpty(items[i].label) ? 0 : items[i].label.Length + 1);
 
         Ansi.SetCursorPosition(offset, top);
 
@@ -69,9 +69,9 @@ public sealed class Tabs(Frame parentFrame) : Element(parentFrame) {
             Ansi.Write($"{items[i].text[(keyIndex+1)..]} ");
         }
 
-        if (!String.IsNullOrEmpty(items[i].counter)) {
+        if (!String.IsNullOrEmpty(items[i].label)) {
             Ansi.SetFgColor([224, 64, 0]);
-            Ansi.Write($"{items[i].counter} ");
+            Ansi.Write($"{items[i].label} ");
         }
 
         return length + 1;

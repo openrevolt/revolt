@@ -1,4 +1,5 @@
-﻿using System.Diagnostics;
+﻿using System.Collections.Concurrent;
+using System.Diagnostics;
 using System.Net;
 using System.Net.NetworkInformation;
 using SharpPcap;
@@ -6,33 +7,18 @@ using SharpPcap;
 namespace Revolt.Sniff;
 
 public sealed partial class Sniffer : IDisposable {
+    public bool includeSelfTraffic = true;
+    public bool includePublicIPs   = true;
+    public bool analyzeL4          = true;
 
-    //[StructLayout(LayoutKind.Auto)]
-    public struct Frame {
-        public long            timestamp;
-        public ushort          size;
+    private ulong frameIndex = 0;
+    public ConcurrentDictionary<ulong, Frame> frames = new ConcurrentDictionary<ulong, Frame>();
 
-        public PhysicalAddress sourceMac;
-        public PhysicalAddress destinationMac;
-        public byte            networkProtocol;
+    public ConcurrentDictionary<Mac, TrafficData> layer2Traffic       = new ConcurrentDictionary<Mac, TrafficData>();
+    public ConcurrentDictionary<IPAddress, TrafficData> layer3Traffic = new ConcurrentDictionary<IPAddress, TrafficData>();
+    public ConcurrentDictionary<IPAddress, TrafficData> layer4Traffic = new ConcurrentDictionary<IPAddress, TrafficData>();
 
-        public IPAddress       sourceIP;
-        public IPAddress       destinationIP;
-        public byte            ttl;
-        public byte            transportProtocol;
-
-        public ushort          sourcePort;
-        public ushort          destinationPort;
-    }
-
-    public bool analyzeL4 = true;
-
-    public List<Frame> capture = new List<Frame>();
-
-
-
-    public long bytesRx, bytesTx = 0;
-    public long packetsRx, packetsTx = 0;
+    public long bytesRx=0, bytesTx=0, packetsRx=0, packetsTx=0;
 
     private ICaptureDevice device;
     private PhysicalAddress deviceMac;
@@ -54,8 +40,8 @@ public sealed partial class Sniffer : IDisposable {
 
     private void Device_onPacketArrival(object sender, SharpPcap.PacketCapture e) {
         RawCapture rawPacket = e.GetPacket();
-        byte[] data = rawPacket.Data;
-        HandleFrames(data, data.Length);
+        byte[] buffer = rawPacket.Data;
+        HandleFrames(buffer);
     }
 
     public void Stop() {
@@ -65,74 +51,126 @@ public sealed partial class Sniffer : IDisposable {
         device = null;
     }
 
-    private void HandleFrames(byte[] buffer, int length) {
-        Interlocked.Add(ref bytesRx, length);
+    private void HandleFrames(byte[] buffer) {
+        long timestamp = Stopwatch.GetTimestamp();
+
+        Mac    sourceMac            = Mac.Parse(buffer, 0);
+        Mac    destinationMac       = Mac.Parse(buffer, 6);
+        ushort networkProtocol      = (ushort)(buffer[12] << 8 | buffer[13]);
+
+        ushort    size              = default;
+        byte      ttl               = default;
+        byte      transportProtocol = default;
+        byte      ihl               = default;
+        IPAddress sourceIP          = null;
+        IPAddress destinationIP     = null;
+
+        ushort sourcePort           = default;
+        ushort destinationPort      = default;
+
+        switch ((NetworkProtocol)networkProtocol) {
+        case NetworkProtocol.IPv4:
+            (size, ttl, transportProtocol, ihl, sourceIP, destinationIP) = HandleV4Packet(buffer, 14);
+            break;
+
+        case NetworkProtocol.IPv6:
+            (size, ttl, transportProtocol, sourceIP, destinationIP) = HandleV6Packet(buffer, 14);
+            ihl = 40;
+            break;
+
+        default:
+            //TODO:
+            break;
+        }
+
+        if (analyzeL4) {
+            switch ((TransportProtocol)transportProtocol) {
+            case TransportProtocol.ICMP:
+                break;
+
+            case TransportProtocol.TCP:
+                break;
+
+            case TransportProtocol.UDP:
+                break;
+            }
+        }
+
+        Frame frame = new Frame() {
+            timestamp         = timestamp,
+            size              = size,
+
+            sourceMac         = sourceMac,
+            destinationMac    = destinationMac,
+            networkProtocol   = networkProtocol,
+
+            sourceIP          = sourceIP,
+            destinationIP     = destinationIP,
+            ttl               = ttl,
+            transportProtocol = transportProtocol,
+
+            sourcePort        = sourcePort,
+            destinationPort   = destinationPort,
+        };
+
+        frames.TryAdd(frameIndex, frame);
+        Interlocked.Increment(ref frameIndex);
+
+        Interlocked.Add(ref bytesRx, buffer.Length);
         Interlocked.Increment(ref packetsRx);
 
-        //TODO:
+        layer2Traffic.AddOrUpdate(
+            sourceMac,
+            new TrafficData() { bytesRx=0, bytesTx=buffer.Length, packetsRx=0, packetsTx=1 },
+            (mac, traffic) => {
+                Interlocked.Add(ref traffic.bytesTx, buffer.Length);
+                Interlocked.Increment(ref traffic.packetsTx);
+                return traffic;
+            }
+        );
+
+        layer2Traffic.AddOrUpdate(
+            destinationMac,
+            new TrafficData() { bytesRx= buffer.Length, bytesTx=0, packetsRx=1, packetsTx=0 },
+            (mac, traffic) => {
+                Interlocked.Add(ref traffic.bytesRx, buffer.Length);
+                Interlocked.Increment(ref traffic.packetsRx);
+                return traffic;
+            }
+        );
     }
 
-    private void HandleV4Packet(byte[] buffer, int length) {
-        if (length < 20) return; //invalid traffic
+    private (ushort, byte, byte, byte, IPAddress, IPAddress) HandleV4Packet(byte[] buffer, uint offset) {
+        if (buffer.Length < 20) return (0, 0, 0, 0, default, default); //invalid traffic
 
+        byte ihl        = (byte)(buffer[0] & 0x0F << 2);
         ushort size     = (ushort)(buffer[2] << 8 | buffer[3]);
         byte   ttl      = buffer[8];
         byte   protocol = buffer[9];
         //ushort checksum = (ushort)(buffer[10] << 8 | buffer[11]);
 
-        //if (size != length) return; //size mismatch
+        IPAddress source      = new IPAddress(buffer.AsSpan(12, 4));
+        IPAddress destination = new IPAddress(buffer.AsSpan(16, 4));
 
-        Frame packet = new Frame() {
-            timestamp         = Stopwatch.GetTimestamp(),
-            networkProtocol   = 0,
-            size              = size,
-            ttl               = ttl,
-            transportProtocol = protocol,
-            sourceIP          = new IPAddress(buffer.AsSpan(12, 4)),
-            destinationIP     = new IPAddress(buffer.AsSpan(16, 4))
-        };
-
-        capture.Add(packet);
-
-        if (analyzeL4) {
-            byte ihl = (byte)(buffer[0] & 0x0F << 2);
-            HandleLayer4(buffer, ihl);
-        }
+        return (size, protocol, ttl, ihl, source, destination);
     }
 
-    private void HandleV6Packet(byte[] buffer, int length) {
-        if (length < 40) return; //invalid traffic
+    private (ushort, byte, byte, IPAddress, IPAddress) HandleV6Packet(byte[] buffer, uint offset) {
+        if (buffer.Length < 40) return (0, 0, 0, default, default); //invalid traffic
 
         ushort size     = (ushort)((buffer[4] << 8 | buffer[5]) + 40);
         byte   protocol = buffer[6];
         byte   ttl      = buffer[7];
 
-        //if (size != length) return; //size mismatch
+        IPAddress source      = new IPAddress(buffer.AsSpan(8, 16));
+        IPAddress destination = new IPAddress(buffer.AsSpan(24, 16));
 
-        Frame packet = new Frame() {
-            timestamp         = Stopwatch.GetTimestamp(),
-            networkProtocol   = 0,
-            size              = size,
-            ttl               = ttl,
-            transportProtocol = protocol,
-            sourceIP          = new IPAddress(buffer.AsSpan(8, 16)),
-            destinationIP     = new IPAddress(buffer.AsSpan(24, 16))
-        };
-
-        capture.Add(packet);
-
-        if (analyzeL4) {
-            HandleLayer4(buffer, 40);
-        }
-    }
-
-    private void HandleLayer4(byte[] buffer, int offset) {
-        //TODO: handle layer 4 header
+        return (size, ttl, protocol, source, destination);
     }
 
     public void Dispose() {
-        Stop();
-        capture.Clear();
+        frames.Clear();
         device?.Dispose();
+        Stop();
     }
 }

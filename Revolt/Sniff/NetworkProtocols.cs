@@ -4,6 +4,15 @@ namespace Revolt.Sniff;
 
 public sealed partial class Sniffer {
 
+    public enum NetworkProtocol : ushort {
+        none   = 0,
+        IPv4   = 0x0800,
+        ARP    = 0x0806,
+        Tagged = 0x8100,
+        WoL    = 0x0842,
+        IPv6   = 0x86DD
+    }
+
     private static readonly FrozenDictionary<ushort, string> networkProtocolNames = new Dictionary<ushort, string>() {
         { 0x0800, "IPv4" },
         { 0x0806, "ARP" },

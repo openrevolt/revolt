@@ -14,7 +14,10 @@ internal class SnifferFrame : Tui.Frame {
 
     private ICaptureDevice captureDevice;
     private Sniffer sniffer;
-    private bool analyzeL4 = true;
+
+    private bool includeSelfTraffic = true;
+    private bool includePublicIPs   = true;
+    private bool analyzeL4          = true;
 
     public SnifferFrame() {
         tabs = new Tui.Tabs(this) {
@@ -22,12 +25,15 @@ internal class SnifferFrame : Tui.Frame {
             right = 1,
             top   = 0,
             items = [
-                new Tui.Tabs.TabItem() { text="Hosts",    key="H" },
-                new Tui.Tabs.TabItem() { text="Frames",   key="F" },
-                new Tui.Tabs.TabItem() { text="Packets",  key="P" },
-                new Tui.Tabs.TabItem() { text="Segments", key="S" },
-                new Tui.Tabs.TabItem() { text="Summary",  key="U" },
-                new Tui.Tabs.TabItem() { text="Issues",   key="I" },
+                new Tui.Tabs.TabItem() { text="L2",    key="2" },
+                new Tui.Tabs.TabItem() { text="L3",    key="3" },
+                new Tui.Tabs.TabItem() { text="L4",    key="4" },
+                new Tui.Tabs.TabItem() { text="Frames",    key="F" },
+                new Tui.Tabs.TabItem() { text="Packets",   key="P" },
+                new Tui.Tabs.TabItem() { text="Segments",  key="S" },
+                new Tui.Tabs.TabItem() { text="Datagrams", key="D" },
+                new Tui.Tabs.TabItem() { text="Summary",   key="U" },
+                new Tui.Tabs.TabItem() { text="Issues",    key="I", label="13" },
             ]
         };
 
@@ -106,14 +112,18 @@ internal class SnifferFrame : Tui.Frame {
         StartDialog dialog = new StartDialog();
 
         dialog.okButton.action = () => {
-            captureDevice = dialog.devices[dialog.rangeSelectBox.index];
-            analyzeL4 = dialog.l4Toggle.Value;
+            captureDevice      = dialog.devices[dialog.rangeSelectBox.index];
+            includeSelfTraffic = dialog.includeSelfToggle.Value;
+            includePublicIPs   = dialog.includePublicToggle.Value;
+            analyzeL4          = dialog.l4Toggle.Value;
 
             dialog.Close();
 
             try {
                 sniffer = new Revolt.Sniff.Sniffer(captureDevice) {
-                    analyzeL4 = dialog.l4Toggle.Value,
+                    includeSelfTraffic = dialog.includeSelfToggle.Value,
+                    includePublicIPs   = dialog.includePublicToggle.Value,
+                    analyzeL4          = dialog.l4Toggle.Value,
                 };
 
                 sniffer.Start();
@@ -131,7 +141,9 @@ internal class SnifferFrame : Tui.Frame {
         };
 
         dialog.Show(true);
-        dialog.l4Toggle.Value = analyzeL4;
+        dialog.includeSelfToggle.Value   = includeSelfTraffic;
+        dialog.includePublicToggle.Value = includePublicIPs;
+        dialog.l4Toggle.Value            = analyzeL4;
     }
 
     private void StopDialog() {
@@ -142,7 +154,7 @@ internal class SnifferFrame : Tui.Frame {
         dialog.okButton.action = () => {
             captureDevice?.StopCapture();
             captureDevice?.Close();
-            sniffer?.Dispose();
+            //sniffer?.Dispose();
 
             toolbar.items[0].text = "Start";
 
@@ -159,6 +171,8 @@ internal class SnifferFrame : Tui.Frame {
 
 file sealed class StartDialog : Tui.DialogBox {
     public Tui.SelectBox rangeSelectBox;
+    public Tui.Toggle    includeSelfToggle;
+    public Tui.Toggle    includePublicToggle;
     public Tui.Toggle    l4Toggle;
 
     public List<ILiveDevice> devices;
@@ -189,9 +203,13 @@ file sealed class StartDialog : Tui.DialogBox {
             placeholder = "no nic found"
         };
 
-        l4Toggle = new Tui.Toggle(this, "Analyze Layer-4 header");
+        includeSelfToggle   = new Tui.Toggle(this, "Include self traffic");
+        includePublicToggle = new Tui.Toggle(this, "Include public IPs");
+        l4Toggle            = new Tui.Toggle(this, "Analyze Layer-4 header");
 
         elements.Add(rangeSelectBox);
+        elements.Add(includeSelfToggle);
+        elements.Add(includePublicToggle);
         elements.Add(l4Toggle);
 
         defaultElement = rangeSelectBox;
@@ -214,6 +232,25 @@ file sealed class StartDialog : Tui.DialogBox {
         rangeSelectBox.right = Renderer.LastWidth - width - left + 2;
         rangeSelectBox.top = top++ - 1;
 
+
+        Ansi.SetCursorPosition(left, top++);
+        Ansi.Write(blank);
+
+        includeSelfToggle.left = left;
+        includeSelfToggle.top = top - 1;
+        Ansi.SetCursorPosition(left, top++);
+        Ansi.Write(blank);
+
+
+        Ansi.SetCursorPosition(left, top++);
+        Ansi.Write(blank);
+
+        includePublicToggle.left = left;
+        includePublicToggle.top = top - 1;
+        Ansi.SetCursorPosition(left, top++);
+        Ansi.Write(blank);
+
+
         Ansi.SetCursorPosition(left, top++);
         Ansi.Write(blank);
 
@@ -221,6 +258,7 @@ file sealed class StartDialog : Tui.DialogBox {
         l4Toggle.top = top - 1;
         Ansi.SetCursorPosition(left, top++);
         Ansi.Write(blank);
+
 
         for (int i = 0; i < 3; i++) {
             Ansi.SetCursorPosition(left, top + i);
