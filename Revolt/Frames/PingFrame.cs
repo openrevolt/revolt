@@ -1,5 +1,6 @@
 ﻿using System.Diagnostics;
 using Revolt.Protocols;
+using Revolt.Tui;
 
 namespace Revolt.Frames;
 
@@ -37,7 +38,7 @@ public sealed class PingFrame : Tui.Frame {
             right             = 1,
             top               = 1,
             bottom            = 3,
-            itemHeight        = 2,
+            itemHeight        = 1,
             drawItemHandler   = DrawPingItem
         };
 
@@ -112,7 +113,7 @@ public sealed class PingFrame : Tui.Frame {
         if (list.items is null || list.items.Count == 0) return;
         if (index >= list.items.Count) return;
 
-        int adjustedY = y + index * 2 - list.scrollOffset * list.itemHeight;
+        int adjustedY = y + index * list.itemHeight - list.scrollOffset * list.itemHeight;
         if (adjustedY < y || adjustedY > Renderer.LastHeight) return;
 
         PingItem item = list.items[index];
@@ -123,16 +124,16 @@ public sealed class PingFrame : Tui.Frame {
 
     private void DrawItemLabel(PingItem item, int index, int y) {
         if (index == list.index) {
-            Ansi.SetFgColor(list.isFocused ? [16, 16, 16] : Data.LIGHT_COLOR);
-            Ansi.SetBgColor(list.isFocused ? Data.SELECT_COLOR : Data.SELECT_COLOR_LIGHT);
+            Ansi.SetFgColor(list.isFocused ? [16, 16, 16] : Glyphs.LIGHT_COLOR);
+            Ansi.SetBgColor(list.isFocused ? Glyphs.FOCUS_COLOR : Glyphs.HIGHLIGHT_COLOR);
         }
         else {
-            Ansi.SetFgColor(Data.LIGHT_COLOR);
-            Ansi.SetBgColor(Data.DARK_COLOR);
+            Ansi.SetFgColor(Glyphs.LIGHT_COLOR);
+            Ansi.SetBgColor(Glyphs.DARK_COLOR);
         }
 
         Ansi.SetCursorPosition(2, y);
-        Ansi.Write(item.host.Length > 23 ? item.host[..22] + Data.ELLIPSIS : item.host.PadRight(23));
+        Ansi.Write(item.host.Length > 23 ? item.host[..22] + Glyphs.ELLIPSIS : item.host.PadRight(23));
 
         Ansi.Write(' ');
     }
@@ -146,7 +147,7 @@ public sealed class PingFrame : Tui.Frame {
         int usableWidth = Math.Min(width - 38, HISTORY_LEN);
         int historyOffset = (ringIndex + HISTORY_LEN - usableWidth + 1) % HISTORY_LEN;
 
-        Ansi.SetBgColor(index == list.index ? Data.SELECT_COLOR_LIGHT : Data.DARK_COLOR);
+        Ansi.SetBgColor(index == list.index ? Glyphs.HIGHLIGHT_COLOR : Glyphs.DARK_COLOR);
 
         Ansi.SetCursorPosition(x + 24, y);
         Ansi.Write(' ');
@@ -158,14 +159,14 @@ public sealed class PingFrame : Tui.Frame {
                 Ansi.SetFgColor(color);
                 Array.Copy(color, lastColor, 3);
             }
-            Ansi.Write(Data.PING_CELL);
+            Ansi.Write(Glyphs.PING_CELL);
         }
 
         Ansi.Write(' ');
         Ansi.SetFgColor(DetermineRttColor(item.status));
         Ansi.Write(DetermineRttText(item.status));
 
-        Ansi.SetBgColor(Data.DARK_COLOR);
+        Ansi.SetBgColor(Glyphs.DARK_COLOR);
     }
 
     private void DrawStatus() {
@@ -180,7 +181,7 @@ public sealed class PingFrame : Tui.Frame {
 
         if (statusLength != lastStatusLength) {
             Ansi.SetCursorPosition(Renderer.LastWidth - lastStatusLength, Math.Max(Renderer.LastHeight, 0));
-            Ansi.SetBgColor(Data.TOOLBAR_COLOR);
+            Ansi.SetBgColor(Glyphs.TOOLBAR_COLOR);
             Ansi.Write(new String(' ', lastStatusLength));
         }
 
@@ -197,10 +198,10 @@ public sealed class PingFrame : Tui.Frame {
         }
 
         Ansi.SetFgColor([16, 16, 16]);
-        Ansi.SetBgColor(Data.LIGHT_COLOR);
+        Ansi.SetBgColor(Glyphs.LIGHT_COLOR);
         Ansi.Write(totalString);
         
-        Ansi.SetBgColor(Data.DARK_COLOR);
+        Ansi.SetBgColor(Glyphs.DARK_COLOR);
 
         lastStatusLength = statusLength;
     }
@@ -212,7 +213,7 @@ public sealed class PingFrame : Tui.Frame {
         Icmp.GENERAL_FAILURE => [176, 0, 0],
         Icmp.ERROR           => [176, 0, 0],
         Icmp.UNKNOWN         => [176, 0, 0],
-        Icmp.UNDEFINED       => Data.CONTROL_COLOR,
+        Icmp.UNDEFINED       => Glyphs.CONTROL_COLOR,
         < 5   => [128, 224, 48],
         < 10  => [48, 224, 128],
         < 20  => [48, 224, 160],
@@ -275,7 +276,7 @@ public sealed class PingFrame : Tui.Frame {
                 if (Renderer.ActiveFrame != this) continue;
 
                 if (shouldMoveToTop && moveCounter >= list.scrollOffset) { //redraw if in viewport
-                    int movedAdjustedY = top + moveCounter * 2 - list.scrollOffset * list.itemHeight;
+                    int movedAdjustedY = top + moveCounter * list.itemHeight - list.scrollOffset * list.itemHeight;
 
                     if (movedAdjustedY >= top && movedAdjustedY <= top + height - 1) {
                         DrawItemLabel(list.items[moveCounter], moveCounter, movedAdjustedY);
@@ -287,7 +288,7 @@ public sealed class PingFrame : Tui.Frame {
                     moveCounter++;
                 }
 
-                int adjustedY = top + i * 2 - list.scrollOffset * list.itemHeight;
+                int adjustedY = top + i * list.itemHeight - list.scrollOffset * list.itemHeight;
                 if (adjustedY < top) continue;
                 if (adjustedY > top + height - 1) continue;
 
@@ -406,6 +407,8 @@ public sealed class PingFrame : Tui.Frame {
             list.Add(item);
         }
 
+        list.index = list.items.Count - 1;
+
         //(int left, int top, int width, _) = list.GetBounding();
         //list.drawItemHandler(list.items.Count - 1, left, top, width);
     }
@@ -475,10 +478,12 @@ public sealed class PingFrame : Tui.Frame {
         if (status) {
             Start();
             toolbar.items[2].text = "Pause";
+            toolbar.items[2].color = null;
         }
         else {
             Stop();
             toolbar.items[2].text = "Start";
+            toolbar.items[2].color = Glyphs.RED_COLOR;
         }
 
         toolbar.Draw(true);
@@ -531,7 +536,7 @@ file sealed class ClearDialog : Tui.DialogBox {
         string blank = new String(' ', width);
 
         Ansi.SetFgColor([16, 16, 16]);
-        Ansi.SetBgColor(Data.DIALOG_COLOR);
+        Ansi.SetBgColor(Glyphs.DIALOG_COLOR);
 
         Ansi.SetCursorPosition(left, top);
         Ansi.Write(blank);
@@ -607,13 +612,13 @@ file sealed class OptionsDialog : Tui.DialogBox {
 
     public OptionsDialog() {
         timeoutTextbox = new Tui.IntegerBox(this) {
-            backColor = Data.DIALOG_COLOR,
+            backColor = Glyphs.DIALOG_COLOR,
             min = 50,
             max = 5_000
         };
 
         intervalTextbox = new Tui.IntegerBox(this) {
-            backColor = Data.DIALOG_COLOR,
+            backColor = Glyphs.DIALOG_COLOR,
             min = 100,
             max = 10_000
         };
@@ -636,7 +641,7 @@ file sealed class OptionsDialog : Tui.DialogBox {
         string blank = new String(' ', width);
 
         Ansi.SetFgColor([16, 16, 16]);
-        Ansi.SetBgColor(Data.DIALOG_COLOR);
+        Ansi.SetBgColor(Glyphs.DIALOG_COLOR);
 
         Ansi.SetCursorPosition(left, top);
         Ansi.Write(blank);

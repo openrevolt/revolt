@@ -1,4 +1,6 @@
-﻿namespace Revolt.Frames;
+﻿using Revolt.Tui;
+
+namespace Revolt.Frames;
 
 public sealed class MainMenu : Tui.Frame {
     public int index;
@@ -24,8 +26,8 @@ public sealed class MainMenu : Tui.Frame {
     public override void Draw(int width, int height) {
         base.Draw(width, height);
 
-        Ansi.SetFgColor(Data.LIGHT_COLOR);
-        Ansi.SetBgColor(Data.DARK_COLOR);
+        Ansi.SetFgColor(Glyphs.LIGHT_COLOR);
+        Ansi.SetBgColor(Glyphs.DARK_COLOR);
 
         Ansi.SetCursorPosition(0, 0);
 
@@ -46,7 +48,7 @@ public sealed class MainMenu : Tui.Frame {
 
         if (String.IsNullOrEmpty(menu[i])) {
             Ansi.SetFgColor([64, 64, 64]);
-            Ansi.SetBgColor(Data.DARK_COLOR);
+            Ansi.SetBgColor(Glyphs.DARK_COLOR);
             Ansi.SetCursorPosition(3, y);
 
             Ansi.Write(new String('-', length));
@@ -62,11 +64,11 @@ public sealed class MainMenu : Tui.Frame {
 
         if (i == index) {
             Ansi.SetFgColor([16, 16, 16]);
-            Ansi.SetBgColor(Data.SELECT_COLOR);
+            Ansi.SetBgColor(Glyphs.FOCUS_COLOR);
         }
         else {
-            Ansi.SetFgColor(Data.LIGHT_COLOR);
-            Ansi.SetBgColor(Data.DARK_COLOR);
+            Ansi.SetFgColor(Glyphs.LIGHT_COLOR);
+            Ansi.SetBgColor(Glyphs.DARK_COLOR);
         }
 
         Ansi.Write(item);

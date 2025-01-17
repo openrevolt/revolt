@@ -1,12 +1,15 @@
-﻿namespace Revolt.Tui;
+﻿using System.Drawing;
+
+namespace Revolt.Tui;
 
 public sealed class Toolbar(Frame parentFrame) : Element(parentFrame) {
 
     public struct ToolbarItem {
         public string text;
         public string key;
+        public byte[] color;
+        public bool   disabled;
         public Action action;
-        public bool disabled;
     }
 
     public ToolbarItem[] items;
@@ -27,7 +30,7 @@ public sealed class Toolbar(Frame parentFrame) : Element(parentFrame) {
         }
 
         Ansi.SetCursorPosition(offset + 1, height);
-        Ansi.SetBgColor(Data.TOOLBAR_COLOR);
+        Ansi.SetBgColor(Glyphs.TOOLBAR_COLOR);
 
         int gap = width - offset;
         if (gap > 0) {
@@ -46,17 +49,20 @@ public sealed class Toolbar(Frame parentFrame) : Element(parentFrame) {
     private int DrawItem(int i, int offset, int height, bool isFocused) {
         Ansi.SetCursorPosition(offset, height);
 
-        Ansi.SetBgColor(Data.TOOLBAR_COLOR);
+        Ansi.SetBgColor(Glyphs.TOOLBAR_COLOR);
         Ansi.Write(' ');
 
         if (items[i].disabled) {
             Ansi.SetFgColor([96,96,96]);
         }
+        if (items[i].color is null) {
+            Ansi.SetFgColor(this.isFocused && i == index ? [16, 16, 16] : Glyphs.LIGHT_COLOR);
+        }
         else {
-            Ansi.SetFgColor(this.isFocused && i == index ? [16, 16, 16] : Data.LIGHT_COLOR);
+            Ansi.SetFgColor(items[i].color);
         }
 
-        Ansi.SetBgColor(this.isFocused && i == index ? Data.SELECT_COLOR : Data.TOOLBAR_COLOR);
+        Ansi.SetBgColor(this.isFocused && i == index ? Glyphs.FOCUS_COLOR : Glyphs.TOOLBAR_COLOR);
 
         Ansi.Write(' ');
         Ansi.SetUnderline(true);

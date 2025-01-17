@@ -18,14 +18,14 @@ public sealed class Toggle(Frame parentFrame, string text) : Element(parentFrame
     public override void Draw(bool push) {
         (int left, int top, _, _) = GetBounding();
 
-        byte[] backColor = isFocused ? Data.SELECT_COLOR : Data.DIALOG_COLOR;
+        byte[] backColor = isFocused ? Glyphs.FOCUS_COLOR : Glyphs.DIALOG_COLOR;
 
         DrawValue(false);
 
-        Ansi.SetBgColor(Data.DIALOG_COLOR);
+        Ansi.SetBgColor(Glyphs.DIALOG_COLOR);
         Ansi.Write(' ');
 
-        Ansi.SetFgColor(Data.DARK_COLOR);
+        Ansi.SetFgColor(Glyphs.DARK_COLOR);
         Ansi.SetBgColor(backColor);
         Ansi.Write(text);
 
@@ -40,16 +40,16 @@ public sealed class Toggle(Frame parentFrame, string text) : Element(parentFrame
         Ansi.SetCursorPosition(left, top);
 
         if (_value) {
-            Ansi.SetBgColor(Data.SELECT_COLOR);
-            Ansi.SetFgColor(Data.DARK_COLOR);
+            Ansi.SetBgColor(Glyphs.FOCUS_COLOR);
+            Ansi.SetFgColor(Glyphs.DARK_COLOR);
             Ansi.Write(' ');
             Ansi.Write(' ');
-            Ansi.Write(Data.TOGGLE_BOX);
+            Ansi.Write(Glyphs.TOGGLE_BOX);
         }
         else {
             Ansi.SetBgColor([128,128,128]);
-            Ansi.SetFgColor(Data.CONTROL_COLOR);
-            Ansi.Write(Data.TOGGLE_BOX);
+            Ansi.SetFgColor(Glyphs.CONTROL_COLOR);
+            Ansi.Write(Glyphs.TOGGLE_BOX);
             Ansi.Write(' ');
             Ansi.Write(' ');
         }

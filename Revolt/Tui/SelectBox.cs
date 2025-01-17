@@ -11,8 +11,8 @@ public sealed class SelectBox(Frame parentFrame) : Element(parentFrame) {
         (int left, int top, int width, _) = GetBounding();
         int usableWidth = Math.Max(width, 6);
 
-        byte[] foreColor = isFocused ? [16, 16, 16] : Data.LIGHT_COLOR;
-        byte[] backColor = isFocused ? Data.SELECT_COLOR : Data.INPUT_COLOR;
+        byte[] foreColor = isFocused ? [16, 16, 16] : Glyphs.LIGHT_COLOR;
+        byte[] backColor = isFocused ? Glyphs.FOCUS_COLOR : Glyphs.INPUT_COLOR;
         string selectedString = options.Length == 0 ? placeholder : options[index];
 
         Ansi.SetBgColor(backColor);
@@ -21,14 +21,14 @@ public sealed class SelectBox(Frame parentFrame) : Element(parentFrame) {
         if (options.Length == 0) {
             Ansi.SetFgColor([128, 128, 128]);
             Ansi.Write(' ');
-            Ansi.Write(Data.LEFT_TRIANGLE);
+            Ansi.Write(Glyphs.LEFT_TRIANGLE);
             Ansi.Write(' ');
 
-            Ansi.Write(placeholder.Length < usableWidth - 6 ? placeholder : placeholder[..(usableWidth - 7)] + Data.ELLIPSIS);
+            Ansi.Write(placeholder.Length < usableWidth - 6 ? placeholder : placeholder[..(usableWidth - 7)] + Glyphs.ELLIPSIS);
             Ansi.Write(new string(' ', Math.Max(usableWidth - placeholder.Length - 6, 0)));
 
             Ansi.Write(' ');
-            Ansi.Write(Data.RIGHT_TRIANGLE);
+            Ansi.Write(Glyphs.RIGHT_TRIANGLE);
             Ansi.Write(' ');
 
             if (push) {
@@ -45,18 +45,18 @@ public sealed class SelectBox(Frame parentFrame) : Element(parentFrame) {
             Ansi.SetFgColor(foreColor);
         }
         Ansi.Write(' ');
-        Ansi.Write(Data.LEFT_TRIANGLE);
+        Ansi.Write(Glyphs.LEFT_TRIANGLE);
         Ansi.Write(' ');
 
         Ansi.SetFgColor(foreColor);
-        Ansi.Write(selectedString.Length < usableWidth - 6 ? selectedString : selectedString[..(usableWidth - 7)] + Data.ELLIPSIS);
+        Ansi.Write(selectedString.Length < usableWidth - 6 ? selectedString : selectedString[..(usableWidth - 7)] + Glyphs.ELLIPSIS);
         Ansi.Write(new string(' ', Math.Max(usableWidth - selectedString.Length - 6, 0)));
 
         if (index == options.Length - 1) {
             Ansi.SetFgColor([128, 128, 128]);
         }
         Ansi.Write(' ');
-        Ansi.Write(Data.RIGHT_TRIANGLE);
+        Ansi.Write(Glyphs.RIGHT_TRIANGLE);
         Ansi.Write(' ');
 
         if (push) {

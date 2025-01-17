@@ -7,8 +7,8 @@ public sealed class Button(Frame parentFrame, string text) : Element(parentFrame
     public override void Draw(bool push) {
         (int left, int top, _, _) = GetBounding();
 
-        byte[] foreColor = isFocused ? [16, 16, 16] : Data.LIGHT_COLOR;
-        byte[] backColor = isFocused ? Data.SELECT_COLOR : Data.CONTROL_COLOR;
+        byte[] foreColor = isFocused ? [16, 16, 16] : Glyphs.LIGHT_COLOR;
+        byte[] backColor = isFocused ? Glyphs.FOCUS_COLOR : Glyphs.CONTROL_COLOR;
 
         Ansi.SetFgColor(foreColor);
         Ansi.SetBgColor(backColor);
@@ -17,10 +17,10 @@ public sealed class Button(Frame parentFrame, string text) : Element(parentFrame
         Ansi.Write(text);
 
         Ansi.SetFgColor(backColor);
-        Ansi.SetBgColor(Data.DIALOG_COLOR);
+        Ansi.SetBgColor(Glyphs.DIALOG_COLOR);
         Ansi.SetCursorPosition(left, top + 1);
 
-        Ansi.Write(new String(Data.UPPER_1_8TH_BLOCK, text.Length));
+        Ansi.Write(new String(Glyphs.UPPER_1_8TH_BLOCK, text.Length));
 
         if (push) {
             Ansi.Push();

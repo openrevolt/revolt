@@ -1,10 +1,11 @@
-﻿namespace Revolt;
+﻿namespace Revolt.Tui;
 
-public static class Data {
-    public static readonly byte[] LIGHT_COLOR        = [192, 192, 192];
-    public static readonly byte[] DARK_COLOR         = [16, 16, 16];
-    public static readonly byte[] SELECT_COLOR       = [255, 192, 0];
-    public static readonly byte[] SELECT_COLOR_LIGHT = [48, 48, 48];
+public static class Glyphs {
+    public static readonly byte[] LIGHT_COLOR     = [192, 192, 192];
+    public static readonly byte[] DARK_COLOR      = [16, 16, 16];
+    public static readonly byte[] FOCUS_COLOR     = [255, 192, 0];
+    public static readonly byte[] HIGHLIGHT_COLOR = [48, 48, 48];
+    public static readonly byte[] RED_COLOR       = [224, 48, 0];
 
     public static readonly byte[] PANE_COLOR         = [32, 32, 32];
     public static readonly byte[] TOOLBAR_COLOR      = [56, 56, 56];
@@ -33,5 +34,6 @@ public static class Data {
 
     public const char TOGGLE_BOX = '\u25A0';
 
-    public const char PING_CELL = '\x258C';
+    //public const char PING_CELL = '\x258C';
+    public const char PING_CELL = '\x25A0';
 }

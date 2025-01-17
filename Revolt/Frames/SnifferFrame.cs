@@ -1,6 +1,7 @@
-﻿using SharpPcap;
+﻿using System.Collections.Generic;
+using SharpPcap;
 using Revolt.Sniff;
-using System.Collections.Generic;
+using Revolt.Tui;
 
 namespace Revolt.Frames;
 
@@ -33,7 +34,7 @@ internal class SnifferFrame : Tui.Frame {
                 new Tui.Tabs.TabItem() { text="Segments",  key="S" },
                 new Tui.Tabs.TabItem() { text="Datagrams", key="D" },
                 new Tui.Tabs.TabItem() { text="Summary",   key="U" },
-                new Tui.Tabs.TabItem() { text="Issues",    key="I", label="13" },
+                new Tui.Tabs.TabItem() { text="Issues",    key="I" },
             ]
         };
 
@@ -42,7 +43,7 @@ internal class SnifferFrame : Tui.Frame {
             right           = 1,
             top             = 3,
             bottom          = 1,
-            backgroundColor = Data.PANE_COLOR
+            backgroundColor = Glyphs.PANE_COLOR
         };
 
         toolbar = new Tui.Toolbar(this) {
@@ -97,9 +98,9 @@ internal class SnifferFrame : Tui.Frame {
         base.Draw(width, height);
 
         Ansi.SetCursorPosition(2, height - 1);
-        Ansi.SetBgColor(Data.DARK_COLOR);
-        Ansi.SetFgColor(Data.PANE_COLOR);
-        Ansi.Write(new String(Data.UPPER_4_8TH_BLOCK, width - 2));
+        Ansi.SetBgColor(Glyphs.DARK_COLOR);
+        Ansi.SetFgColor(Glyphs.PANE_COLOR);
+        Ansi.Write(new String(Glyphs.UPPER_4_8TH_BLOCK, width - 2));
         Ansi.Push();
     }
 
@@ -222,7 +223,7 @@ file sealed class StartDialog : Tui.DialogBox {
         string blank = new String(' ', width);
 
         Ansi.SetFgColor([16, 16, 16]);
-        Ansi.SetBgColor(Data.DIALOG_COLOR);
+        Ansi.SetBgColor(Glyphs.DIALOG_COLOR);
 
         Ansi.SetCursorPosition(left, top);
         Ansi.Write(blank);

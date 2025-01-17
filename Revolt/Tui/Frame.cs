@@ -26,7 +26,7 @@ public abstract class Frame {
         string blank = new string(' ', width);
 
         int top = 0;
-        Ansi.SetBgColor(Data.DARK_COLOR);
+        Ansi.SetBgColor(Glyphs.DARK_COLOR);
         for (int y = top; y <= height; y++) {
             if (y > Console.WindowHeight) break;
 

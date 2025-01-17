@@ -2,6 +2,7 @@
 using System.Net;
 using Protest.Protocols;
 using Revolt.Protocols;
+using Revolt.Tui;
 
 namespace Revolt.Frames;
 
@@ -110,8 +111,8 @@ public sealed class NetMapperFrame : Tui.Frame {
         uint hostPerGlyph = hostPerDot * 8;
 
         Ansi.SetCursorPosition(3, Math.Max(height - 2, 0));
-        Ansi.SetBgColor(Data.TOOLBAR_COLOR);
-        Ansi.SetFgColor(Data.LIGHT_COLOR);
+        Ansi.SetBgColor(Glyphs.TOOLBAR_COLOR);
+        Ansi.SetFgColor(Glyphs.LIGHT_COLOR);
 
         if (discovered.IsEmpty) {
             Ansi.SetBgColor([48, 48, 48]);
@@ -138,7 +139,7 @@ public sealed class NetMapperFrame : Tui.Frame {
                 Ansi.Write(' ');
             }
             else {
-                Ansi.Write((char)(Data.BRAILLE_BASE | braille));
+                Ansi.Write((char)(Glyphs.BRAILLE_BASE | braille));
             }
         }
 
@@ -153,14 +154,14 @@ public sealed class NetMapperFrame : Tui.Frame {
 
         if (statusLength != lastStatusLength) {
             Ansi.SetCursorPosition(Renderer.LastWidth - lastStatusLength, Math.Max(Renderer.LastHeight, 0));
-            Ansi.SetBgColor(Data.TOOLBAR_COLOR);
+            Ansi.SetBgColor(Glyphs.TOOLBAR_COLOR);
             Ansi.Write(new String(' ', lastStatusLength));
 
             Ansi.SetCursorPosition(Renderer.LastWidth - totalString.Length + 1, Math.Max(Renderer.LastHeight, 0));
             Ansi.SetFgColor([16, 16, 16]);
-            Ansi.SetBgColor(Data.LIGHT_COLOR);
+            Ansi.SetBgColor(Glyphs.LIGHT_COLOR);
             Ansi.Write(totalString);
-            Ansi.SetBgColor(Data.DARK_COLOR);
+            Ansi.SetBgColor(Glyphs.DARK_COLOR);
         }
     }
 
@@ -184,12 +185,12 @@ public sealed class NetMapperFrame : Tui.Frame {
         byte[] foreColor, backColor;
 
         if (isSelected) {
-            foreColor = list.isFocused ? [16, 16, 16] : Data.LIGHT_COLOR;
-            backColor = list.isFocused ? Data.SELECT_COLOR : Data.SELECT_COLOR_LIGHT;
+            foreColor = list.isFocused ? [16, 16, 16] : Glyphs.LIGHT_COLOR;
+            backColor = list.isFocused ? Glyphs.FOCUS_COLOR : Glyphs.HIGHLIGHT_COLOR;
         }
         else {
-            foreColor = Data.LIGHT_COLOR;
-            backColor = Data.DARK_COLOR;
+            foreColor = Glyphs.LIGHT_COLOR;
+            backColor = Glyphs.DARK_COLOR;
         }
 
         Ansi.SetBgColor(backColor);
@@ -215,24 +216,24 @@ public sealed class NetMapperFrame : Tui.Frame {
             Ansi.Write(new string(' ', manufacturerWidth));
         }
         else if (manufacturerWidth > 0) {
-            Ansi.Write(item.manufacturer.Length > manufacturerWidth ? item.manufacturer[..(manufacturerWidth - 1)] + Data.ELLIPSIS : item.manufacturer.PadRight(manufacturerWidth));
+            Ansi.Write(item.manufacturer.Length > manufacturerWidth ? item.manufacturer[..(manufacturerWidth - 1)] + Glyphs.ELLIPSIS : item.manufacturer.PadRight(manufacturerWidth));
         }
 
         if (String.IsNullOrEmpty(item.name)) {
             Ansi.Write(new string(' ', nameWidth));
         }
         else {
-            Ansi.Write(item.name.Length > nameWidth ? item.name[..(nameWidth - 1)] + Data.ELLIPSIS : item.name.PadRight(nameWidth));
+            Ansi.Write(item.name.Length > nameWidth ? item.name[..(nameWidth - 1)] + Glyphs.ELLIPSIS : item.name.PadRight(nameWidth));
         }
 
         if (String.IsNullOrEmpty(item.other) && otherWidth > 0) {
             Ansi.Write(new string(' ', otherWidth));
         }
         else if (otherWidth > 0) {
-            Ansi.Write(item.other.Length > otherWidth ? item.other[..(otherWidth - 1)] + Data.ELLIPSIS : item.other.PadRight(otherWidth));
+            Ansi.Write(item.other.Length > otherWidth ? item.other[..(otherWidth - 1)] + Glyphs.ELLIPSIS : item.other.PadRight(otherWidth));
         }
 
-        Ansi.SetBgColor(Data.DARK_COLOR);
+        Ansi.SetBgColor(Glyphs.DARK_COLOR);
     }
 
     private async Task Discover() {
@@ -439,15 +440,23 @@ public sealed class NetMapperFrame : Tui.Frame {
     }
 
     private void Clear() {
-        if (cancellationTokenSource is not null && cancellationToken.CanBeCanceled) {
-            return;
-        }
+        if (cancellationTokenSource is not null && cancellationToken.CanBeCanceled) return;
 
-        discovered.Clear();
-        list.Clear();
+        Tui.ConfirmDialog dialog = new Tui.ConfirmDialog() {
+            text = "Are you sure you want to clear?"
+        };
 
-        DrawMap(Renderer.LastWidth, Renderer.LastHeight);
-        Ansi.Push();
+        dialog.okButton.action = () => {
+            discovered.Clear();
+            list.Clear();
+
+            DrawMap(Renderer.LastWidth, Renderer.LastHeight);
+            Ansi.Push();
+
+            dialog.Close();
+        };
+
+        dialog.Show();
     }
 }
 
@@ -497,7 +506,7 @@ file sealed class OptionsDialog : Tui.DialogBox {
         string blank = new String(' ', width);
 
         Ansi.SetFgColor([16, 16, 16]);
-        Ansi.SetBgColor(Data.DIALOG_COLOR);
+        Ansi.SetBgColor(Glyphs.DIALOG_COLOR);
 
         Ansi.SetCursorPosition(left, top);
         Ansi.Write(blank);

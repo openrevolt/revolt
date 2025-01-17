@@ -26,7 +26,7 @@ public sealed class Tabs(Frame parentFrame) : Element(parentFrame) {
         }
 
         Ansi.SetCursorPosition(left, top + 2);
-        Ansi.SetBgColor(Data.PANE_COLOR);
+        Ansi.SetBgColor(Glyphs.PANE_COLOR);
         Ansi.Write(new String(' ', width));
 
         if (push) {
@@ -37,25 +37,25 @@ public sealed class Tabs(Frame parentFrame) : Element(parentFrame) {
     private int DrawItem(int i, int offset, int top, bool isFocused) {
         int keyIndex = items[i].text.IndexOf(items[i].key, StringComparison.OrdinalIgnoreCase);
 
-        byte[] backgroundColor = i == index ? Data.PANE_COLOR : [24, 24, 24];
+        byte[] backgroundColor = i == index ? Glyphs.PANE_COLOR : [24, 24, 24];
 
         int length = items[i].text.Length + 2 + (String.IsNullOrEmpty(items[i].label) ? 0 : items[i].label.Length + 1);
 
         Ansi.SetCursorPosition(offset, top);
 
-        Ansi.SetBgColor(Data.DARK_COLOR);
+        Ansi.SetBgColor(Glyphs.DARK_COLOR);
         Ansi.Write(' ');
 
-        Ansi.SetFgColor(this.isFocused && i == index ? Data.SELECT_COLOR : backgroundColor);
-        Ansi.Write(new String(Data.LOWER_1_8TH_BLOCK, length));
+        Ansi.SetFgColor(this.isFocused && i == index ? Glyphs.FOCUS_COLOR : backgroundColor);
+        Ansi.Write(new String(Glyphs.LOWER_1_8TH_BLOCK, length));
 
 
         Ansi.SetCursorPosition(offset, top + 1);
 
-        Ansi.SetBgColor(Data.DARK_COLOR);
+        Ansi.SetBgColor(Glyphs.DARK_COLOR);
         Ansi.Write(' ');
 
-        Ansi.SetFgColor(i == index ? [255, 255, 255] : Data.LIGHT_COLOR);
+        Ansi.SetFgColor(i == index ? [255, 255, 255] : Glyphs.LIGHT_COLOR);
         Ansi.SetBgColor(backgroundColor);
 
         if (keyIndex == -1) {
@@ -70,7 +70,7 @@ public sealed class Tabs(Frame parentFrame) : Element(parentFrame) {
         }
 
         if (!String.IsNullOrEmpty(items[i].label)) {
-            Ansi.SetFgColor([224, 64, 0]);
+            Ansi.SetFgColor(Glyphs.RED_COLOR);
             Ansi.Write($"{items[i].label} ");
         }
 

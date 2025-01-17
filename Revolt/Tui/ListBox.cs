@@ -5,7 +5,7 @@ public sealed class ListBox<T>(Frame parentFrame) : Element(parentFrame) {
     public int itemHeight   = 1;
     public int index        = -1;
     public int scrollOffset = 0;
-    public byte[] backgroundColor = Data.DARK_COLOR;
+    public byte[] backgroundColor = Glyphs.DARK_COLOR;
 
     public delegate void DrawItemDelegate(int i, int x, int y, int width);
     public DrawItemDelegate drawItemHandler;
@@ -130,7 +130,7 @@ public sealed class ListBox<T>(Frame parentFrame) : Element(parentFrame) {
 
     public void Add(T item) {
         items.Add(item);
-        index = items.Count - 1;
+        //index = items.Count - 1;
     }
 
     public void Remove(T item) {

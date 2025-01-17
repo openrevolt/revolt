@@ -3,7 +3,7 @@
 public sealed class IntegerBox(Frame parentFrame) : Element(parentFrame) {
     const int scrollInterval = 16;
 
-    public byte[] backColor = Data.DARK_COLOR;
+    public byte[] backColor = Glyphs.DARK_COLOR;
     public string placeholder = String.Empty;
     public Action action;
 
@@ -32,16 +32,16 @@ public sealed class IntegerBox(Frame parentFrame) : Element(parentFrame) {
         (int left, int top, int width, _) = GetBounding();
         int usableWidth = Math.Max(width, 0);
 
-        Ansi.SetFgColor(Data.LIGHT_COLOR);
-        Ansi.SetBgColor(Data.INPUT_COLOR);
+        Ansi.SetFgColor(Glyphs.LIGHT_COLOR);
+        Ansi.SetBgColor(Glyphs.INPUT_COLOR);
         Ansi.SetCursorPosition(left, top);
         Ansi.Write(new String(' ', usableWidth));
 
-        Ansi.SetFgColor(isFocused ? Data.SELECT_COLOR : Data.INPUT_COLOR);
+        Ansi.SetFgColor(isFocused ? Glyphs.FOCUS_COLOR : Glyphs.INPUT_COLOR);
         Ansi.SetBgColor(backColor);
         Ansi.SetCursorPosition(left, top + 1);
 
-        Ansi.Write(new String(Data.UPPER_1_8TH_BLOCK, usableWidth));
+        Ansi.Write(new String(Glyphs.UPPER_1_8TH_BLOCK, usableWidth));
 
         DrawValue();
     }
@@ -51,8 +51,8 @@ public sealed class IntegerBox(Frame parentFrame) : Element(parentFrame) {
 
         int usableWidth = Math.Max(width - 1, 0);
 
-        Ansi.SetFgColor(Data.LIGHT_COLOR);
-        Ansi.SetBgColor(Data.INPUT_COLOR);
+        Ansi.SetFgColor(Glyphs.LIGHT_COLOR);
+        Ansi.SetBgColor(Glyphs.INPUT_COLOR);
         Ansi.SetCursorPosition(left, top);
 
         if (!String.IsNullOrEmpty(placeholder) && _value.Length == 0) {
