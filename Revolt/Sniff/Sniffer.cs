@@ -12,11 +12,12 @@ public sealed partial class Sniffer : IDisposable {
     public bool analyzeL4          = true;
 
     private ulong frameIndex = 0;
-    public ConcurrentDictionary<ulong, Frame> frames = new ConcurrentDictionary<ulong, Frame>();
+    private ConcurrentDictionary<ulong, Frame> frames = new ConcurrentDictionary<ulong, Frame>();
 
-    public ConcurrentDictionary<Mac, TrafficData> layer2Traffic       = new ConcurrentDictionary<Mac, TrafficData>();
-    public ConcurrentDictionary<IPAddress, TrafficData> layer3Traffic = new ConcurrentDictionary<IPAddress, TrafficData>();
-    public ConcurrentDictionary<IPAddress, TrafficData> layer4Traffic = new ConcurrentDictionary<IPAddress, TrafficData>();
+    private IndexedDictionary<Mac, TrafficData>       framesCount   = new IndexedDictionary<Mac, TrafficData>();
+    private IndexedDictionary<IPAddress, TrafficData> packetCount   = new IndexedDictionary<IPAddress, TrafficData>();
+    private IndexedDictionary<ushort, TrafficData>    segmentCount  = new IndexedDictionary<ushort, TrafficData>();
+    private IndexedDictionary<ushort, TrafficData>    datagramCount = new IndexedDictionary<ushort, TrafficData>();
 
     public long bytesRx=0, bytesTx=0, packetsRx=0, packetsTx=0;
 
@@ -119,7 +120,7 @@ public sealed partial class Sniffer : IDisposable {
         Interlocked.Add(ref bytesRx, buffer.Length);
         Interlocked.Increment(ref packetsRx);
 
-        layer2Traffic.AddOrUpdate(
+        framesCount.AddOrUpdate(
             sourceMac,
             new TrafficData() { bytesRx=0, bytesTx=buffer.Length, packetsRx=0, packetsTx=1 },
             (mac, traffic) => {
@@ -129,7 +130,7 @@ public sealed partial class Sniffer : IDisposable {
             }
         );
 
-        layer2Traffic.AddOrUpdate(
+        framesCount.AddOrUpdate(
             destinationMac,
             new TrafficData() { bytesRx= buffer.Length, bytesTx=0, packetsRx=1, packetsTx=0 },
             (mac, traffic) => {

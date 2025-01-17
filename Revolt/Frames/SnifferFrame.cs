@@ -26,14 +26,13 @@ internal class SnifferFrame : Tui.Frame {
             right = 1,
             top   = 0,
             items = [
-                new Tui.Tabs.TabItem() { text="L2",    key="2" },
-                new Tui.Tabs.TabItem() { text="L3",    key="3" },
-                new Tui.Tabs.TabItem() { text="L4",    key="4" },
+                new Tui.Tabs.TabItem() { text="L3",        key="3" },
+                new Tui.Tabs.TabItem() { text="L4",        key="4" },
                 new Tui.Tabs.TabItem() { text="Frames",    key="F" },
                 new Tui.Tabs.TabItem() { text="Packets",   key="P" },
                 new Tui.Tabs.TabItem() { text="Segments",  key="S" },
                 new Tui.Tabs.TabItem() { text="Datagrams", key="D" },
-                new Tui.Tabs.TabItem() { text="Summary",   key="U" },
+                new Tui.Tabs.TabItem() { text="Overview",  key="O" },
                 new Tui.Tabs.TabItem() { text="Issues",    key="I" },
             ]
         };

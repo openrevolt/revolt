@@ -1,7 +1,7 @@
 ﻿namespace Revolt.Tui;
 
 public sealed class ListBox<T>(Frame parentFrame) : Element(parentFrame) {
-    public SynchronizedList<T> items = [];
+    public SyncedList<T> items = [];
     public int itemHeight   = 1;
     public int index        = -1;
     public int scrollOffset = 0;

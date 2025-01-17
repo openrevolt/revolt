@@ -1,9 +1,9 @@
 ﻿namespace System.Collections.Generic;
 
-public sealed class SynchronizedList<T> : IList<T> where T : notnull {
+public sealed class SyncedList<T> : IList<T> where T : notnull {
     private readonly List<T> _list = new();
 
-    private static readonly ReaderWriterLockSlim _lock = new();
+    private readonly ReaderWriterLockSlim _lock = new ReaderWriterLockSlim();
 
     public int Count {
         get {
@@ -175,4 +175,5 @@ public sealed class SynchronizedList<T> : IList<T> where T : notnull {
             _lock.ExitReadLock();
         }
     }
+
 }

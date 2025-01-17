@@ -54,7 +54,6 @@ public sealed partial class Sniffer {
 }
 
 public static class MacExtension {
-
     private static readonly char[]  macLookup = "0123456789ABCDEF".ToCharArray();
     public static string ToFormattedString(this Sniff.Sniffer.Mac mac) {
         Span<char> buffer = stackalloc char[17];
@@ -79,5 +78,4 @@ public static class MacExtension {
 
         return new string(buffer);
     }
-
 }
