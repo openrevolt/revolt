@@ -1,92 +1,57 @@
-﻿using System.Collections.Concurrent;
-using System.Collections.Generic;
+﻿namespace System.Collections.Concurrent;
 
-namespace System.Collections.Generic;
+public class IndexedDictionary<TKey, TValue>
+    where TKey : notnull
+    where TValue : class {
 
-public class IndexedDictionary<TKey, TValue> where TValue : class {
     private readonly ConcurrentDictionary<TKey, TValue> _dictionary = new ConcurrentDictionary<TKey, TValue>();
-    private readonly List<TValue> _list = new List<TValue>();
-    private readonly ReaderWriterLockSlim _lock = new ReaderWriterLockSlim();
+    private readonly ConcurrentDictionary<long, TValue> _indexMapping = new ConcurrentDictionary<long, TValue>();
+    private long _count;
 
-    public int Count => _dictionary.Count;
+    public int Count =>
+        (int)Interlocked.Read(ref _count);
 
     public TValue this[int index] {
         get {
-            _lock.EnterReadLock();
-            try {
-                return _list[index];
-            }
-            finally {
-                _lock.ExitReadLock();
-            }
+            return _indexMapping[index];
         }
     }
 
     public bool TryAdd(TKey key, TValue value) {
         if (!_dictionary.TryAdd(key, value)) return false;
-
-        _lock.EnterWriteLock();
-        try {
-            _list.Add(value);
-        }
-        finally {
-            _lock.ExitWriteLock();
-        }
-
+        long newIndex = Interlocked.Increment(ref _count) - 1;
+        _indexMapping.TryAdd(newIndex, value);
         return true;
     }
 
     public TValue AddOrUpdate(TKey key, TValue value, Func<TKey, TValue, TValue> updateValueFactory) {
-        TValue existingValue;
-
-        if (_dictionary.TryGetValue(key, out existingValue)) {
-            var updatedValue = updateValueFactory(key, existingValue);
+        if (_dictionary.TryGetValue(key, out TValue existingValue)) {
+            TValue updatedValue = updateValueFactory(key, existingValue);
             _dictionary[key] = updatedValue;
             return updatedValue;
         }
-        else {
-            if (_dictionary.TryAdd(key, value)) {
-                _lock.EnterWriteLock();
-                try {
-                    _list.Add(value);
-                }
-                finally {
-                    _lock.ExitWriteLock();
-                }
-            }
-            return value;
-        }
-    }
 
-    public TValue GetByKey(TKey key) {
-        if (!_dictionary.TryGetValue(key, out TValue value))
-            throw new KeyNotFoundException($"Key '{key}' not found.");
-
+        TryAdd(key, value);
         return value;
     }
 
-    public void Clear() {
-        _dictionary.Clear();
+    public TValue GetByKey(TKey key) {
+        if (!_dictionary.TryGetValue(key, out TValue value)) {
+            throw new KeyNotFoundException($"Key '{key}' not found.");
+        }
 
-        _lock.EnterWriteLock();
-        try {
-            _list.Clear();
-        }
-        finally {
-            _lock.ExitWriteLock();
-        }
+        return value;
     }
 
     public bool ContainsKey(TKey key)
         => _dictionary.ContainsKey(key);
 
-    public List<TValue> ToList() {
-        _lock.EnterReadLock();
-        try {
-            return new List<TValue>(_list);
-        }
-        finally {
-            _lock.ExitReadLock();
-        }
+    public void Clear() {
+        _dictionary.Clear();
+        _indexMapping.Clear();
     }
+
+    public List<TValue> ToList =>
+        _indexMapping.Values.ToList();
+
 }

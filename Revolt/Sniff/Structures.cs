@@ -8,13 +8,13 @@ public sealed partial class Sniffer {
 
     [StructLayout(LayoutKind.Explicit)]
     public struct Mac {
+        [FieldOffset(0)] public ulong value;
         [FieldOffset(0)] public byte a;
         [FieldOffset(1)] public byte b;
         [FieldOffset(2)] public byte c;
         [FieldOffset(3)] public byte d;
         [FieldOffset(4)] public byte e;
         [FieldOffset(5)] public byte f;
-        [FieldOffset(0)] public ulong value;
 
         public static Mac Parse(byte[] buffer, int offset) {
             Mac mac = default;

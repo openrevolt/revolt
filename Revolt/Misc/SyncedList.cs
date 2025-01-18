@@ -2,7 +2,6 @@
 
 public sealed class SyncedList<T> : IList<T> where T : notnull {
     private readonly List<T> _list = new();
-
     private readonly ReaderWriterLockSlim _lock = new ReaderWriterLockSlim();
 
     public int Count {
