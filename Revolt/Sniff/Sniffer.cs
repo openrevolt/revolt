@@ -11,13 +11,18 @@ public sealed partial class Sniffer : IDisposable {
     public bool includePublicIPs   = true;
     public bool analyzeL4          = true;
 
+    public IndexedDictionary<Mac, TrafficData>       framesCount   = new IndexedDictionary<Mac, TrafficData>();
+    public IndexedDictionary<IPAddress, TrafficData> packetCount   = new IndexedDictionary<IPAddress, TrafficData>();
+    public IndexedDictionary<ushort, TrafficData>    segmentCount  = new IndexedDictionary<ushort, TrafficData>();
+    public IndexedDictionary<ushort, TrafficData>    datagramCount = new IndexedDictionary<ushort, TrafficData>();
+
     private ulong frameIndex = 0;
     private ConcurrentDictionary<ulong, Frame> frames = new ConcurrentDictionary<ulong, Frame>();
 
-    private IndexedDictionary<Mac, TrafficData>       framesCount   = new IndexedDictionary<Mac, TrafficData>();
-    private IndexedDictionary<IPAddress, TrafficData> packetCount   = new IndexedDictionary<IPAddress, TrafficData>();
-    private IndexedDictionary<ushort, TrafficData>    segmentCount  = new IndexedDictionary<ushort, TrafficData>();
-    private IndexedDictionary<ushort, TrafficData>    datagramCount = new IndexedDictionary<ushort, TrafficData>();
+    private Dictionary<ushort, long> networkBytes   = new Dictionary<ushort, long>();
+    private Dictionary<ushort, long> networkPackets = new Dictionary<ushort, long>();
+    private long[] transportBytes   = new long[256];
+    private long[] transportPackets = new long[256];
 
     public long bytesRx=0, bytesTx=0, packetsRx=0, packetsTx=0;
 

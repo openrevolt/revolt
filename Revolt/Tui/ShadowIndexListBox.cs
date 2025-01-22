@@ -1,8 +1,11 @@
-﻿namespace Revolt.Tui;
+﻿using System.Collections.Concurrent;
+using System.ComponentModel;
 
-public sealed class ListBox<T>(Frame parentFrame) : Element(parentFrame) {
-    public SyncedList<T> items    = [];
-    public int itemHeight         = 1;
+namespace Revolt.Tui;
+
+public sealed class ShadowIndexListBox<TKey, TValue>(Frame parentFrame) : Element(parentFrame)
+    where TValue : class {
+
     public int index              = -1;
     public int scrollOffset       = 0;
     public byte[] backgroundColor = Glyphs.DARK_COLOR;
@@ -10,20 +13,35 @@ public sealed class ListBox<T>(Frame parentFrame) : Element(parentFrame) {
     public delegate void DrawItemDelegate(int i, int x, int y, int width);
     public DrawItemDelegate drawItemHandler;
 
+    public IndexedDictionary<TKey, TValue> shadow;
+
+    public void BindDictionary(IndexedDictionary<TKey, TValue> shadow) {
+        this.shadow = shadow;
+        this.Draw(true);
+    }
+
+    public int Count => shadow?.Count ?? 0;
+
+    public TValue this[int index] {
+        get {
+            return shadow?[index] ?? null;
+        }
+    }
+
     public override void Draw(bool push) {
         (int left, int top, int width, int height) = GetBounding();
-        int visibleItems = height / itemHeight;
+        int visibleItems = height;
 
         CalculateScrollOffset(height);
 
-        for (int i = scrollOffset; i < Math.Min(scrollOffset + visibleItems, items.Count); i++) {
+        for (int i = scrollOffset; i < Math.Min(scrollOffset + visibleItems, shadow?.Count ?? 0); i++) {
             drawItemHandler(i, left, top, width);
         }
 
-        if (items.Count * itemHeight < height - 1) {
+        if ((shadow?.Count ?? 0) < height - 1) {
             string blank = new String(' ', width);
             Ansi.SetBgColor(this.backgroundColor);
-            for (int i = items.Count * itemHeight; i < height - 1; i++) {
+            for (int i = shadow?.Count ?? 0; i < height - 1; i++) {
                 Ansi.SetCursorPosition(left, top + i);
                 Ansi.Write(blank);
             }
@@ -35,9 +53,9 @@ public sealed class ListBox<T>(Frame parentFrame) : Element(parentFrame) {
     }
 
     private void CalculateScrollOffset(int height) {
-        int visibleItems = height / itemHeight;
+        int visibleItems = height;
 
-        if (items.Count <= visibleItems) {
+        if (shadow?.Count <= visibleItems) {
             scrollOffset = 0;
         }
         else if (index < scrollOffset) {
@@ -47,12 +65,12 @@ public sealed class ListBox<T>(Frame parentFrame) : Element(parentFrame) {
             scrollOffset = index - visibleItems + 1;
         }
 
-        int maxScrollOffset = Math.Max(0, items.Count - visibleItems);
+        int maxScrollOffset = Math.Max(0, (shadow?.Count ?? 0) - visibleItems);
         scrollOffset = Math.Min(scrollOffset, maxScrollOffset);
     }
 
     public override void HandleKey(ConsoleKeyInfo key) {
-        if (items is null || items.Count == 0) return;
+        if (shadow is null || shadow.Count == 0) return;
 
         (int left, int top, int width, int height) = GetBounding();
         int lastIndex = index;
@@ -64,21 +82,21 @@ public sealed class ListBox<T>(Frame parentFrame) : Element(parentFrame) {
             break;
 
         case ConsoleKey.DownArrow:
-            index = Math.Min(items.Count - 1, index + 1);
+            index = Math.Min(shadow.Count - 1, index + 1);
             break;
 
         case ConsoleKey.PageUp:
-            index = Math.Clamp(index - (height / itemHeight) + 1, 0, items.Count - 1);
+            index = Math.Clamp(index - height + 1, 0, shadow.Count - 1);
             Draw(true);
             return;
 
         case ConsoleKey.PageDown:
-            index = Math.Clamp(index + (height / itemHeight) - 1, 0, items.Count - 1);
+            index = Math.Clamp(index + height - 1, 0, shadow.Count - 1);
             Draw(true);
             return;
 
         case ConsoleKey.Home:
-            if (items.Count > 0) {
+            if (shadow.Count > 0) {
                 index = 0;
             }
             if (index != lastIndex) {
@@ -87,8 +105,8 @@ public sealed class ListBox<T>(Frame parentFrame) : Element(parentFrame) {
             return;
 
         case ConsoleKey.End:
-            if (items.Count > 0) {
-                index = items.Count - 1;
+            if (shadow.Count > 0) {
+                index = shadow.Count - 1;
             }
             if (index != lastIndex) {
                 Draw(true);
@@ -116,10 +134,10 @@ public sealed class ListBox<T>(Frame parentFrame) : Element(parentFrame) {
             Ansi.SetScrollRegion(top, top + height - 1);
 
             if (delta < 0) {
-                Ansi.ScrollDown(itemHeight);
+                Ansi.ScrollDown(1);
             }
             else if (delta > 0) {
-                Ansi.ScrollUp(itemHeight);
+                Ansi.ScrollUp(1);
             }
 
             drawItemHandler(lastIndex, left, top, width);
@@ -128,36 +146,8 @@ public sealed class ListBox<T>(Frame parentFrame) : Element(parentFrame) {
         }
     }
 
-    public void Add(T item) {
-        items.Add(item);
-        //index = items.Count - 1;
-    }
-
-    public void Remove(T item) {
-        int removedIndex = items.IndexOf(item);
-        if (removedIndex < 0) return;
-        
-        items.RemoveAt(removedIndex);
-        index = Math.Clamp(index, 0, items.Count - 1);
-    }
-
-    public T RemoveSelected() {
-        if (items.Count == 0)     return default;
-        if (index < 0)            return default;
-        if (index >= items.Count) return default;
-       
-        T item = items[index];
-        items.RemoveAt(index);
-
-        index = items.Count == 0 ? -1 : Math.Clamp(index, 0, items.Count - 1);
-
-        Draw(true);
-
-        return item;
-    }
-
     public void Clear() {
-        items.Clear();
+        shadow?.Clear();
         index = -1;
         Draw(true);
     }
@@ -165,7 +155,7 @@ public sealed class ListBox<T>(Frame parentFrame) : Element(parentFrame) {
     public override void Focus(bool draw = true) {
         base.Focus(draw);
 
-        if (index == -1 && items.Count > 0) {
+        if (index == -1 && shadow?.Count > 0) {
             index = 0;
         }
 

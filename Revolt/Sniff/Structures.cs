@@ -1,5 +1,4 @@
 ﻿using System.Net;
-using System.Runtime.CompilerServices;
 using System.Runtime.InteropServices;
 
 namespace Revolt.Sniff;
@@ -42,6 +41,10 @@ public sealed partial class Sniffer {
 
         public ushort    sourcePort { init; get; }
         public ushort    destinationPort { init; get; }
+        public uint      initialSequence { init; get;  }
+        public uint      seqNumber { init; get; }
+        public uint      ackNumber { init; get; }
+        public uint      window { init; get; }
     }
 
     public class TrafficData {

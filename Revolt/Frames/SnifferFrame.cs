@@ -1,7 +1,10 @@
 ﻿using System.Collections.Generic;
-using SharpPcap;
+using System.Net;
 using Revolt.Sniff;
 using Revolt.Tui;
+using SharpPcap;
+
+using static Revolt.Sniff.Sniffer;
 
 namespace Revolt.Frames;
 
@@ -10,8 +13,14 @@ internal class SnifferFrame : Tui.Frame {
     public static SnifferFrame Instance { get; } = new SnifferFrame();
 
     public Tui.Tabs tabs;
-    public Tui.ListBox<string> list;
     public Tui.Toolbar toolbar;
+
+    public Tui.ShadowIndexListBox<Mac, TrafficData> currentList;
+
+    private Tui.ShadowIndexListBox<Mac, TrafficData> framesList;
+    private Tui.ShadowIndexListBox<IPAddress, TrafficData> packetList;
+    private Tui.ShadowIndexListBox<ushort, TrafficData> segmentList;
+    private Tui.ShadowIndexListBox<ushort, TrafficData> datagramList;
 
     private ICaptureDevice captureDevice;
     private Sniffer sniffer;
@@ -37,12 +46,40 @@ internal class SnifferFrame : Tui.Frame {
             ]
         };
 
-        list = new Tui.ListBox<string>(this) {
+        framesList = new Tui.ShadowIndexListBox<Mac, TrafficData>(this) {
             left            = 1,
             right           = 1,
             top             = 3,
             bottom          = 1,
-            backgroundColor = Glyphs.PANE_COLOR
+            backgroundColor = Glyphs.PANE_COLOR,
+            drawItemHandler = DrawFrameItem
+        };
+
+        packetList = new Tui.ShadowIndexListBox<IPAddress, TrafficData>(this) {
+            left = 1,
+            right = 1,
+            top = 3,
+            bottom = 1,
+            backgroundColor = Glyphs.PANE_COLOR,
+            drawItemHandler = DrawPacketItem
+        };
+
+        segmentList = new Tui.ShadowIndexListBox<ushort, TrafficData>(this) {
+            left = 1,
+            right = 1,
+            top = 3,
+            bottom = 1,
+            backgroundColor = Glyphs.PANE_COLOR,
+            drawItemHandler = DrawSegmentItem
+        };
+
+        datagramList = new Tui.ShadowIndexListBox<ushort, TrafficData>(this) {
+            left = 1,
+            right = 1,
+            top = 3,
+            bottom = 1,
+            backgroundColor = Glyphs.PANE_COLOR,
+            drawItemHandler = DrawDatagramItem
         };
 
         toolbar = new Tui.Toolbar(this) {
@@ -54,11 +91,13 @@ internal class SnifferFrame : Tui.Frame {
             ],
         };
 
+        currentList = framesList;
+
         elements.Add(tabs);
-        elements.Add(list);
+        elements.Add(currentList);
         elements.Add(toolbar);
 
-        defaultElement = list;
+        defaultElement = currentList;
         FocusNext();
     }
 
@@ -103,6 +142,64 @@ internal class SnifferFrame : Tui.Frame {
         Ansi.Push();
     }
 
+    private void DrawFrameItem(int index, int x, int y, int width) {
+        if (framesList.Count == 0) return;
+        if (index < 0) return;
+        if (index >= framesList.Count) return;
+
+        int adjustedY = y + index - framesList.scrollOffset;
+        if (adjustedY < y || adjustedY > Renderer.LastHeight) return;
+
+        TrafficData item = framesList[index];
+
+        Ansi.SetCursorPosition(2, adjustedY);
+        
+        if (index == framesList.index) {
+            Ansi.SetFgColor(framesList.isFocused ? [16, 16, 16] : Glyphs.LIGHT_COLOR);
+            Ansi.SetBgColor(framesList.isFocused ? Glyphs.FOCUS_COLOR : Glyphs.HIGHLIGHT_COLOR);
+        }
+        else {
+            Ansi.SetFgColor(Glyphs.LIGHT_COLOR);
+            Ansi.SetBgColor(Glyphs.PANE_COLOR);
+        }
+
+        Ansi.Write(' ');
+
+        Ansi.Write(framesList.shadow.GetKeyByIndex(index).ToFormattedString());
+        Ansi.Write(' ');
+
+        Ansi.Write(Glyphs.ARROW_UP);
+        Ansi.Write(item.packetsTx.ToString());
+        Ansi.Write(' ');
+
+        Ansi.Write(Glyphs.ARROW_DOWN);
+        Ansi.Write(item.packetsRx.ToString());
+        Ansi.Write(' ');
+
+        Ansi.Write(' ');
+        Ansi.Write(' ');
+
+        Ansi.Write(Glyphs.ARROW_UP);
+        Ansi.Write(item.bytesTx.ToString());
+        Ansi.Write("B ");
+
+        Ansi.Write(Glyphs.ARROW_DOWN);
+        Ansi.Write(item.bytesRx.ToString());
+        Ansi.Write("B");
+    }
+
+    private void DrawPacketItem(int i, int x, int y, int width) {
+
+    }
+
+    private void DrawSegmentItem(int i, int x, int y, int width) {
+
+    }
+
+    private void DrawDatagramItem(int i, int x, int y, int width) {
+
+    }
+
     private void StartDialog() {
         if (captureDevice is not null && captureDevice.Started) {
             StopDialog();
@@ -125,6 +222,8 @@ internal class SnifferFrame : Tui.Frame {
                     includePublicIPs   = dialog.includePublicToggle.Value,
                     analyzeL4          = dialog.l4Toggle.Value,
                 };
+
+                framesList.BindDictionary(sniffer.framesCount);
 
                 sniffer.Start();
             }

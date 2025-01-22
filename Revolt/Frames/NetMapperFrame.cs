@@ -167,6 +167,7 @@ public sealed class NetMapperFrame : Tui.Frame {
 
     private void DrawDiscoverItem(int index, int x, int y, int width) {
         if (list.items is null || list.items.Count == 0) return;
+        if (index < 0) return;
         if (index >= list.items.Count) return;
 
         int adjustedY = y + index - list.scrollOffset * list.itemHeight;

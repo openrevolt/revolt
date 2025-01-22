@@ -29,6 +29,9 @@ public static class Glyphs {
     public const char LOWER_7_8TH_BLOCK = '\u2587';
     public const char LOWER_8_8TH_BLOCK = '\u2588';
 
+    public const char ARROW_UP = '\u2191';
+    public const char ARROW_DOWN = '\u2193';
+
     public const char LEFT_TRIANGLE  = '\u25C2';
     public const char RIGHT_TRIANGLE = '\u25B8';
 
