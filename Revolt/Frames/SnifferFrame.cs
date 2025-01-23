@@ -1,6 +1,5 @@
 ﻿using System.Collections.Generic;
 using System.Net;
-using System.Security.Cryptography.X509Certificates;
 using Revolt.Protocols;
 using Revolt.Sniff;
 using Revolt.Tui;
@@ -184,7 +183,7 @@ internal class SnifferFrame : Tui.Frame {
         }
 
         DrawNumber(item.packetsTx, 16, [232, 118, 0]);
-        DrawNumber(item.packetsRx, 16, [232, 118, 0]);
+        DrawNumber(item.packetsRx, 16, [122, 212, 43]);
         DrawBytes(item.bytesTx, 16, [232, 118, 0]);
         DrawBytes(item.bytesRx, 16, [122, 212, 43]);
 
@@ -202,6 +201,62 @@ internal class SnifferFrame : Tui.Frame {
 
     private void DrawDatagramItem(int i, int x, int y, int width) {
 
+    }
+
+    private void DrawNumber(long value, int padding, byte[] color) {
+        if (value == 0) {
+            Ansi.SetFgColor(color);
+            Ansi.Write("-".PadLeft(padding));
+            return;
+        }
+
+        string text = value.ToString();
+
+        Ansi.Write(new String(' ', Math.Max(padding - text.Length, 0)));
+
+        for (int i = 0; i < text.Length; i++) {
+            int groupIndex = (text.Length - i - 1) / 3;
+            byte[] groupColor = color.Select(c => (byte)Math.Min(c + groupIndex * 56, 255)).ToArray();
+            Ansi.SetFgColor(groupColor);
+            Ansi.Write(text[i]);
+        }
+    }
+
+    private void DrawBytes(long value, int padding, byte[] color) {
+        if (value == 0) {
+            Ansi.SetFgColor(color);
+            Ansi.Write("-   ".PadLeft(padding));
+            return;
+        }
+
+        string text = SizeToString(value);
+
+        Ansi.Write(new String(' ', Math.Max(padding - text.Length, 0)));
+
+        if (text.Length > 6) {
+            Ansi.SetFgColor(color.Select(c => (byte)Math.Min(c + 56, 255)).ToArray());
+            Ansi.Write(text.Substring(0, text.Length - 6));
+
+            Ansi.SetFgColor(color);
+            Ansi.Write(text.Substring(text.Length - 6));
+        }
+        else {
+            Ansi.SetFgColor(color);
+            Ansi.Write(text);
+        }
+    }
+
+    private static string SizeToString(long size) {
+        if (size < 32_768) return $"{size} B ";
+        if (size < 32_768 * 1024) return $"{Math.Floor(size / 1024f)} KB";
+        if (size < 32_768 * Math.Pow(1024, 2)) return $"{Math.Floor(size / Math.Pow(1024, 2))} MB";
+        if (size < 32_768 * Math.Pow(1024, 3)) return $"{Math.Floor(size / Math.Pow(1024, 3))} GB";
+        if (size < 32_768 * Math.Pow(1024, 4)) return $"{Math.Floor(size / Math.Pow(1024, 4))} TB";
+        if (size < 32_768 * Math.Pow(1024, 5)) return $"{Math.Floor(size / Math.Pow(1024, 5))} EB";
+        if (size < 32_768 * Math.Pow(1024, 6)) return $"{Math.Floor(size / Math.Pow(1024, 6))} ZB";
+        if (size < 32_768 * Math.Pow(1024, 7)) return $"{Math.Floor(size / Math.Pow(1024, 7))} YB";
+        if (size < 32_768 * Math.Pow(1024, 8)) return $"{Math.Floor(size / Math.Pow(1024, 8))} BB";
+        return size.ToString();
     }
 
     private void StartDialog() {
@@ -269,31 +324,6 @@ internal class SnifferFrame : Tui.Frame {
 
     private void FiltersDialog() {
 
-    }
-
-    private void DrawNumber(long value, int padding, byte[] color) {
-        string text = value.ToString();
-        Ansi.SetFgColor(color);
-        Ansi.Write(text.PadLeft(padding));
-    }
-
-    private void DrawBytes(long value, int padding, byte[] color) {
-        string text = SizeToString(value);
-        Ansi.SetFgColor(color);
-        Ansi.Write(text.PadLeft(padding));
-    }
-
-    private static string SizeToString(long size) {
-        if (size < 32_768) return $"{size} B ";
-        if (size < 32_768 * 1024) return $"{Math.Floor(size / 1024f)} KB";
-        if (size < 32_768 * Math.Pow(1024, 2)) return $"{Math.Floor(size / Math.Pow(1024, 2))} MB";
-        if (size < 32_768 * Math.Pow(1024, 3)) return $"{Math.Floor(size / Math.Pow(1024, 3))} GB";
-        if (size < 32_768 * Math.Pow(1024, 4)) return $"{Math.Floor(size / Math.Pow(1024, 4))} TB";
-        if (size < 32_768 * Math.Pow(1024, 5)) return $"{Math.Floor(size / Math.Pow(1024, 5))} EB";
-        if (size < 32_768 * Math.Pow(1024, 6)) return $"{Math.Floor(size / Math.Pow(1024, 6))} ZB";
-        if (size < 32_768 * Math.Pow(1024, 7)) return $"{Math.Floor(size / Math.Pow(1024, 7))} YB";
-        if (size < 32_768 * Math.Pow(1024, 8)) return $"{Math.Floor(size / Math.Pow(1024, 8))} BB";
-        return size.ToString();
     }
 }
 
