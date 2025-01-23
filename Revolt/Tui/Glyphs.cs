@@ -2,7 +2,7 @@
 
 public static class Glyphs {
     public static readonly byte[] LIGHT_COLOR     = [192, 192, 192];
-    public static readonly byte[] DARK_COLOR      = [16, 16, 16];
+    public static readonly byte[] DARK_COLOR      = [0, 0, 0];
     public static readonly byte[] FOCUS_COLOR     = [255, 192, 0];
     public static readonly byte[] HIGHLIGHT_COLOR = [48, 48, 48];
     public static readonly byte[] RED_COLOR       = [224, 48, 0];

@@ -37,7 +37,7 @@ public sealed class PingFrame : Tui.Frame {
             left              = 1,
             right             = 1,
             top               = 1,
-            bottom            = 3,
+            bottom            = 2,
             itemHeight        = 1,
             drawItemHandler   = DrawPingItem
         };

@@ -32,7 +32,7 @@ public class Generator : IIncrementalGenerator {
         builder.AppendLine("namespace Revolt.Protocols;");
         builder.AppendLine("public static partial class MacLookup {");
 
-        builder.AppendLine("    public static readonly (byte, byte, string)[][] table = [");
+        builder.AppendLine("    private static readonly (byte, byte, string)[][] table = [");
         LoadFile(rootPath, builder);
         builder.AppendLine("    ];");
 

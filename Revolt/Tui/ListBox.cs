@@ -20,10 +20,10 @@ public sealed class ListBox<T>(Frame parentFrame) : Element(parentFrame) {
             drawItemHandler(i, left, top, width);
         }
 
-        if (items.Count * itemHeight < height - 1) {
+        if (items.Count * itemHeight < height) {
             string blank = new String(' ', width);
             Ansi.SetBgColor(this.backgroundColor);
-            for (int i = items.Count * itemHeight; i < height - 1; i++) {
+            for (int i = items.Count * itemHeight; i < height; i++) {
                 Ansi.SetCursorPosition(left, top + i);
                 Ansi.Write(blank);
             }

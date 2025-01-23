@@ -3,7 +3,7 @@
 public static partial class MacLookup {
 
 #if DEBUG
-    public static readonly (byte, byte, string)[][] table = [];
+    private static readonly (byte, byte, string)[][] table = [];
 #endif
 
     public static string Lookup(string mac) {

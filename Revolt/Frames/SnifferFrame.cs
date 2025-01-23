@@ -1,5 +1,7 @@
 ﻿using System.Collections.Generic;
 using System.Net;
+using System.Security.Cryptography.X509Certificates;
+using Revolt.Protocols;
 using Revolt.Sniff;
 using Revolt.Tui;
 using SharpPcap;
@@ -50,34 +52,34 @@ internal class SnifferFrame : Tui.Frame {
             left            = 1,
             right           = 1,
             top             = 3,
-            bottom          = 1,
+            bottom          = 2,
             backgroundColor = Glyphs.PANE_COLOR,
             drawItemHandler = DrawFrameItem
         };
 
         packetList = new Tui.ShadowIndexListBox<IPAddress, TrafficData>(this) {
-            left = 1,
-            right = 1,
-            top = 3,
-            bottom = 1,
+            left            = 1,
+            right           = 1,
+            top             = 3,
+            bottom          = 2,
             backgroundColor = Glyphs.PANE_COLOR,
             drawItemHandler = DrawPacketItem
         };
 
         segmentList = new Tui.ShadowIndexListBox<ushort, TrafficData>(this) {
-            left = 1,
-            right = 1,
-            top = 3,
-            bottom = 1,
+            left            = 1,
+            right           = 1,
+            top             = 3,
+            bottom          = 2,
             backgroundColor = Glyphs.PANE_COLOR,
             drawItemHandler = DrawSegmentItem
         };
 
         datagramList = new Tui.ShadowIndexListBox<ushort, TrafficData>(this) {
-            left = 1,
-            right = 1,
-            top = 3,
-            bottom = 1,
+            left            = 1,
+            right           = 1,
+            top             = 3,
+            bottom          = 2,
             backgroundColor = Glyphs.PANE_COLOR,
             drawItemHandler = DrawDatagramItem
         };
@@ -151,10 +153,15 @@ internal class SnifferFrame : Tui.Frame {
         if (adjustedY < y || adjustedY > Renderer.LastHeight) return;
 
         TrafficData item = framesList[index];
+        bool isSelected = index == framesList.index;
+
+        int vendorWidth = Math.Max(width - 88, 0);
+        string macString = framesList.shadow.GetKeyByIndex(index).ToFormattedString();
+        string vendorString = MacLookup.Lookup(macString);
 
         Ansi.SetCursorPosition(2, adjustedY);
         
-        if (index == framesList.index) {
+        if (isSelected) {
             Ansi.SetFgColor(framesList.isFocused ? [16, 16, 16] : Glyphs.LIGHT_COLOR);
             Ansi.SetBgColor(framesList.isFocused ? Glyphs.FOCUS_COLOR : Glyphs.HIGHLIGHT_COLOR);
         }
@@ -164,28 +171,25 @@ internal class SnifferFrame : Tui.Frame {
         }
 
         Ansi.Write(' ');
-
-        Ansi.Write(framesList.shadow.GetKeyByIndex(index).ToFormattedString());
+        Ansi.Write(macString);
         Ansi.Write(' ');
 
-        Ansi.Write(Glyphs.ARROW_UP);
-        Ansi.Write(item.packetsTx.ToString());
-        Ansi.Write(' ');
+        Ansi.SetFgColor(Glyphs.LIGHT_COLOR);
+        Ansi.SetBgColor(isSelected ? Glyphs.HIGHLIGHT_COLOR : Glyphs.PANE_COLOR);
 
-        Ansi.Write(Glyphs.ARROW_DOWN);
-        Ansi.Write(item.packetsRx.ToString());
-        Ansi.Write(' ');
+        Ansi.Write("    ");
+
+        if (vendorWidth > 0) {
+            Ansi.Write(vendorString.Length > vendorWidth ? vendorString[..(vendorWidth - 1)] + Glyphs.ELLIPSIS : vendorString.PadRight(vendorWidth));
+        }
+
+        DrawNumber(item.packetsTx, 16, [232, 118, 0]);
+        DrawNumber(item.packetsRx, 16, [232, 118, 0]);
+        DrawBytes(item.bytesTx, 16, [232, 118, 0]);
+        DrawBytes(item.bytesRx, 16, [122, 212, 43]);
 
         Ansi.Write(' ');
-        Ansi.Write(' ');
-
-        Ansi.Write(Glyphs.ARROW_UP);
-        Ansi.Write(item.bytesTx.ToString());
-        Ansi.Write("B ");
-
-        Ansi.Write(Glyphs.ARROW_DOWN);
-        Ansi.Write(item.bytesRx.ToString());
-        Ansi.Write("B");
+        Ansi.SetBgColor(Glyphs.DARK_COLOR);
     }
 
     private void DrawPacketItem(int i, int x, int y, int width) {
@@ -265,6 +269,31 @@ internal class SnifferFrame : Tui.Frame {
 
     private void FiltersDialog() {
 
+    }
+
+    private void DrawNumber(long value, int padding, byte[] color) {
+        string text = value.ToString();
+        Ansi.SetFgColor(color);
+        Ansi.Write(text.PadLeft(padding));
+    }
+
+    private void DrawBytes(long value, int padding, byte[] color) {
+        string text = SizeToString(value);
+        Ansi.SetFgColor(color);
+        Ansi.Write(text.PadLeft(padding));
+    }
+
+    private static string SizeToString(long size) {
+        if (size < 32_768) return $"{size} B ";
+        if (size < 32_768 * 1024) return $"{Math.Floor(size / 1024f)} KB";
+        if (size < 32_768 * Math.Pow(1024, 2)) return $"{Math.Floor(size / Math.Pow(1024, 2))} MB";
+        if (size < 32_768 * Math.Pow(1024, 3)) return $"{Math.Floor(size / Math.Pow(1024, 3))} GB";
+        if (size < 32_768 * Math.Pow(1024, 4)) return $"{Math.Floor(size / Math.Pow(1024, 4))} TB";
+        if (size < 32_768 * Math.Pow(1024, 5)) return $"{Math.Floor(size / Math.Pow(1024, 5))} EB";
+        if (size < 32_768 * Math.Pow(1024, 6)) return $"{Math.Floor(size / Math.Pow(1024, 6))} ZB";
+        if (size < 32_768 * Math.Pow(1024, 7)) return $"{Math.Floor(size / Math.Pow(1024, 7))} YB";
+        if (size < 32_768 * Math.Pow(1024, 8)) return $"{Math.Floor(size / Math.Pow(1024, 8))} BB";
+        return size.ToString();
     }
 }
 

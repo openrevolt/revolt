@@ -37,7 +37,7 @@ public sealed class Tabs(Frame parentFrame) : Element(parentFrame) {
     private int DrawItem(int i, int offset, int top, bool isFocused) {
         int keyIndex = items[i].text.IndexOf(items[i].key, StringComparison.OrdinalIgnoreCase);
 
-        byte[] backgroundColor = i == index ? Glyphs.PANE_COLOR : [24, 24, 24];
+        byte[] backgroundColor = i == index ? Glyphs.PANE_COLOR : [16, 16, 16];
 
         int length = items[i].text.Length + 2 + (String.IsNullOrEmpty(items[i].label) ? 0 : items[i].label.Length + 1);
 

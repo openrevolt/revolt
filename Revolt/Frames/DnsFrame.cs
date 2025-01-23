@@ -38,7 +38,7 @@ public sealed class DnsFrame : Tui.Frame {
             left            = 1,
             right           = 1,
             top             = 1,
-            bottom          = 3,
+            bottom          = 2,
             drawItemHandler = DrawDnsItem
         };
 

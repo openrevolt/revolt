@@ -41,7 +41,7 @@ public sealed class ShadowIndexListBox<TKey, TValue>(Frame parentFrame) : Elemen
         if ((shadow?.Count ?? 0) < height - 1) {
             string blank = new String(' ', width);
             Ansi.SetBgColor(this.backgroundColor);
-            for (int i = shadow?.Count ?? 0; i < height - 1; i++) {
+            for (int i = shadow?.Count ?? 0; i < height; i++) {
                 Ansi.SetCursorPosition(left, top + i);
                 Ansi.Write(blank);
             }
