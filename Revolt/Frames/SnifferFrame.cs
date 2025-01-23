@@ -26,10 +26,6 @@ internal class SnifferFrame : Tui.Frame {
     private ICaptureDevice captureDevice;
     private Sniffer sniffer;
 
-    private bool includeSelfTraffic = true;
-    private bool includePublicIPs   = true;
-    private bool analyzeL4          = true;
-
     public SnifferFrame() {
         tabs = new Tui.Tabs(this) {
             left  = 1,
@@ -131,16 +127,6 @@ internal class SnifferFrame : Tui.Frame {
         }
 
         return true;
-    }
-
-    public override void Draw(int width, int height) {
-        base.Draw(width, height);
-
-        Ansi.SetCursorPosition(2, height - 1);
-        Ansi.SetBgColor(Glyphs.DARK_COLOR);
-        Ansi.SetFgColor(Glyphs.PANE_COLOR);
-        Ansi.Write(new String(Glyphs.UPPER_4_8TH_BLOCK, width - 2));
-        Ansi.Push();
     }
 
     private void DrawFrameItem(int index, int x, int y, int width) {
@@ -269,18 +255,11 @@ internal class SnifferFrame : Tui.Frame {
 
         dialog.okButton.action = () => {
             captureDevice      = dialog.devices[dialog.rangeSelectBox.index];
-            includeSelfTraffic = dialog.includeSelfToggle.Value;
-            includePublicIPs   = dialog.includePublicToggle.Value;
-            analyzeL4          = dialog.l4Toggle.Value;
 
             dialog.Close();
 
             try {
-                sniffer = new Revolt.Sniff.Sniffer(captureDevice) {
-                    includeSelfTraffic = dialog.includeSelfToggle.Value,
-                    includePublicIPs   = dialog.includePublicToggle.Value,
-                    analyzeL4          = dialog.l4Toggle.Value,
-                };
+                sniffer = new Revolt.Sniff.Sniffer(captureDevice);
 
                 framesList.BindDictionary(sniffer.framesCount);
 
@@ -299,9 +278,6 @@ internal class SnifferFrame : Tui.Frame {
         };
 
         dialog.Show(true);
-        dialog.includeSelfToggle.Value   = includeSelfTraffic;
-        dialog.includePublicToggle.Value = includePublicIPs;
-        dialog.l4Toggle.Value            = analyzeL4;
     }
 
     private void StopDialog() {
@@ -329,9 +305,6 @@ internal class SnifferFrame : Tui.Frame {
 
 file sealed class StartDialog : Tui.DialogBox {
     public Tui.SelectBox rangeSelectBox;
-    public Tui.Toggle    includeSelfToggle;
-    public Tui.Toggle    includePublicToggle;
-    public Tui.Toggle    l4Toggle;
 
     public List<ILiveDevice> devices;
 
@@ -361,14 +334,7 @@ file sealed class StartDialog : Tui.DialogBox {
             placeholder = "no nic found"
         };
 
-        includeSelfToggle   = new Tui.Toggle(this, "Include self traffic");
-        includePublicToggle = new Tui.Toggle(this, "Include public IPs");
-        l4Toggle            = new Tui.Toggle(this, "Analyze Layer-4 header");
-
         elements.Add(rangeSelectBox);
-        elements.Add(includeSelfToggle);
-        elements.Add(includePublicToggle);
-        elements.Add(l4Toggle);
 
         defaultElement = rangeSelectBox;
     }
@@ -389,33 +355,6 @@ file sealed class StartDialog : Tui.DialogBox {
         rangeSelectBox.left = left + 5;
         rangeSelectBox.right = Renderer.LastWidth - width - left + 2;
         rangeSelectBox.top = top++ - 1;
-
-
-        Ansi.SetCursorPosition(left, top++);
-        Ansi.Write(blank);
-
-        includeSelfToggle.left = left;
-        includeSelfToggle.top = top - 1;
-        Ansi.SetCursorPosition(left, top++);
-        Ansi.Write(blank);
-
-
-        Ansi.SetCursorPosition(left, top++);
-        Ansi.Write(blank);
-
-        includePublicToggle.left = left;
-        includePublicToggle.top = top - 1;
-        Ansi.SetCursorPosition(left, top++);
-        Ansi.Write(blank);
-
-
-        Ansi.SetCursorPosition(left, top++);
-        Ansi.Write(blank);
-
-        l4Toggle.left = left;
-        l4Toggle.top = top - 1;
-        Ansi.SetCursorPosition(left, top++);
-        Ansi.Write(blank);
 
 
         for (int i = 0; i < 3; i++) {
