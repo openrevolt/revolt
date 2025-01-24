@@ -219,7 +219,7 @@ internal class SnifferFrame : Tui.Frame {
 
         string vendorString;
 
-        if (mac.value == 0xffffffffffff) {
+        if (mac.IsBroadcast()) {
             Ansi.SetFgColor([0, 160, 255]);
             vendorString = "Broadcast";
             Ansi.Write(vendorString.Length > vendorWidth
@@ -227,11 +227,17 @@ internal class SnifferFrame : Tui.Frame {
                 : vendorString.PadRight(vendorWidth));
             Ansi.SetFgColor(Glyphs.LIGHT_COLOR);
         }
-        else if ((mac.value & 0xffffff000000) == 0x01_00_5e_00_00_00 ||
-                 (mac.value & 0xffffff000000) == 0x10_80_c2_00_00_00 ||
-                 (mac.value & 0xffff00000000) == 0x33_33_00_00_00_00) {
+        else if (mac.IsMulticast()) {
             Ansi.SetFgColor([0, 224, 255]);
             vendorString = "Multicast";
+            Ansi.Write(vendorString.Length > vendorWidth
+                ? vendorString[..(vendorWidth - 1)] + Glyphs.ELLIPSIS
+                : vendorString.PadRight(vendorWidth));
+            Ansi.SetFgColor(Glyphs.LIGHT_COLOR);
+        }
+        else if (mac.IsStp()) {
+            Ansi.SetFgColor([0, 255, 255]);
+            vendorString = "STP";
             Ansi.Write(vendorString.Length > vendorWidth
                 ? vendorString[..(vendorWidth - 1)] + Glyphs.ELLIPSIS
                 : vendorString.PadRight(vendorWidth));
