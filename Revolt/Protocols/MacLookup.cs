@@ -1,4 +1,6 @@
-﻿namespace Revolt.Protocols;
+﻿using Revolt;
+
+namespace Revolt.Protocols;
 
 public static partial class MacLookup {
 
@@ -14,13 +16,16 @@ public static partial class MacLookup {
         if (!byte.TryParse(mac[2..4], System.Globalization.NumberStyles.HexNumber, null, out byte b)) return String.Empty;
         if (!byte.TryParse(mac[4..6], System.Globalization.NumberStyles.HexNumber, null, out byte c)) return String.Empty;
 
-        return Lookup([a, b, c]);
+        return Lookup(a, b, c);
     }
 
-    private static string Lookup(byte[] mac) {
-        byte a = mac[0];
-        byte b = mac[1];
-        byte c = mac[2];
+    public static string Lookup(Sniff.Sniffer.Mac mac) {
+        if (table.Length == 0) return String.Empty;
+
+        return Lookup(mac.a, mac.b, mac.c);
+    }
+
+    private static string Lookup(byte a, byte b, byte c) {
 
         (byte, byte, string)[] subArray = table[a];
 

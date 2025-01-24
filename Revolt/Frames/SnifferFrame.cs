@@ -161,6 +161,12 @@ internal class SnifferFrame : Tui.Frame {
     }
 
     private void Tabs_onChange() {
+        bool flag = focusedElement == elements[1];
+
+        if (flag) {
+            focusedElement.Blur(false);
+        }
+
         elements[1] = tabs.index switch {
             2 => framesList,
             3 => packetList,
@@ -168,6 +174,11 @@ internal class SnifferFrame : Tui.Frame {
             5 => datagramList,
             _ => datagramList
         };
+
+        if (flag) {
+            focusedElement = elements[1];
+            elements[1].Focus();
+        }
 
         elements[1].Draw(true);
     }
@@ -183,9 +194,8 @@ internal class SnifferFrame : Tui.Frame {
         TrafficData item = framesList[index];
         bool isSelected = index == framesList.index;
 
-        int vendorWidth = Math.Max(width - 88, 0);
-        string macString = framesList.shadow.GetKeyByIndex(index).ToFormattedString();
-        string vendorString = MacLookup.Lookup(macString);
+        int vendorWidth = Math.Max(width - 72, 0);
+        Mac mac = framesList.shadow.GetKeyByIndex(index);
 
         Ansi.SetCursorPosition(2, adjustedY);
         
@@ -199,7 +209,7 @@ internal class SnifferFrame : Tui.Frame {
         }
 
         Ansi.Write(' ');
-        Ansi.Write(macString);
+        Ansi.Write(mac.ToFormattedString());
         Ansi.Write(' ');
 
         Ansi.SetFgColor(Glyphs.LIGHT_COLOR);
@@ -207,14 +217,39 @@ internal class SnifferFrame : Tui.Frame {
 
         Ansi.Write("    ");
 
-        if (vendorWidth > 0) {
-            Ansi.Write(vendorString.Length > vendorWidth ? vendorString[..(vendorWidth - 1)] + Glyphs.ELLIPSIS : vendorString.PadRight(vendorWidth));
+        string vendorString;
+
+        if (mac.value == 0xffffffffffff) {
+            Ansi.SetFgColor([0, 160, 255]);
+            vendorString = "Broadcast";
+            Ansi.Write(vendorString.Length > vendorWidth
+                ? vendorString[..(vendorWidth - 1)] + Glyphs.ELLIPSIS
+                : vendorString.PadRight(vendorWidth));
+            Ansi.SetFgColor(Glyphs.LIGHT_COLOR);
+        }
+        else if ((mac.value & 0xffffff000000) == 0x01_00_5e_00_00_00 ||
+                 (mac.value & 0xffffff000000) == 0x10_80_c2_00_00_00 ||
+                 (mac.value & 0xffff00000000) == 0x33_33_00_00_00_00) {
+            Ansi.SetFgColor([0, 224, 255]);
+            vendorString = "Multicast";
+            Ansi.Write(vendorString.Length > vendorWidth
+                ? vendorString[..(vendorWidth - 1)] + Glyphs.ELLIPSIS
+                : vendorString.PadRight(vendorWidth));
+            Ansi.SetFgColor(Glyphs.LIGHT_COLOR);
+        }
+        else {
+            vendorString = MacLookup.Lookup(mac);
+            if (vendorWidth > 0) {
+                Ansi.Write(vendorString.Length > vendorWidth
+                    ? vendorString[..(vendorWidth - 1)] + Glyphs.ELLIPSIS
+                    : vendorString.PadRight(vendorWidth));
+            }
         }
 
-        DrawNumber(item.packetsTx, 16, [232, 118, 0]);
-        DrawNumber(item.packetsRx, 16, [122, 212, 43]);
-        DrawBytes(item.bytesTx, 16, [232, 118, 0]);
-        DrawBytes(item.bytesRx, 16, [122, 212, 43]);
+        DrawNumber(item.packetsTx, 12, [232, 118, 0]);
+        DrawNumber(item.packetsRx, 12, [122, 212, 43]);
+        DrawBytes(item.bytesTx, 12, [232, 118, 0]);
+        DrawBytes(item.bytesRx, 12, [122, 212, 43]);
 
         Ansi.Write(' ');
         Ansi.SetBgColor(Glyphs.DARK_COLOR);
@@ -246,23 +281,22 @@ internal class SnifferFrame : Tui.Frame {
         }
 
         Ansi.Write(' ');
-        Ansi.Write(ipString.PadRight(52));
+        Ansi.Write(ipString.PadRight(40));
 
         Ansi.SetFgColor(Glyphs.LIGHT_COLOR);
         Ansi.SetBgColor(isSelected ? Glyphs.HIGHLIGHT_COLOR : Glyphs.PANE_COLOR);
 
-        Ansi.Write(new String(' ', width - 118));
+        Ansi.Write(new String(' ', Math.Max(width - 90, 0)));
 
-        DrawNumber(item.packetsTx, 16, [232, 118, 0]);
-        DrawNumber(item.packetsRx, 16, [122, 212, 43]);
-        DrawBytes(item.bytesTx, 16, [232, 118, 0]);
-        DrawBytes(item.bytesRx, 16, [122, 212, 43]);
+        DrawNumber(item.packetsTx, 12, [232, 118, 0]);
+        DrawNumber(item.packetsRx, 12, [122, 212, 43]);
+        DrawBytes(item.bytesTx, 12, [232, 118, 0]);
+        DrawBytes(item.bytesRx, 12, [122, 212, 43]);
 
         Ansi.Write(' ');
             
         Ansi.SetBgColor(Glyphs.DARK_COLOR);
     }               
-
 
     private void DrawSegmentItem(int i, int x, int y, int width) {
 
