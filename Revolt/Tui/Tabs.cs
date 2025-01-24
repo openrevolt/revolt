@@ -12,6 +12,7 @@ public sealed class Tabs(Frame parentFrame) : Element(parentFrame) {
 
     public TabItem[] items;
     public int index = 0;
+    public Action OnChange;
 
     public override void Draw(bool push) {
         (int left, int top, int width, int _) = GetBounding();
@@ -87,13 +88,39 @@ public sealed class Tabs(Frame parentFrame) : Element(parentFrame) {
             index = Math.Max(0, index - 1);
             if (lastIndex == index) break;
             Draw(true);
+
+            if (OnChange is not null) {
+                OnChange();
+            }
+
             break;
 
         case ConsoleKey.RightArrow:
             index = Math.Min(items.Length - 1, index + 1);
             if (lastIndex == index) break;
             Draw(true);
+
+            if (OnChange is not null) {
+                OnChange();
+            }
+
             break;
         }
+    }
+
+    public void SetIndex(int i) {
+        if (items is null || items.Length == 0) return;
+
+        int lastIndex = index;
+
+        index = Math.Min(i, items.Length - 1);
+
+        if (lastIndex == index) return;
+
+        if (OnChange is not null) {
+            OnChange();
+        }
+
+        Draw(true);
     }
 }

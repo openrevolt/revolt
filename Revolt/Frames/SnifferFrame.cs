@@ -16,12 +16,10 @@ internal class SnifferFrame : Tui.Frame {
     public Tui.Tabs tabs;
     public Tui.Toolbar toolbar;
 
-    public Tui.ShadowIndexListBox<Mac, TrafficData> currentList;
-
-    private Tui.ShadowIndexListBox<Mac, TrafficData> framesList;
+    private Tui.ShadowIndexListBox<Mac, TrafficData>       framesList;
     private Tui.ShadowIndexListBox<IPAddress, TrafficData> packetList;
-    private Tui.ShadowIndexListBox<ushort, TrafficData> segmentList;
-    private Tui.ShadowIndexListBox<ushort, TrafficData> datagramList;
+    private Tui.ShadowIndexListBox<ushort, TrafficData>    segmentList;
+    private Tui.ShadowIndexListBox<ushort, TrafficData>    datagramList;
 
     private ICaptureDevice captureDevice;
     private Sniffer sniffer;
@@ -40,7 +38,8 @@ internal class SnifferFrame : Tui.Frame {
                 new Tui.Tabs.TabItem() { text="Datagrams", key="D" },
                 new Tui.Tabs.TabItem() { text="Overview",  key="O" },
                 new Tui.Tabs.TabItem() { text="Issues",    key="I" },
-            ]
+            ],
+            OnChange = Tabs_onChange
         };
 
         framesList = new Tui.ShadowIndexListBox<Mac, TrafficData>(this) {
@@ -88,13 +87,11 @@ internal class SnifferFrame : Tui.Frame {
             ],
         };
 
-        currentList = framesList;
-
         elements.Add(tabs);
-        elements.Add(currentList);
+        elements.Add(framesList);
         elements.Add(toolbar);
 
-        defaultElement = currentList;
+        defaultElement = framesList;
         FocusNext();
     }
 
@@ -113,6 +110,40 @@ internal class SnifferFrame : Tui.Frame {
             MainMenu.Instance.Show();
             break;
 
+        case ConsoleKey.D3:
+        case ConsoleKey.NumPad3:
+            tabs.SetIndex(0);
+            break;
+
+        case ConsoleKey.D4:
+        case ConsoleKey.NumPad4:
+            tabs.SetIndex(1);
+            break;
+
+        case ConsoleKey.F:
+            tabs.SetIndex(2);
+            break;
+
+        case ConsoleKey.P:
+            tabs.SetIndex(3);
+            break;
+
+        case ConsoleKey.S:
+            tabs.SetIndex(4);
+            break;
+
+        case ConsoleKey.D:
+            tabs.SetIndex(5);
+            break;
+
+        case ConsoleKey.O:
+            tabs.SetIndex(6);
+            break;
+
+        case ConsoleKey.I:
+            tabs.SetIndex(7);
+            break;
+
         case ConsoleKey.F2:
             StartDialog();
             break;
@@ -127,6 +158,18 @@ internal class SnifferFrame : Tui.Frame {
         }
 
         return true;
+    }
+
+    private void Tabs_onChange() {
+        elements[1] = tabs.index switch {
+            2 => framesList,
+            3 => packetList,
+            4 => segmentList,
+            5 => datagramList,
+            _ => datagramList
+        };
+
+        elements[1].Draw(true);
     }
 
     private void DrawFrameItem(int index, int x, int y, int width) {
@@ -177,9 +220,49 @@ internal class SnifferFrame : Tui.Frame {
         Ansi.SetBgColor(Glyphs.DARK_COLOR);
     }
 
-    private void DrawPacketItem(int i, int x, int y, int width) {
+    private void DrawPacketItem(int index, int x, int y, int width) {
+        if (packetList.Count == 0) return;
+        if (index < 0) return;
+        if (index >= packetList.Count) return;
 
-    }
+        int adjustedY = y + index - packetList.scrollOffset;
+        if (adjustedY < y || adjustedY > Renderer.LastHeight) return;
+
+        TrafficData item = packetList[index];
+        bool isSelected = index == packetList.index;
+
+        IPAddress ip       = packetList.shadow.GetKeyByIndex(index);
+        string    ipString = ip.ToString();
+
+        Ansi.SetCursorPosition(2, adjustedY);
+
+        if (isSelected) {
+            Ansi.SetFgColor(packetList.isFocused ? [16, 16, 16] : Glyphs.LIGHT_COLOR);
+            Ansi.SetBgColor(packetList.isFocused ? Glyphs.FOCUS_COLOR : Glyphs.HIGHLIGHT_COLOR);
+        }
+        else {
+            Ansi.SetFgColor(Glyphs.LIGHT_COLOR);
+            Ansi.SetBgColor(Glyphs.PANE_COLOR);
+        }
+
+        Ansi.Write(' ');
+        Ansi.Write(ipString.PadRight(52));
+
+        Ansi.SetFgColor(Glyphs.LIGHT_COLOR);
+        Ansi.SetBgColor(isSelected ? Glyphs.HIGHLIGHT_COLOR : Glyphs.PANE_COLOR);
+
+        Ansi.Write(new String(' ', width - 118));
+
+        DrawNumber(item.packetsTx, 16, [232, 118, 0]);
+        DrawNumber(item.packetsRx, 16, [122, 212, 43]);
+        DrawBytes(item.bytesTx, 16, [232, 118, 0]);
+        DrawBytes(item.bytesRx, 16, [122, 212, 43]);
+
+        Ansi.Write(' ');
+            
+        Ansi.SetBgColor(Glyphs.DARK_COLOR);
+    }               
+
 
     private void DrawSegmentItem(int i, int x, int y, int width) {
 
@@ -233,15 +316,15 @@ internal class SnifferFrame : Tui.Frame {
     }
 
     private static string SizeToString(long size) {
-        if (size < 32_768) return $"{size} B ";
-        if (size < 32_768 * 1024) return $"{Math.Floor(size / 1024f)} KB";
-        if (size < 32_768 * Math.Pow(1024, 2)) return $"{Math.Floor(size / Math.Pow(1024, 2))} MB";
-        if (size < 32_768 * Math.Pow(1024, 3)) return $"{Math.Floor(size / Math.Pow(1024, 3))} GB";
-        if (size < 32_768 * Math.Pow(1024, 4)) return $"{Math.Floor(size / Math.Pow(1024, 4))} TB";
-        if (size < 32_768 * Math.Pow(1024, 5)) return $"{Math.Floor(size / Math.Pow(1024, 5))} EB";
-        if (size < 32_768 * Math.Pow(1024, 6)) return $"{Math.Floor(size / Math.Pow(1024, 6))} ZB";
-        if (size < 32_768 * Math.Pow(1024, 7)) return $"{Math.Floor(size / Math.Pow(1024, 7))} YB";
-        if (size < 32_768 * Math.Pow(1024, 8)) return $"{Math.Floor(size / Math.Pow(1024, 8))} BB";
+        if (size < 65_536) return $"{size} B ";
+        if (size < 65_536 * 1024) return $"{Math.Floor(size / 1024f)} KB";
+        if (size < 65_536 * Math.Pow(1024, 2)) return $"{Math.Floor(size / Math.Pow(1024, 2))} MB";
+        if (size < 65_536 * Math.Pow(1024, 3)) return $"{Math.Floor(size / Math.Pow(1024, 3))} GB";
+        if (size < 65_536 * Math.Pow(1024, 4)) return $"{Math.Floor(size / Math.Pow(1024, 4))} TB";
+        if (size < 65_536 * Math.Pow(1024, 5)) return $"{Math.Floor(size / Math.Pow(1024, 5))} EB";
+        if (size < 65_536 * Math.Pow(1024, 6)) return $"{Math.Floor(size / Math.Pow(1024, 6))} ZB";
+        if (size < 65_536 * Math.Pow(1024, 7)) return $"{Math.Floor(size / Math.Pow(1024, 7))} YB";
+        if (size < 65_536 * Math.Pow(1024, 8)) return $"{Math.Floor(size / Math.Pow(1024, 8))} BB";
         return size.ToString();
     }
 
@@ -262,6 +345,7 @@ internal class SnifferFrame : Tui.Frame {
                 sniffer = new Revolt.Sniff.Sniffer(captureDevice);
 
                 framesList.BindDictionary(sniffer.framesCount);
+                packetList.BindDictionary(sniffer.packetCount);
 
                 sniffer.Start();
             }

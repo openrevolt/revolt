@@ -275,13 +275,12 @@ public sealed class NetMapperFrame : Tui.Frame {
 
             toolbar.items[0].text = "Discover";
             toolbar.items[1].disabled = false;
-            toolbar.Draw(true);
+
+            if (Renderer.ActiveDialog is null && Renderer.ActiveFrame == this) {
+                list.Draw(true);
+                toolbar.Draw(true);
+            }
         }
-
-        if (Renderer.ActiveDialog is not null) return;
-        if (Renderer.ActiveFrame != this) return;
-
-        list.Draw(true);
     }
 
     private async Task DiscoverIcmp(CancellationToken cancellationToken) {

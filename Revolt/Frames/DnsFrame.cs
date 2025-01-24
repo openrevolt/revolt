@@ -20,7 +20,7 @@ public sealed class DnsFrame : Tui.Frame {
     public Tui.ListBox<DnsItem> list;
     public Tui.Toolbar toolbar;
 
-    private readonly List<string> queryHistory = [];
+    private readonly List<string> queryHistory     = [];
     private Dns.RecordType        type             = Dns.RecordType.A;
     private Dns.TransportMethod   transport        = Dns.TransportMethod.Auto;
     private string                server           = null;

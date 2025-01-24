@@ -36,15 +36,16 @@ public sealed class ListBox<T>(Frame parentFrame) : Element(parentFrame) {
 
     private void CalculateScrollOffset(int height) {
         int visibleItems = height / itemHeight;
+        int calculatedIndex = Math.Max(index, 0);
 
         if (items.Count <= visibleItems) {
             scrollOffset = 0;
         }
-        else if (index < scrollOffset) {
-            scrollOffset = index;
+        else if (calculatedIndex < scrollOffset) {
+            scrollOffset = calculatedIndex;
         }
-        else if (index >= scrollOffset + visibleItems) {
-            scrollOffset = index - visibleItems + 1;
+        else if (calculatedIndex >= scrollOffset + visibleItems) {
+            scrollOffset = calculatedIndex - visibleItems + 1;
         }
 
         int maxScrollOffset = Math.Max(0, items.Count - visibleItems);
@@ -130,7 +131,6 @@ public sealed class ListBox<T>(Frame parentFrame) : Element(parentFrame) {
 
     public void Add(T item) {
         items.Add(item);
-        //index = items.Count - 1;
     }
 
     public void Remove(T item) {

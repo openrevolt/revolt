@@ -1,4 +1,5 @@
 ﻿using System.Collections.Concurrent;
+using System.Collections.Generic;
 using System.Diagnostics;
 using System.Net;
 using System.Net.NetworkInformation;
@@ -7,10 +8,6 @@ using SharpPcap;
 namespace Revolt.Sniff;
 
 public sealed partial class Sniffer : IDisposable {
-    public bool includeSelfTraffic = true;
-    public bool includePublicIPs   = true;
-    public bool analyzeL4          = true;
-
     public IndexedDictionary<Mac, TrafficData>       framesCount   = new IndexedDictionary<Mac, TrafficData>();
     public IndexedDictionary<IPAddress, TrafficData> packetCount   = new IndexedDictionary<IPAddress, TrafficData>();
     public IndexedDictionary<ushort, TrafficData>    segmentCount  = new IndexedDictionary<ushort, TrafficData>();
@@ -64,7 +61,7 @@ public sealed partial class Sniffer : IDisposable {
         Mac    destinationMac       = Mac.Parse(buffer, 6);
         ushort networkProtocol      = (ushort)(buffer[12] << 8 | buffer[13]);
 
-        ushort    size              = default;
+        ushort    l3Size            = default;
         byte      ttl               = default;
         byte      transportProtocol = default;
         byte      ihl               = default;
@@ -76,11 +73,11 @@ public sealed partial class Sniffer : IDisposable {
 
         switch ((NetworkProtocol)networkProtocol) {
         case NetworkProtocol.IPv4:
-            (size, ttl, transportProtocol, ihl, sourceIP, destinationIP) = HandleV4Packet(buffer, 14);
+            (l3Size, ttl, transportProtocol, ihl, sourceIP, destinationIP) = HandleV4Packet(buffer, 14);
             break;
 
         case NetworkProtocol.IPv6:
-            (size, ttl, transportProtocol, sourceIP, destinationIP) = HandleV6Packet(buffer, 14);
+            (l3Size, ttl, transportProtocol, sourceIP, destinationIP) = HandleV6Packet(buffer, 14);
             ihl = 40;
             break;
 
@@ -89,22 +86,20 @@ public sealed partial class Sniffer : IDisposable {
             break;
         }
 
-        if (analyzeL4) {
-            switch ((TransportProtocol)transportProtocol) {
-            case TransportProtocol.ICMP:
-                break;
+        /*switch ((TransportProtocol)transportProtocol) {
+        case TransportProtocol.ICMP:
+            break;
 
-            case TransportProtocol.TCP:
-                break;
+        case TransportProtocol.TCP:
+            break;
 
-            case TransportProtocol.UDP:
-                break;
-            }
-        }
+        case TransportProtocol.UDP:
+            break;
+        }*/
 
         Frame frame = new Frame() {
             timestamp         = timestamp,
-            size              = size,
+            size              = l3Size,
 
             sourceMac         = sourceMac,
             destinationMac    = destinationMac,
@@ -144,32 +139,57 @@ public sealed partial class Sniffer : IDisposable {
                 return traffic;
             }
         );
+
+        if (sourceIP is not null) {
+            packetCount.AddOrUpdate(
+                sourceIP,
+                new TrafficData() { bytesRx = 0, bytesTx = l3Size, packetsRx = 0, packetsTx = 1 },
+                (ip, traffic) => {
+                    Interlocked.Add(ref traffic.bytesTx, l3Size);
+                    Interlocked.Increment(ref traffic.packetsTx);
+                    return traffic;
+                }
+            );
+        }
+
+        if (destinationIP is not null) {
+            packetCount.AddOrUpdate(
+                destinationIP,
+                new TrafficData() { bytesRx = l3Size, bytesTx = 0, packetsRx = 1, packetsTx = 0 },
+                (ip, traffic) => {
+                    Interlocked.Add(ref traffic.bytesRx, l3Size);
+                    Interlocked.Increment(ref traffic.packetsRx);
+                    return traffic;
+                }
+            );
+        }
+
     }
 
-    private (ushort, byte, byte, byte, IPAddress, IPAddress) HandleV4Packet(byte[] buffer, uint offset) {
+    private (ushort, byte, byte, byte, IPAddress, IPAddress) HandleV4Packet(byte[] buffer, int offset) {
         if (buffer.Length < 20) return (0, 0, 0, 0, default, default); //invalid traffic
 
-        byte ihl        = (byte)(buffer[0] & 0x0F << 2);
-        ushort size     = (ushort)(buffer[2] << 8 | buffer[3]);
-        byte   ttl      = buffer[8];
-        byte   protocol = buffer[9];
-        //ushort checksum = (ushort)(buffer[10] << 8 | buffer[11]);
+        byte   ihl      = (byte)(buffer[offset] & 0x0F << 2);
+        ushort size     = (ushort)(buffer[offset+2] << 8 | buffer[offset+3]);
+        byte   ttl      = buffer[offset+8];
+        byte   protocol = buffer[offset+9];
+        //ushort checksum = (ushort)(buffer[offset+10] << 8 | buffer[offset+11]);
 
-        IPAddress source      = new IPAddress(buffer.AsSpan(12, 4));
-        IPAddress destination = new IPAddress(buffer.AsSpan(16, 4));
+        IPAddress source      = new IPAddress(buffer.AsSpan(offset+12, 4));
+        IPAddress destination = new IPAddress(buffer.AsSpan(offset+16, 4));
 
         return (size, protocol, ttl, ihl, source, destination);
     }
 
-    private (ushort, byte, byte, IPAddress, IPAddress) HandleV6Packet(byte[] buffer, uint offset) {
+    private (ushort, byte, byte, IPAddress, IPAddress) HandleV6Packet(byte[] buffer, int offset) {
         if (buffer.Length < 40) return (0, 0, 0, default, default); //invalid traffic
 
-        ushort size     = (ushort)((buffer[4] << 8 | buffer[5]) + 40);
-        byte   protocol = buffer[6];
-        byte   ttl      = buffer[7];
+        ushort size     = (ushort)((buffer[offset+4] << 8 | buffer[offset+5]) + 40);
+        byte   protocol = buffer[offset+6];
+        byte   ttl      = buffer[offset+7];
 
-        IPAddress source      = new IPAddress(buffer.AsSpan(8, 16));
-        IPAddress destination = new IPAddress(buffer.AsSpan(24, 16));
+        IPAddress source      = new IPAddress(buffer.AsSpan(offset+8, 16));
+        IPAddress destination = new IPAddress(buffer.AsSpan(offset+24, 16));
 
         return (size, ttl, protocol, source, destination);
     }

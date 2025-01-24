@@ -54,15 +54,16 @@ public sealed class ShadowIndexListBox<TKey, TValue>(Frame parentFrame) : Elemen
 
     private void CalculateScrollOffset(int height) {
         int visibleItems = height;
+        int calculatedIndex = Math.Max(index, 0);
 
         if (shadow?.Count <= visibleItems) {
             scrollOffset = 0;
         }
-        else if (index < scrollOffset) {
-            scrollOffset = index;
+        else if (calculatedIndex < scrollOffset) {
+            scrollOffset = calculatedIndex;
         }
-        else if (index >= scrollOffset + visibleItems) {
-            scrollOffset = index - visibleItems + 1;
+        else if (calculatedIndex >= scrollOffset + visibleItems) {
+            scrollOffset = calculatedIndex - visibleItems + 1;
         }
 
         int maxScrollOffset = Math.Max(0, (shadow?.Count ?? 0) - visibleItems);
