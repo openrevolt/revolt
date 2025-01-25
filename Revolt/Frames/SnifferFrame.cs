@@ -277,9 +277,9 @@ internal class SnifferFrame : Tui.Frame {
         TrafficData item = packetList[index];
         bool isSelected = index == packetList.index;
 
-        IPAddress ip       = packetList.shadow.GetKeyByIndex(index);
+        IPAddress ip       = packetList.shadow.GetKeyByIndex(index) ?? new IPAddress(0);
         string    ipString = ip.ToString();
-
+        
         int noteWidth = Math.Max(width - 93, 0);
 
         Ansi.SetCursorPosition(2, adjustedY);
@@ -324,7 +324,7 @@ internal class SnifferFrame : Tui.Frame {
             }
             else {
                 Ansi.SetFgColor([128, 128, 128]);
-                noteString = "Public";
+                noteString = String.Empty;
             }
         }
         else if (ip.AddressFamily == System.Net.Sockets.AddressFamily.InterNetworkV6) {
