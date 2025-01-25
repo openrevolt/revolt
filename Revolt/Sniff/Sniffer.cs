@@ -36,15 +36,15 @@ public sealed partial class Sniffer : IDisposable {
     }
 
     public void Start() {
-        device.OnPacketArrival += Device_onPacketArrival;
+        device.OnPacketArrival += Device_OnPacketArrival;
         device.Open();
         device.StartCapture();
     }
 
-    private void Device_onPacketArrival(object sender, SharpPcap.PacketCapture e) {
+    private void Device_OnPacketArrival(object sender, SharpPcap.PacketCapture e) {
         RawCapture rawPacket = e.GetPacket();
         byte[] buffer = rawPacket.Data;
-        HandleFrames(buffer);
+        HandlePacket(buffer);
     }
 
     public void Stop() {
@@ -54,7 +54,7 @@ public sealed partial class Sniffer : IDisposable {
         device = null;
     }
 
-    private void HandleFrames(byte[] buffer) {
+    private void HandlePacket(byte[] buffer) {
         long timestamp = Stopwatch.GetTimestamp();
 
         Mac    sourceMac            = Mac.Parse(buffer, 0);
@@ -122,20 +122,22 @@ public sealed partial class Sniffer : IDisposable {
 
         framesCount.AddOrUpdate(
             sourceMac,
-            new TrafficData() { bytesRx=0, bytesTx=buffer.Length, packetsRx=0, packetsTx=1 },
+            new TrafficData() { bytesRx=0, bytesTx=buffer.Length, packetsRx=0, packetsTx=1, lastActivity=timestamp },
             (mac, traffic) => {
                 Interlocked.Add(ref traffic.bytesTx, buffer.Length);
                 Interlocked.Increment(ref traffic.packetsTx);
+                traffic.lastActivity = timestamp;
                 return traffic;
             }
         );
 
         framesCount.AddOrUpdate(
             destinationMac,
-            new TrafficData() { bytesRx= buffer.Length, bytesTx=0, packetsRx=1, packetsTx=0 },
+            new TrafficData() { bytesRx= buffer.Length, bytesTx=0, packetsRx=1, packetsTx=0, lastActivity = timestamp },
             (mac, traffic) => {
                 Interlocked.Add(ref traffic.bytesRx, buffer.Length);
                 Interlocked.Increment(ref traffic.packetsRx);
+                traffic.lastActivity = timestamp;
                 return traffic;
             }
         );
@@ -143,10 +145,11 @@ public sealed partial class Sniffer : IDisposable {
         if (sourceIP is not null) {
             packetCount.AddOrUpdate(
                 sourceIP,
-                new TrafficData() { bytesRx = 0, bytesTx = l3Size, packetsRx = 0, packetsTx = 1 },
+                new TrafficData() { bytesRx = 0, bytesTx = l3Size, packetsRx = 0, packetsTx = 1, lastActivity = timestamp },
                 (ip, traffic) => {
                     Interlocked.Add(ref traffic.bytesTx, l3Size);
                     Interlocked.Increment(ref traffic.packetsTx);
+                    traffic.lastActivity = timestamp;
                     return traffic;
                 }
             );
@@ -155,10 +158,11 @@ public sealed partial class Sniffer : IDisposable {
         if (destinationIP is not null) {
             packetCount.AddOrUpdate(
                 destinationIP,
-                new TrafficData() { bytesRx = l3Size, bytesTx = 0, packetsRx = 1, packetsTx = 0 },
+                new TrafficData() { bytesRx = l3Size, bytesTx = 0, packetsRx = 1, packetsTx = 0, lastActivity = timestamp },
                 (ip, traffic) => {
                     Interlocked.Add(ref traffic.bytesRx, l3Size);
                     Interlocked.Increment(ref traffic.packetsRx);
+                    traffic.lastActivity = timestamp;
                     return traffic;
                 }
             );

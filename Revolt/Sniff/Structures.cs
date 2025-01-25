@@ -52,19 +52,18 @@ public sealed partial class Sniffer {
             buffer[16] = macLookup[f & 0xF];
             return new string(buffer);
         }
+
         public bool IsBroadcast() =>
             value == 0xffffffffffff;
 
-        public bool IsMulticast() =>
-            (value & 0xffffff000000) == 0x01_00_5e_00_00_00 ||
-            (value & 0xffffff000000) == 0x10_80_c2_00_00_00 ||
-            (value & 0xffff00000000) == 0x33_33_00_00_00_00;
-
-        public bool IsStp() =>
+        public bool IsEthernetMulticast() =>
             (value & 0xffffff000000) == 0x01_80_c2_00_00_00;
 
-        public bool IsLocallyAdministeredMac() =>
-            (value & 0x020000000000) != 0;
+        public bool IsPVv4Multicast() =>
+            (value & 0xffffff000000) == 0x01_00_5e_00_00_00;
+
+        public bool IsPVv6Multicast() =>
+            (value & 0xffff00000000) == 0x33_33_00_00_00_00;
 
     }
 
@@ -94,5 +93,6 @@ public sealed partial class Sniffer {
         public long bytesTx;
         public long packetsRx;
         public long packetsTx;
+        public long lastActivity;
     }
 }

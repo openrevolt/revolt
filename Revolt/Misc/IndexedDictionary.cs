@@ -49,11 +49,13 @@ public class IndexedDictionary<TKey, TValue>
 
     public TKey GetKeyByIndex(long index) {
         if (!_indexMapping.TryGetValue(index, out TValue item)) {
-            throw new KeyNotFoundException($"Index '{index}' not found.");
+            return default;
+            //throw new KeyNotFoundException($"Index '{index}' not found.");
         }
 
         if (!_reverseLookup.TryGetValue(item, out TKey key)) {
-            throw new KeyNotFoundException("Reverse mapping corrupted.");
+            return default;
+            //throw new KeyNotFoundException("Reverse mapping corrupted.");
         }
 
         return key;

@@ -1,4 +1,5 @@
 ﻿using System.Collections.Generic;
+using System.Diagnostics;
 using System.Net;
 using Revolt.Protocols;
 using Revolt.Sniff;
@@ -194,7 +195,7 @@ internal class SnifferFrame : Tui.Frame {
         TrafficData item = framesList[index];
         bool isSelected = index == framesList.index;
 
-        int vendorWidth = Math.Max(width - 72, 0);
+        int vendorWidth = Math.Max(width - 74, 0);
         Mac mac = framesList.shadow.GetKeyByIndex(index);
 
         Ansi.SetCursorPosition(2, adjustedY);
@@ -222,40 +223,44 @@ internal class SnifferFrame : Tui.Frame {
         if (mac.IsBroadcast()) {
             Ansi.SetFgColor([0, 160, 255]);
             vendorString = "Broadcast";
-            Ansi.Write(vendorString.Length > vendorWidth
-                ? vendorString[..(vendorWidth - 1)] + Glyphs.ELLIPSIS
-                : vendorString.PadRight(vendorWidth));
-            Ansi.SetFgColor(Glyphs.LIGHT_COLOR);
         }
-        else if (mac.IsMulticast()) {
+        else if (mac.IsEthernetMulticast()) {
             Ansi.SetFgColor([0, 224, 255]);
-            vendorString = "Multicast";
-            Ansi.Write(vendorString.Length > vendorWidth
-                ? vendorString[..(vendorWidth - 1)] + Glyphs.ELLIPSIS
-                : vendorString.PadRight(vendorWidth));
-            Ansi.SetFgColor(Glyphs.LIGHT_COLOR);
+            vendorString = "Ethernet multicast";
         }
-        else if (mac.IsStp()) {
+        else if (mac.IsPVv4Multicast()) {
             Ansi.SetFgColor([0, 255, 255]);
-            vendorString = "STP";
-            Ansi.Write(vendorString.Length > vendorWidth
-                ? vendorString[..(vendorWidth - 1)] + Glyphs.ELLIPSIS
-                : vendorString.PadRight(vendorWidth));
-            Ansi.SetFgColor(Glyphs.LIGHT_COLOR);
+            vendorString = "IPv4 multicast";
+        }
+        else if (mac.IsPVv6Multicast()) {
+            Ansi.SetFgColor([0, 255, 255]);
+            vendorString = "IPv6 multicast";
         }
         else {
             vendorString = MacLookup.Lookup(mac);
-            if (vendorWidth > 0) {
-                Ansi.Write(vendorString.Length > vendorWidth
-                    ? vendorString[..(vendorWidth - 1)] + Glyphs.ELLIPSIS
-                    : vendorString.PadRight(vendorWidth));
-            }
+        }
+
+        if (vendorWidth > 0) {
+            Ansi.Write(vendorString.Length > vendorWidth
+            ? vendorString[..(vendorWidth - 1)] + Glyphs.ELLIPSIS
+            : vendorString.PadRight(vendorWidth));
         }
 
         DrawNumber(item.packetsTx, 12, [232, 118, 0]);
         DrawNumber(item.packetsRx, 12, [122, 212, 43]);
         DrawBytes(item.bytesTx, 12, [232, 118, 0]);
         DrawBytes(item.bytesRx, 12, [122, 212, 43]);
+
+        long now = Stopwatch.GetTimestamp();
+        long delta = now - item.lastActivity;
+        if (delta < 100_000_000) {
+            byte b = (byte)(255 - delta * 223 / 100_000_000);
+            Ansi.SetFgColor([b, 32, 32]);
+            Ansi.Write($" {Glyphs.BULLET}");
+        }
+        else {
+            Ansi.Write("  ");
+        }
 
         Ansi.Write(' ');
         Ansi.SetBgColor(Glyphs.DARK_COLOR);
@@ -275,6 +280,8 @@ internal class SnifferFrame : Tui.Frame {
         IPAddress ip       = packetList.shadow.GetKeyByIndex(index);
         string    ipString = ip.ToString();
 
+        int noteWidth = Math.Max(width - 93, 0);
+
         Ansi.SetCursorPosition(2, adjustedY);
 
         if (isSelected) {
@@ -292,17 +299,94 @@ internal class SnifferFrame : Tui.Frame {
         Ansi.SetFgColor(Glyphs.LIGHT_COLOR);
         Ansi.SetBgColor(isSelected ? Glyphs.HIGHLIGHT_COLOR : Glyphs.PANE_COLOR);
 
-        Ansi.Write(new String(' ', Math.Max(width - 90, 0)));
+        string noteString;
+        if (IPAddress.IsLoopback(ip)) {
+            Ansi.SetFgColor([0, 255, 255]);
+            noteString = "Loopback";
+        }
+        else if (ip.AddressFamily == System.Net.Sockets.AddressFamily.InterNetwork) {
+            byte[] bytes = ip.GetAddressBytes();
+            if (bytes.All(o => o == 255)) {
+                Ansi.SetFgColor([0, 160, 255]);
+                noteString = "Broadcast";
+            }
+            else if (bytes[0] > 223 && bytes[0] < 240) {
+                Ansi.SetFgColor([0, 255, 255]);
+                noteString = "Multicast";
+            }
+            else if (ip.IsApipa()) {
+                Ansi.SetFgColor([128, 128, 128]);
+                noteString = "APIPA";
+            }
+            else if (ip.IsPrivate()) {
+                Ansi.SetFgColor([128, 128, 128]);
+                noteString = "Private";
+            }
+            else {
+                Ansi.SetFgColor([128, 128, 128]);
+                noteString = "Public";
+            }
+        }
+        else if (ip.AddressFamily == System.Net.Sockets.AddressFamily.InterNetworkV6) {
+            if (ip.IsIPv6Multicast) {
+                Ansi.SetFgColor([0, 255, 255]);
+                noteString = "Multicast";
+            }
+            else if (ip.IsIPv6Teredo) {
+                Ansi.SetFgColor([128, 128, 128]);
+                noteString = "Teredo";
+            }
+            else if (ip.IsIPv4MappedToIPv6) {
+                Ansi.SetFgColor([128, 128, 128]);
+                noteString = "Mapped IPv4";
+            }
+            else if (ip.IsIPv6UniqueLocal) {
+                Ansi.SetFgColor([128, 128, 128]);
+                noteString = "Unique local";
+            }
+            else if (ip.IsIPv6LinkLocal) {
+                Ansi.SetFgColor([128, 128, 128]);
+                noteString = "Link local";
+            }
+            else if (ip.IsIPv6SiteLocal) {
+                byte b = 255;
+                Ansi.SetFgColor([b, 32, 32]);
+                noteString = "Site local";
+            }
+            else {
+                noteString = String.Empty;
+            }
+        }
+        else {
+            noteString = String.Empty;
+        }
+
+        if (noteWidth > 0) {
+            Ansi.Write(' ');
+            Ansi.Write(noteString.Length > noteWidth
+            ? noteString[..(noteWidth - 1)] + Glyphs.ELLIPSIS
+            : noteString.PadRight(noteWidth));
+        }
 
         DrawNumber(item.packetsTx, 12, [232, 118, 0]);
         DrawNumber(item.packetsRx, 12, [122, 212, 43]);
         DrawBytes(item.bytesTx, 12, [232, 118, 0]);
         DrawBytes(item.bytesRx, 12, [122, 212, 43]);
 
+        long now = Stopwatch.GetTimestamp();
+        long delta = now - item.lastActivity;
+        if (delta < 100_000_000) {
+            byte b = (byte)(255 - delta * 223 / 100_000_000);
+            Ansi.SetFgColor([b, 32, 32]);
+            Ansi.Write($" {Glyphs.BULLET}");
+        }
+        else {
+            Ansi.Write("  ");
+        }
+
         Ansi.Write(' ');
-            
         Ansi.SetBgColor(Glyphs.DARK_COLOR);
-    }               
+    }
 
     private void DrawSegmentItem(int i, int x, int y, int width) {
 

@@ -34,6 +34,8 @@ public static class Glyphs {
 
     public const char LEFT_TRIANGLE  = '\u25C2';
     public const char RIGHT_TRIANGLE = '\u25B8';
+    
+    public const char BULLET = '\u2B24';
 
     public const char TOGGLE_BOX = '\u25A0';
 
