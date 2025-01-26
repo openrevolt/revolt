@@ -1,5 +1,4 @@
 ﻿using System.Collections.Generic;
-using System.Diagnostics;
 using System.Net;
 using System.Reflection;
 using Revolt.Protocols;
@@ -570,11 +569,11 @@ internal class SnifferFrame : Tui.Frame {
         DrawBytes(traffic.bytesTx, 12, [232, 118, 0]);
         DrawBytes(traffic.bytesRx, 12, [122, 212, 43]);
 
-        long now = Stopwatch.GetTimestamp();
+        long now = DateTime.UtcNow.Ticks;
         long delta = now - traffic.lastActivity;
         if (delta < 100_000_000) {
-            byte b = (byte)(255 - delta * 223 / 100_000_000);
-            Ansi.SetFgColor([b, 32, 32]);
+            byte r = (byte)(255 - delta * 223 / 100_000_000);
+            Ansi.SetFgColor([r, 32, 32]);
             Ansi.Write($" {Glyphs.BULLET}");
         }
         else {

@@ -1,6 +1,5 @@
 ﻿using System.Collections.Concurrent;
 using System.Collections.Generic;
-using System.Diagnostics;
 using System.Net;
 using System.Net.NetworkInformation;
 using SharpPcap;
@@ -44,7 +43,7 @@ public sealed partial class Sniffer : IDisposable {
     private void Device_OnPacketArrival(object sender, SharpPcap.PacketCapture e) {
         RawCapture rawPacket = e.GetPacket();
         byte[] buffer = rawPacket.Data;
-        HandlePacket(buffer);
+        HandlePacket(buffer, rawPacket.Timeval.Date.Ticks);
     }
 
     public void Stop() {
@@ -54,9 +53,7 @@ public sealed partial class Sniffer : IDisposable {
         device = null;
     }
 
-    private void HandlePacket(byte[] buffer) {
-        long timestamp = Stopwatch.GetTimestamp();
-
+    private void HandlePacket(byte[] buffer, long timestamp) {
         Mac    sourceMac            = Mac.Parse(buffer, 0);
         Mac    destinationMac       = Mac.Parse(buffer, 6);
         ushort networkProtocol      = (ushort)(buffer[12] << 8 | buffer[13]);
@@ -74,15 +71,15 @@ public sealed partial class Sniffer : IDisposable {
         switch ((NetworkProtocol)networkProtocol) {
         case NetworkProtocol.IPv4:
             (l3Size, ttl, transportProtocol, ihl, sourceIP, destinationIP) = HandleV4Packet(buffer, 14);
+            Interlocked.Add(ref transportBytes[transportProtocol], buffer.Length);
+            Interlocked.Increment(ref transportPackets[transportProtocol]);
             break;
 
         case NetworkProtocol.IPv6:
             (l3Size, ttl, transportProtocol, sourceIP, destinationIP) = HandleV6Packet(buffer, 14);
             ihl = 40;
-            break;
-
-        default:
-            //TODO:
+            Interlocked.Add(ref transportBytes[transportProtocol], buffer.Length);
+            Interlocked.Increment(ref transportPackets[transportProtocol]);
             break;
         }
 
@@ -229,9 +226,6 @@ public sealed partial class Sniffer : IDisposable {
                 return count;
             }
         );
-
-        Interlocked.Add(ref transportBytes[transportProtocol], buffer.Length);
-        Interlocked.Increment(ref transportPackets[transportProtocol]);
     }
 
     private (ushort, byte, byte, byte, IPAddress, IPAddress) HandleV4Packet(byte[] buffer, int offset) {
