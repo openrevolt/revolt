@@ -95,4 +95,9 @@ public sealed partial class Sniffer {
         public long packetsTx;
         public long lastActivity;
     }
+
+    public class Count {
+        public long bytes;
+        public long packets;
+    }
 }

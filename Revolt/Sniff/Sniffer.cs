@@ -13,14 +13,13 @@ public sealed partial class Sniffer : IDisposable {
     public IndexedDictionary<ushort, TrafficData>    segmentCount  = new IndexedDictionary<ushort, TrafficData>();
     public IndexedDictionary<ushort, TrafficData>    datagramCount = new IndexedDictionary<ushort, TrafficData>();
 
+    public IndexedDictionary<ushort, Count> networkCount = new IndexedDictionary<ushort, Count>();
+
+    public long[] transportBytes   = new long[256];
+    public long[] transportPackets = new long[256];
+
     private ulong frameIndex = 0;
     private ConcurrentDictionary<ulong, Frame> frames = new ConcurrentDictionary<ulong, Frame>();
-
-    private ConcurrentDictionary<ushort, long> networkBytes   = new ConcurrentDictionary<ushort, long>();
-    private ConcurrentDictionary<ushort, long> networkPackets = new ConcurrentDictionary<ushort, long>();
-
-    private long[] transportBytes   = new long[256];
-    private long[] transportPackets = new long[256];
 
     public long bytesRx=0, bytesTx=0, packetsRx=0, packetsTx=0;
 
@@ -112,9 +111,9 @@ public sealed partial class Sniffer : IDisposable {
         if (sourceIP is not null && destinationIP is not null) {
             packetCount.AddOrUpdate(
                 sourceIP,
-                new TrafficData() { bytesRx = 0, bytesTx = l3Size, packetsRx = 0, packetsTx = 1, lastActivity = timestamp },
+                new TrafficData() { bytesRx = 0, bytesTx = buffer.Length, packetsRx = 0, packetsTx = 1, lastActivity = timestamp },
                 (ip, traffic) => {
-                    Interlocked.Add(ref traffic.bytesTx, l3Size);
+                    Interlocked.Add(ref traffic.bytesTx, buffer.Length);
                     Interlocked.Increment(ref traffic.packetsTx);
                     traffic.lastActivity = timestamp;
                     return traffic;
@@ -123,9 +122,9 @@ public sealed partial class Sniffer : IDisposable {
 
             packetCount.AddOrUpdate(
                 destinationIP,
-                new TrafficData() { bytesRx = l3Size, bytesTx = 0, packetsRx = 1, packetsTx = 0, lastActivity = timestamp },
+                new TrafficData() { bytesRx = buffer.Length, bytesTx = 0, packetsRx = 1, packetsTx = 0, lastActivity = timestamp },
                 (ip, traffic) => {
-                    Interlocked.Add(ref traffic.bytesRx, l3Size);
+                    Interlocked.Add(ref traffic.bytesRx, buffer.Length);
                     Interlocked.Increment(ref traffic.packetsRx);
                     traffic.lastActivity = timestamp;
                     return traffic;
@@ -134,14 +133,14 @@ public sealed partial class Sniffer : IDisposable {
 
             switch ((TransportProtocol)transportProtocol) {
             case TransportProtocol.TCP: {
-                (sourcePort, destinationPort, ushort l4size) = HandleSegment(buffer, 14 + ihl);
+                (sourcePort, destinationPort, _) = HandleSegment(buffer, 14 + ihl);
 
                 if (sourcePort < 49152) {
                     segmentCount.AddOrUpdate(
                         sourcePort,
-                        new TrafficData() { bytesRx = 0, bytesTx = l4size, packetsRx = 0, packetsTx = 1, lastActivity = timestamp },
+                        new TrafficData() { bytesRx = 0, bytesTx = buffer.Length, packetsRx = 0, packetsTx = 1, lastActivity = timestamp },
                         (port, traffic) => {
-                            Interlocked.Add(ref traffic.bytesTx, l4size);
+                            Interlocked.Add(ref traffic.bytesTx, buffer.Length);
                             Interlocked.Increment(ref traffic.packetsTx);
                             traffic.lastActivity = timestamp;
                             return traffic;
@@ -152,9 +151,9 @@ public sealed partial class Sniffer : IDisposable {
                 if (destinationPort < 49152) {
                     segmentCount.AddOrUpdate(
                         destinationPort,
-                        new TrafficData() { bytesRx = l4size, bytesTx = 0, packetsRx = 1, packetsTx = 0, lastActivity = timestamp },
+                        new TrafficData() { bytesRx = buffer.Length, bytesTx = 0, packetsRx = 1, packetsTx = 0, lastActivity = timestamp },
                         (port, traffic) => {
-                            Interlocked.Add(ref traffic.bytesRx, l4size);
+                            Interlocked.Add(ref traffic.bytesRx, buffer.Length);
                             Interlocked.Increment(ref traffic.packetsRx);
                             traffic.lastActivity = timestamp;
                             return traffic;
@@ -165,14 +164,14 @@ public sealed partial class Sniffer : IDisposable {
                 break;
             }
             case TransportProtocol.UDP: {
-                (sourcePort, destinationPort, ushort l4size) = HandleDatagram(buffer, 14 + ihl);
+                (sourcePort, destinationPort, _) = HandleDatagram(buffer, 14 + ihl);
 
                 if (sourcePort < 49152) {
                     datagramCount.AddOrUpdate(
                         sourcePort,
-                        new TrafficData() { bytesRx = 0, bytesTx = l4size, packetsRx = 0, packetsTx = 1, lastActivity = timestamp },
+                        new TrafficData() { bytesRx = 0, bytesTx = buffer.Length, packetsRx = 0, packetsTx = 1, lastActivity = timestamp },
                         (port, traffic) => {
-                            Interlocked.Add(ref traffic.bytesTx, l4size);
+                            Interlocked.Add(ref traffic.bytesTx, buffer.Length);
                             Interlocked.Increment(ref traffic.packetsTx);
                             traffic.lastActivity = timestamp;
                             return traffic;
@@ -183,9 +182,9 @@ public sealed partial class Sniffer : IDisposable {
                 if (destinationPort < 49152) {
                     datagramCount.AddOrUpdate(
                         destinationPort,
-                        new TrafficData() { bytesRx = l4size, bytesTx = 0, packetsRx = 1, packetsTx = 0, lastActivity = timestamp },
+                        new TrafficData() { bytesRx = buffer.Length, bytesTx = 0, packetsRx = 1, packetsTx = 0, lastActivity = timestamp },
                         (port, traffic) => {
-                            Interlocked.Add(ref traffic.bytesRx, l4size);
+                            Interlocked.Add(ref traffic.bytesRx, buffer.Length);
                             Interlocked.Increment(ref traffic.packetsRx);
                             traffic.lastActivity = timestamp;
                             return traffic;
@@ -221,10 +220,17 @@ public sealed partial class Sniffer : IDisposable {
         Interlocked.Add(ref bytesRx, buffer.Length);
         Interlocked.Increment(ref packetsRx);
 
-        networkBytes.AddOrUpdate(networkProtocol, l3Size, (proto, length) => length + l3Size);
-        networkPackets.AddOrUpdate(networkProtocol, 1, (proto, length) => ++length);
+        networkCount.AddOrUpdate(
+            networkProtocol,
+            new Count() { bytes = buffer.Length, packets = 1 },
+            (code, count) => {
+                Interlocked.Add(ref count.bytes, buffer.Length);
+                Interlocked.Increment(ref count.packets);
+                return count;
+            }
+        );
 
-        Interlocked.Add(ref transportPackets[transportProtocol], l3Size);
+        Interlocked.Add(ref transportBytes[transportProtocol], buffer.Length);
         Interlocked.Increment(ref transportPackets[transportProtocol]);
     }
 
