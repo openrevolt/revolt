@@ -1,6 +1,7 @@
 ﻿using System.Collections.Generic;
 using System.Diagnostics;
 using System.Net;
+using System.Reflection;
 using Revolt.Protocols;
 using Revolt.Sniff;
 using Revolt.Tui;
@@ -31,12 +32,12 @@ internal class SnifferFrame : Tui.Frame {
             right = 1,
             top   = 0,
             items = [
-                new Tui.Tabs.TabItem() { text="L3",        key="3" },
-                new Tui.Tabs.TabItem() { text="L4",        key="4" },
                 new Tui.Tabs.TabItem() { text="Frames",    key="F" },
                 new Tui.Tabs.TabItem() { text="Packets",   key="P" },
                 new Tui.Tabs.TabItem() { text="Segments",  key="S" },
                 new Tui.Tabs.TabItem() { text="Datagrams", key="D" },
+                new Tui.Tabs.TabItem() { text="L3",        key="3" },
+                new Tui.Tabs.TabItem() { text="L4",        key="4" },
                 new Tui.Tabs.TabItem() { text="Overview",  key="O" },
                 new Tui.Tabs.TabItem() { text="Issues",    key="I" },
             ],
@@ -111,29 +112,29 @@ internal class SnifferFrame : Tui.Frame {
             MainMenu.Instance.Show();
             break;
 
+        case ConsoleKey.F:
+            tabs.SetIndex(0);
+            break;
+
+        case ConsoleKey.P:
+            tabs.SetIndex(1);
+            break;
+
+        case ConsoleKey.S:
+            tabs.SetIndex(2);
+            break;
+
+        case ConsoleKey.D:
+            tabs.SetIndex(3);
+            break;
+
         case ConsoleKey.D3:
         case ConsoleKey.NumPad3:
-            tabs.SetIndex(0);
+            tabs.SetIndex(4);
             break;
 
         case ConsoleKey.D4:
         case ConsoleKey.NumPad4:
-            tabs.SetIndex(1);
-            break;
-
-        case ConsoleKey.F:
-            tabs.SetIndex(2);
-            break;
-
-        case ConsoleKey.P:
-            tabs.SetIndex(3);
-            break;
-
-        case ConsoleKey.S:
-            tabs.SetIndex(4);
-            break;
-
-        case ConsoleKey.D:
             tabs.SetIndex(5);
             break;
 
@@ -169,10 +170,10 @@ internal class SnifferFrame : Tui.Frame {
         }
 
         elements[1] = tabs.index switch {
-            2 => framesList,
-            3 => packetList,
-            4 => segmentList,
-            5 => datagramList,
+            0 => framesList,
+            1 => packetList,
+            2 => segmentList,
+            3 => datagramList,
             _ => datagramList
         };
 
@@ -323,7 +324,6 @@ internal class SnifferFrame : Tui.Frame {
                 noteString = "Private";
             }
             else {
-                Ansi.SetFgColor([128, 128, 128]);
                 noteString = String.Empty;
             }
         }
@@ -388,12 +388,114 @@ internal class SnifferFrame : Tui.Frame {
         Ansi.SetBgColor(Glyphs.DARK_COLOR);
     }
 
-    private void DrawSegmentItem(int i, int x, int y, int width) {
+    private void DrawSegmentItem(int index, int x, int y, int width) {
+        if (segmentList.Count == 0) return;
+        if (index < 0) return;
+        if (index >= segmentList.Count) return;
 
+        int adjustedY = y + index - segmentList.scrollOffset;
+        if (adjustedY < y || adjustedY > Renderer.LastHeight) return;
+
+        TrafficData item = segmentList[index];
+        bool isSelected = index == segmentList.index;
+
+        ushort port       = segmentList.shadow.GetKeyByIndex(index);
+        string portString = port.ToString();
+
+        int noteWidth = Math.Max(width - 72, 0);
+
+        Ansi.SetCursorPosition(2, adjustedY);
+
+        if (isSelected) {
+            Ansi.SetFgColor(segmentList.isFocused ? [16, 16, 16] : Glyphs.LIGHT_COLOR);
+            Ansi.SetBgColor(segmentList.isFocused ? Glyphs.FOCUS_COLOR : Glyphs.HIGHLIGHT_COLOR);
+        }
+        else {
+            Ansi.SetFgColor(port < 1024 ? Glyphs.LIGHT_COLOR : [128, 128, 128]);
+            Ansi.SetBgColor(Glyphs.PANE_COLOR);
+        }
+
+        Ansi.Write(' ');
+        Ansi.Write(portString.PadRight(20));
+
+        Ansi.SetFgColor(Glyphs.LIGHT_COLOR);
+        Ansi.SetBgColor(isSelected ? Glyphs.HIGHLIGHT_COLOR : Glyphs.PANE_COLOR);
+
+        Ansi.Write(new String(' ', noteWidth));
+
+        DrawNumber(item.packetsTx, 12, [232, 118, 0]);
+        DrawNumber(item.packetsRx, 12, [122, 212, 43]);
+        DrawBytes(item.bytesTx, 12, [232, 118, 0]);
+        DrawBytes(item.bytesRx, 12, [122, 212, 43]);
+
+        long now = Stopwatch.GetTimestamp();
+        long delta = now - item.lastActivity;
+        if (delta < 100_000_000) {
+            byte b = (byte)(255 - delta * 223 / 100_000_000);
+            Ansi.SetFgColor([b, 32, 32]);
+            Ansi.Write($" {Glyphs.BULLET}");
+        }
+        else {
+            Ansi.Write("  ");
+        }
+
+        Ansi.Write(' ');
+        Ansi.SetBgColor(Glyphs.DARK_COLOR);
     }
 
-    private void DrawDatagramItem(int i, int x, int y, int width) {
+    private void DrawDatagramItem(int index, int x, int y, int width) {
+        if (datagramList.Count == 0) return;
+        if (index < 0) return;
+        if (index >= datagramList.Count) return;
 
+        int adjustedY = y + index - datagramList.scrollOffset;
+        if (adjustedY < y || adjustedY > Renderer.LastHeight) return;
+
+        TrafficData item = datagramList[index];
+        bool isSelected = index == datagramList.index;
+
+        ushort port       = datagramList.shadow.GetKeyByIndex(index);
+        string portString = port.ToString();
+
+        int noteWidth = Math.Max(width - 72, 0);
+
+        Ansi.SetCursorPosition(2, adjustedY);
+
+        if (isSelected) {
+            Ansi.SetFgColor(datagramList.isFocused ? [16, 16, 16] : Glyphs.LIGHT_COLOR);
+            Ansi.SetBgColor(datagramList.isFocused ? Glyphs.FOCUS_COLOR : Glyphs.HIGHLIGHT_COLOR);
+        }
+        else {
+            Ansi.SetFgColor(port < 1024 ? Glyphs.LIGHT_COLOR : [128, 128, 128]);
+            Ansi.SetBgColor(Glyphs.PANE_COLOR);
+        }
+
+        Ansi.Write(' ');
+        Ansi.Write(portString.PadRight(20));
+
+        Ansi.SetFgColor(Glyphs.LIGHT_COLOR);
+        Ansi.SetBgColor(isSelected ? Glyphs.HIGHLIGHT_COLOR : Glyphs.PANE_COLOR);
+
+        Ansi.Write(new String(' ', noteWidth));
+
+        DrawNumber(item.packetsTx, 12, [232, 118, 0]);
+        DrawNumber(item.packetsRx, 12, [122, 212, 43]);
+        DrawBytes(item.bytesTx, 12, [232, 118, 0]);
+        DrawBytes(item.bytesRx, 12, [122, 212, 43]);
+
+        long now = Stopwatch.GetTimestamp();
+        long delta = now - item.lastActivity;
+        if (delta < 100_000_000) {
+            byte b = (byte)(255 - delta * 223 / 100_000_000);
+            Ansi.SetFgColor([b, 32, 32]);
+            Ansi.Write($" {Glyphs.BULLET}");
+        }
+        else {
+            Ansi.Write("  ");
+        }
+
+        Ansi.Write(' ');
+        Ansi.SetBgColor(Glyphs.DARK_COLOR);
     }
 
     private void DrawNumber(long value, int padding, byte[] color) {
@@ -470,6 +572,8 @@ internal class SnifferFrame : Tui.Frame {
 
                 framesList.BindDictionary(sniffer.framesCount);
                 packetList.BindDictionary(sniffer.packetCount);
+                segmentList.BindDictionary(sniffer.segmentCount);
+                datagramList.BindDictionary(sniffer.datagramCount);
 
                 sniffer.Start();
             }

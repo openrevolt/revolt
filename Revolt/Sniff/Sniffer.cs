@@ -16,8 +16,9 @@ public sealed partial class Sniffer : IDisposable {
     private ulong frameIndex = 0;
     private ConcurrentDictionary<ulong, Frame> frames = new ConcurrentDictionary<ulong, Frame>();
 
-    private Dictionary<ushort, long> networkBytes   = new Dictionary<ushort, long>();
-    private Dictionary<ushort, long> networkPackets = new Dictionary<ushort, long>();
+    private ConcurrentDictionary<ushort, long> networkBytes   = new ConcurrentDictionary<ushort, long>();
+    private ConcurrentDictionary<ushort, long> networkPackets = new ConcurrentDictionary<ushort, long>();
+
     private long[] transportBytes   = new long[256];
     private long[] transportPackets = new long[256];
 
@@ -86,16 +87,116 @@ public sealed partial class Sniffer : IDisposable {
             break;
         }
 
-        /*switch ((TransportProtocol)transportProtocol) {
-        case TransportProtocol.ICMP:
-            break;
+        framesCount.AddOrUpdate(
+            sourceMac,
+            new TrafficData() { bytesRx=0, bytesTx=buffer.Length, packetsRx=0, packetsTx=1, lastActivity=timestamp },
+            (mac, traffic) => {
+                Interlocked.Add(ref traffic.bytesTx, buffer.Length);
+                Interlocked.Increment(ref traffic.packetsTx);
+                traffic.lastActivity = timestamp;
+                return traffic;
+            }
+        );
 
-        case TransportProtocol.TCP:
-            break;
+        framesCount.AddOrUpdate(
+            destinationMac,
+            new TrafficData() { bytesRx= buffer.Length, bytesTx=0, packetsRx=1, packetsTx=0, lastActivity = timestamp },
+            (mac, traffic) => {
+                Interlocked.Add(ref traffic.bytesRx, buffer.Length);
+                Interlocked.Increment(ref traffic.packetsRx);
+                traffic.lastActivity = timestamp;
+                return traffic;
+            }
+        );
 
-        case TransportProtocol.UDP:
-            break;
-        }*/
+        if (sourceIP is not null && destinationIP is not null) {
+            packetCount.AddOrUpdate(
+                sourceIP,
+                new TrafficData() { bytesRx = 0, bytesTx = l3Size, packetsRx = 0, packetsTx = 1, lastActivity = timestamp },
+                (ip, traffic) => {
+                    Interlocked.Add(ref traffic.bytesTx, l3Size);
+                    Interlocked.Increment(ref traffic.packetsTx);
+                    traffic.lastActivity = timestamp;
+                    return traffic;
+                }
+            );
+
+            packetCount.AddOrUpdate(
+                destinationIP,
+                new TrafficData() { bytesRx = l3Size, bytesTx = 0, packetsRx = 1, packetsTx = 0, lastActivity = timestamp },
+                (ip, traffic) => {
+                    Interlocked.Add(ref traffic.bytesRx, l3Size);
+                    Interlocked.Increment(ref traffic.packetsRx);
+                    traffic.lastActivity = timestamp;
+                    return traffic;
+                }
+            );
+
+            switch ((TransportProtocol)transportProtocol) {
+            case TransportProtocol.TCP: {
+                (sourcePort, destinationPort, ushort l4size) = HandleSegment(buffer, 14 + ihl);
+
+                if (sourcePort < 49152) {
+                    segmentCount.AddOrUpdate(
+                        sourcePort,
+                        new TrafficData() { bytesRx = 0, bytesTx = l4size, packetsRx = 0, packetsTx = 1, lastActivity = timestamp },
+                        (port, traffic) => {
+                            Interlocked.Add(ref traffic.bytesTx, l4size);
+                            Interlocked.Increment(ref traffic.packetsTx);
+                            traffic.lastActivity = timestamp;
+                            return traffic;
+                        }
+                    );
+                }
+
+                if (destinationPort < 49152) {
+                    segmentCount.AddOrUpdate(
+                        destinationPort,
+                        new TrafficData() { bytesRx = l4size, bytesTx = 0, packetsRx = 1, packetsTx = 0, lastActivity = timestamp },
+                        (port, traffic) => {
+                            Interlocked.Add(ref traffic.bytesRx, l4size);
+                            Interlocked.Increment(ref traffic.packetsRx);
+                            traffic.lastActivity = timestamp;
+                            return traffic;
+                        }
+                    );
+                }
+
+                break;
+            }
+            case TransportProtocol.UDP: {
+                (sourcePort, destinationPort, ushort l4size) = HandleDatagram(buffer, 14 + ihl);
+
+                if (sourcePort < 49152) {
+                    datagramCount.AddOrUpdate(
+                        sourcePort,
+                        new TrafficData() { bytesRx = 0, bytesTx = l4size, packetsRx = 0, packetsTx = 1, lastActivity = timestamp },
+                        (port, traffic) => {
+                            Interlocked.Add(ref traffic.bytesTx, l4size);
+                            Interlocked.Increment(ref traffic.packetsTx);
+                            traffic.lastActivity = timestamp;
+                            return traffic;
+                        }
+                    );
+                }
+
+                if (destinationPort < 49152) {
+                    datagramCount.AddOrUpdate(
+                        destinationPort,
+                        new TrafficData() { bytesRx = l4size, bytesTx = 0, packetsRx = 1, packetsTx = 0, lastActivity = timestamp },
+                        (port, traffic) => {
+                            Interlocked.Add(ref traffic.bytesRx, l4size);
+                            Interlocked.Increment(ref traffic.packetsRx);
+                            traffic.lastActivity = timestamp;
+                            return traffic;
+                        }
+                    );
+                }
+
+                break;
+            }
+            }
+        }
 
         Frame frame = new Frame() {
             timestamp         = timestamp,
@@ -120,54 +221,11 @@ public sealed partial class Sniffer : IDisposable {
         Interlocked.Add(ref bytesRx, buffer.Length);
         Interlocked.Increment(ref packetsRx);
 
-        framesCount.AddOrUpdate(
-            sourceMac,
-            new TrafficData() { bytesRx=0, bytesTx=buffer.Length, packetsRx=0, packetsTx=1, lastActivity=timestamp },
-            (mac, traffic) => {
-                Interlocked.Add(ref traffic.bytesTx, buffer.Length);
-                Interlocked.Increment(ref traffic.packetsTx);
-                traffic.lastActivity = timestamp;
-                return traffic;
-            }
-        );
+        networkBytes.AddOrUpdate(networkProtocol, l3Size, (proto, length) => length + l3Size);
+        networkPackets.AddOrUpdate(networkProtocol, 1, (proto, length) => ++length);
 
-        framesCount.AddOrUpdate(
-            destinationMac,
-            new TrafficData() { bytesRx= buffer.Length, bytesTx=0, packetsRx=1, packetsTx=0, lastActivity = timestamp },
-            (mac, traffic) => {
-                Interlocked.Add(ref traffic.bytesRx, buffer.Length);
-                Interlocked.Increment(ref traffic.packetsRx);
-                traffic.lastActivity = timestamp;
-                return traffic;
-            }
-        );
-
-        if (sourceIP is not null) {
-            packetCount.AddOrUpdate(
-                sourceIP,
-                new TrafficData() { bytesRx = 0, bytesTx = l3Size, packetsRx = 0, packetsTx = 1, lastActivity = timestamp },
-                (ip, traffic) => {
-                    Interlocked.Add(ref traffic.bytesTx, l3Size);
-                    Interlocked.Increment(ref traffic.packetsTx);
-                    traffic.lastActivity = timestamp;
-                    return traffic;
-                }
-            );
-        }
-
-        if (destinationIP is not null) {
-            packetCount.AddOrUpdate(
-                destinationIP,
-                new TrafficData() { bytesRx = l3Size, bytesTx = 0, packetsRx = 1, packetsTx = 0, lastActivity = timestamp },
-                (ip, traffic) => {
-                    Interlocked.Add(ref traffic.bytesRx, l3Size);
-                    Interlocked.Increment(ref traffic.packetsRx);
-                    traffic.lastActivity = timestamp;
-                    return traffic;
-                }
-            );
-        }
-
+        Interlocked.Add(ref transportPackets[transportProtocol], l3Size);
+        Interlocked.Increment(ref transportPackets[transportProtocol]);
     }
 
     private (ushort, byte, byte, byte, IPAddress, IPAddress) HandleV4Packet(byte[] buffer, int offset) {
@@ -196,6 +254,22 @@ public sealed partial class Sniffer : IDisposable {
         IPAddress destination = new IPAddress(buffer.AsSpan(offset+24, 16));
 
         return (size, ttl, protocol, source, destination);
+    }
+
+    private (ushort, ushort, ushort) HandleSegment(byte[] buffer, int offset) {
+        ushort source      = (ushort)(buffer[offset+0] << 8 | buffer[offset+1]);
+        ushort destination = (ushort)(buffer[offset+2] << 8 | buffer[offset+3]);
+        ushort size   = (ushort)(buffer[offset+14] << 8 | buffer[offset+15]);
+        //ushort checksum = (ushort)(buffer[offset+16] << 8 | buffer[offset+17]);
+        return (source, destination, size);
+    }
+
+    private (ushort, ushort, ushort) HandleDatagram(byte[] buffer, int offset) {
+        ushort source      = (ushort)(buffer[offset+0] << 8 | buffer[offset+1]);
+        ushort destination = (ushort)(buffer[offset+2] << 8 | buffer[offset+3]);
+        ushort size   = (ushort)(buffer[offset+4] << 8 | buffer[offset+5]);
+        //ushort checksum = (ushort)(buffer[offset+5] << 8 | buffer[offset+6]);
+        return (source, destination, size);
     }
 
     public void Dispose() {
