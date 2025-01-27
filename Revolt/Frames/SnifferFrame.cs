@@ -1,4 +1,5 @@
 ﻿using System.Collections.Generic;
+using System.Diagnostics;
 using System.Net;
 using System.Reflection;
 using Revolt.Protocols;
@@ -23,6 +24,8 @@ internal class SnifferFrame : Tui.Frame {
     private Tui.ShadowIndexListBox<ushort, TrafficData>    datagramList;
     private Tui.ShadowIndexListBox<ushort, Count>          layer3ProtocolList;
     private Tui.ListBox<byte>                              layer4ProtocolList;
+
+    private Tui.Element currentList;
 
     private ICaptureDevice captureDevice;
     private Sniffer sniffer;
@@ -106,13 +109,16 @@ internal class SnifferFrame : Tui.Frame {
                 new Tui.Toolbar.ToolbarItem() { text="Start",  key="F2", action=StartDialog },
                 new Tui.Toolbar.ToolbarItem() { text="Filter", key="F4", action=FiltersDialog },
             ],
+            drawStatus = DrawStatus
         };
 
+        currentList = framesList;
+
         elements.Add(tabs);
-        elements.Add(framesList);
+        elements.Add(currentList);
         elements.Add(toolbar);
 
-        defaultElement = framesList;
+        defaultElement = currentList;
         FocusNext();
 
         for (short i = 0; i < 256; i++) {
@@ -192,7 +198,7 @@ internal class SnifferFrame : Tui.Frame {
             focusedElement.Blur(false);
         }
 
-        elements[1] = tabs.index switch {
+        currentList = tabs.index switch {
             0 => framesList,
             1 => packetList,
             2 => segmentList,
@@ -202,12 +208,21 @@ internal class SnifferFrame : Tui.Frame {
             _ => datagramList
         };
 
+        elements[1] = currentList;
+
         if (flag) {
             focusedElement = elements[1];
             elements[1].Focus();
         }
 
         elements[1].Draw(true);
+    }
+
+    private void DrawStatus() {
+        Ansi.SetCursorPosition(Renderer.LastWidth - 25, Math.Max(Renderer.LastHeight, 0));
+        Ansi.SetBgColor(Glyphs.TOOLBAR_COLOR);
+        DrawNumber(sniffer?.totalPackets ?? 0, 12, Glyphs.LIGHT_COLOR);
+        DrawBytes(sniffer?.totalBytes ?? 0, 12, Glyphs.LIGHT_COLOR);
     }
 
     private void DrawFrameItem(int index, int x, int y, int width) {
@@ -637,6 +652,29 @@ internal class SnifferFrame : Tui.Frame {
         return size.ToString();
     }
 
+    private void UpdateLoop() {
+        new Thread(() => {
+            long lastUpdate = 0;
+            long lastCount = 0;
+
+            while (captureDevice.Started) {
+                Thread.Sleep(250);
+                long now = Stopwatch.GetTimestamp();
+
+                if (lastCount == sniffer.totalPackets && now - lastUpdate > 30_000_000) continue;
+                if (Renderer.ActiveDialog is not null) continue;
+                if (Renderer.ActiveFrame != this) continue;
+
+                currentList.Draw(false);
+                toolbar.drawStatus();
+                Ansi.Push();
+
+                lastUpdate = now;
+                lastCount = sniffer.totalPackets;
+            }
+        }).Start();
+    }
+
     private void StartDialog() {
         if (captureDevice is not null && captureDevice.Started) {
             StopDialog();
@@ -660,6 +698,8 @@ internal class SnifferFrame : Tui.Frame {
                 layer3ProtocolList.BindDictionary(sniffer.networkCount);
 
                 sniffer.Start();
+
+                UpdateLoop();
             }
             catch (Exception ex) {
                 Tui.MessageDialog message = new Tui.MessageDialog() {

@@ -17,13 +17,16 @@ public sealed partial class Sniffer : IDisposable {
     public long[] transportBytes   = new long[256];
     public long[] transportPackets = new long[256];
 
+    public long totalPackets=0, totalBytes=0;
+
     private ulong frameIndex = 0;
     private ConcurrentDictionary<ulong, Frame> frames = new ConcurrentDictionary<ulong, Frame>();
 
-    public long bytesRx=0, bytesTx=0, packetsRx=0, packetsTx=0;
-
     private ICaptureDevice device;
     private PhysicalAddress deviceMac;
+
+    //private bool captureOnlyWellKnownPort = true;
+    private const ushort maxPort = 1024; //49152
 
     public Sniffer(ICaptureDevice device) {
         if (device.MacAddress is null) {
@@ -132,7 +135,7 @@ public sealed partial class Sniffer : IDisposable {
             case TransportProtocol.TCP: {
                 (sourcePort, destinationPort, _) = HandleSegment(buffer, 14 + ihl);
 
-                if (sourcePort < 49152) {
+                if (sourcePort < maxPort) {
                     segmentCount.AddOrUpdate(
                         sourcePort,
                         new TrafficData() { bytesRx = 0, bytesTx = buffer.Length, packetsRx = 0, packetsTx = 1, lastActivity = timestamp },
@@ -145,7 +148,7 @@ public sealed partial class Sniffer : IDisposable {
                     );
                 }
 
-                if (destinationPort < 49152) {
+                if (destinationPort < maxPort) {
                     segmentCount.AddOrUpdate(
                         destinationPort,
                         new TrafficData() { bytesRx = buffer.Length, bytesTx = 0, packetsRx = 1, packetsTx = 0, lastActivity = timestamp },
@@ -163,7 +166,7 @@ public sealed partial class Sniffer : IDisposable {
             case TransportProtocol.UDP: {
                 (sourcePort, destinationPort, _) = HandleDatagram(buffer, 14 + ihl);
 
-                if (sourcePort < 49152) {
+                if (sourcePort < maxPort) {
                     datagramCount.AddOrUpdate(
                         sourcePort,
                         new TrafficData() { bytesRx = 0, bytesTx = buffer.Length, packetsRx = 0, packetsTx = 1, lastActivity = timestamp },
@@ -176,7 +179,7 @@ public sealed partial class Sniffer : IDisposable {
                     );
                 }
 
-                if (destinationPort < 49152) {
+                if (destinationPort < maxPort) {
                     datagramCount.AddOrUpdate(
                         destinationPort,
                         new TrafficData() { bytesRx = buffer.Length, bytesTx = 0, packetsRx = 1, packetsTx = 0, lastActivity = timestamp },
@@ -214,8 +217,8 @@ public sealed partial class Sniffer : IDisposable {
         frames.TryAdd(frameIndex, frame);
         Interlocked.Increment(ref frameIndex);
 
-        Interlocked.Add(ref bytesRx, buffer.Length);
-        Interlocked.Increment(ref packetsRx);
+        Interlocked.Increment(ref totalPackets);
+        Interlocked.Add(ref totalBytes, buffer.Length);
 
         networkCount.AddOrUpdate(
             networkProtocol,
@@ -231,7 +234,7 @@ public sealed partial class Sniffer : IDisposable {
     private (ushort, byte, byte, byte, IPAddress, IPAddress) HandleV4Packet(byte[] buffer, int offset) {
         if (buffer.Length < 20) return (0, 0, 0, 0, default, default); //invalid traffic
 
-        byte   ihl      = (byte)(buffer[offset] & 0x0F << 2);
+        byte   ihl      = (byte)((buffer[offset] & 0x0F) << 2);
         ushort size     = (ushort)(buffer[offset+2] << 8 | buffer[offset+3]);
         byte   ttl      = buffer[offset+8];
         byte   protocol = buffer[offset+9];
@@ -259,16 +262,16 @@ public sealed partial class Sniffer : IDisposable {
     private (ushort, ushort, ushort) HandleSegment(byte[] buffer, int offset) {
         ushort source      = (ushort)(buffer[offset+0] << 8 | buffer[offset+1]);
         ushort destination = (ushort)(buffer[offset+2] << 8 | buffer[offset+3]);
-        ushort size   = (ushort)(buffer[offset+14] << 8 | buffer[offset+15]);
-        //ushort checksum = (ushort)(buffer[offset+16] << 8 | buffer[offset+17]);
+        ushort size        = (ushort)(buffer[offset+14] << 8 | buffer[offset+15]);
+        //ushort checksum    = (ushort)(buffer[offset+16] << 8 | buffer[offset+17]);
         return (source, destination, size);
     }
 
     private (ushort, ushort, ushort) HandleDatagram(byte[] buffer, int offset) {
         ushort source      = (ushort)(buffer[offset+0] << 8 | buffer[offset+1]);
         ushort destination = (ushort)(buffer[offset+2] << 8 | buffer[offset+3]);
-        ushort size   = (ushort)(buffer[offset+4] << 8 | buffer[offset+5]);
-        //ushort checksum = (ushort)(buffer[offset+5] << 8 | buffer[offset+6]);
+        ushort size        = (ushort)(buffer[offset+4] << 8 | buffer[offset+5]);
+        //ushort checksum    = (ushort)(buffer[offset+5] << 8 | buffer[offset+6]);
         return (source, destination, size);
     }
 
