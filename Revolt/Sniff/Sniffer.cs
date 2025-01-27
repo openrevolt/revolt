@@ -76,7 +76,7 @@ public sealed partial class Sniffer : IDisposable {
             break;
 
         case NetworkProtocol.IPv6:
-            (l3Size, ttl, transportProtocol, sourceIP, destinationIP) = HandleV6Packet(buffer, 14);
+            (l3Size, transportProtocol, ttl, sourceIP, destinationIP) = HandleV6Packet(buffer, 14);
             ihl = 40;
             Interlocked.Add(ref transportBytes[transportProtocol], buffer.Length);
             Interlocked.Increment(ref transportPackets[transportProtocol]);
@@ -240,7 +240,7 @@ public sealed partial class Sniffer : IDisposable {
         IPAddress source      = new IPAddress(buffer.AsSpan(offset+12, 4));
         IPAddress destination = new IPAddress(buffer.AsSpan(offset+16, 4));
 
-        return (size, protocol, ttl, ihl, source, destination);
+        return (size, ttl, protocol, ihl, source, destination);
     }
 
     private (ushort, byte, byte, IPAddress, IPAddress) HandleV6Packet(byte[] buffer, int offset) {
@@ -253,7 +253,7 @@ public sealed partial class Sniffer : IDisposable {
         IPAddress source      = new IPAddress(buffer.AsSpan(offset+8, 16));
         IPAddress destination = new IPAddress(buffer.AsSpan(offset+24, 16));
 
-        return (size, ttl, protocol, source, destination);
+        return (size, protocol, ttl, source, destination);
     }
 
     private (ushort, ushort, ushort) HandleSegment(byte[] buffer, int offset) {

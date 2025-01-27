@@ -21,7 +21,7 @@ internal class SnifferFrame : Tui.Frame {
     private Tui.ShadowIndexListBox<IPAddress, TrafficData> packetList;
     private Tui.ShadowIndexListBox<ushort, TrafficData>    segmentList;
     private Tui.ShadowIndexListBox<ushort, TrafficData>    datagramList;
-    private Tui.ShadowIndexListBox<ushort, Count>         layer3ProtocolList;
+    private Tui.ShadowIndexListBox<ushort, Count>          layer3ProtocolList;
     private Tui.ListBox<byte>                              layer4ProtocolList;
 
     private ICaptureDevice captureDevice;
@@ -482,7 +482,7 @@ internal class SnifferFrame : Tui.Frame {
         ushort protocol       = layer3ProtocolList.shadow.GetKeyByIndex(index);
         string protocolString = "0x" + protocol.ToString("X2").PadLeft(4, '0');
 
-        int nameWidth = Math.Max(20, 0);
+        int nameWidth = Math.Max(56, 0);
         int noteWidth = Math.Max(width - nameWidth - 34, 0);
 
         string nameString = GetNetworkProtocolName(protocol);
