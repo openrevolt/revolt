@@ -1,6 +1,4 @@
-﻿using Revolt;
-
-namespace Revolt.Protocols;
+﻿namespace Revolt.Protocols;
 
 public static partial class MacLookup {
 

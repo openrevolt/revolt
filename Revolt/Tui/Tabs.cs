@@ -1,6 +1,4 @@
-﻿using System;
-
-namespace Revolt.Tui;
+﻿namespace Revolt.Tui;
 
 public sealed class Tabs(Frame parentFrame) : Element(parentFrame) {
 

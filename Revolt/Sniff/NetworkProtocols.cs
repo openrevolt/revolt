@@ -1,5 +1,4 @@
 ﻿using System.Collections.Frozen;
-using System.Numerics;
 
 namespace Revolt.Sniff;
 
@@ -71,6 +70,7 @@ public sealed partial class Sniffer {
         { 0x88A8, "S-Tag (802.1Q)" },
         { 0x88B5, "IEEE (802.11r)" },
         { 0x88B8, "AV Bridging" },
+        { 0x88BF, "MikroTik RoMON" },
         { 0x88CC, "LLDP - Link Layer Discovery Protocol (802.1AB)" },
         { 0x88E5, "Media Access Control Security (802.1AE)" },
         { 0x88F5, "MVRP - Multiple VLAN Registration Protocol (802.1Q)" },

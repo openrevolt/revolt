@@ -1,6 +1,4 @@
-﻿using System.Drawing;
-
-namespace Revolt.Tui;
+﻿namespace Revolt.Tui;
 
 public sealed class Toolbar(Frame parentFrame) : Element(parentFrame) {
 

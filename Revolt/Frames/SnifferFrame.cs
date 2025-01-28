@@ -1,7 +1,5 @@
-﻿using System.Collections.Generic;
-using System.Diagnostics;
+﻿using System.Diagnostics;
 using System.Net;
-using System.Reflection;
 using Revolt.Protocols;
 using Revolt.Sniff;
 using Revolt.Tui;
@@ -107,7 +105,7 @@ internal class SnifferFrame : Tui.Frame {
             right = 0,
             items = [
                 new Tui.Toolbar.ToolbarItem() { text="Start",  key="F2", action=StartDialog },
-                new Tui.Toolbar.ToolbarItem() { text="Filter", key="F4", action=FiltersDialog },
+                //new Tui.Toolbar.ToolbarItem() { text="Filter", key="F4", action=FiltersDialog },
             ],
             drawStatus = DrawStatus
         };
@@ -260,7 +258,6 @@ internal class SnifferFrame : Tui.Frame {
         Ansi.Write("    ");
 
         string vendorString;
-
         if (mac.IsBroadcast()) {
             Ansi.SetFgColor([0, 160, 255]);
             vendorString = "Broadcast";
@@ -587,8 +584,8 @@ internal class SnifferFrame : Tui.Frame {
         long now = DateTime.UtcNow.Ticks;
         long delta = now - traffic.lastActivity;
         if (delta < 100_000_000) {
-            byte r = (byte)(255 - delta * 223 / 100_000_000);
-            Ansi.SetFgColor([r, 32, 32]);
+            byte v = (byte)(255 - delta * 223 / 100_000_000);
+            Ansi.SetFgColor([v, v, 32]);
             Ansi.Write($" {Glyphs.BULLET}");
         }
         else {
