@@ -698,6 +698,13 @@ internal class SnifferFrame : Tui.Frame {
 
                 UpdateLoop();
             }
+            catch (SharpPcap.PcapException ex) {
+                Tui.MessageDialog message = new Tui.MessageDialog() {
+                    text = ex.Error.ToString()
+                };
+                message.Show();
+                return;
+            }
             catch (Exception ex) {
                 Tui.MessageDialog message = new Tui.MessageDialog() {
                     text = ex.Message

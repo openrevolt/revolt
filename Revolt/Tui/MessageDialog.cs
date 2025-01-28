@@ -49,7 +49,7 @@ public sealed class MessageDialog : DialogBox {
     }
 
     public override bool HandleKey(ConsoleKeyInfo key) =>
-    base.HandleKey(key);
+        base.HandleKey(key);
 
     public override void Close() {
         Ansi.HideCursor();
