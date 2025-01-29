@@ -6,15 +6,12 @@ using SharpPcap;
 namespace Revolt.Sniff;
 
 public sealed partial class Sniffer : IDisposable {
-    public IndexedDictionary<Mac, TrafficData>       framesCount   = new IndexedDictionary<Mac, TrafficData>();
-    public IndexedDictionary<IPAddress, TrafficData> packetCount   = new IndexedDictionary<IPAddress, TrafficData>();
-    public IndexedDictionary<ushort, TrafficData>    segmentCount  = new IndexedDictionary<ushort, TrafficData>();
-    public IndexedDictionary<ushort, TrafficData>    datagramCount = new IndexedDictionary<ushort, TrafficData>();
-
-    public IndexedDictionary<ushort, Count> networkCount = new IndexedDictionary<ushort, Count>();
-
-    public long[] transportBytes   = new long[256];
-    public long[] transportPackets = new long[256];
+    public IndexedDictionary<Mac, TrafficData>       framesCount    = new IndexedDictionary<Mac, TrafficData>();
+    public IndexedDictionary<IPAddress, TrafficData> packetCount    = new IndexedDictionary<IPAddress, TrafficData>();
+    public IndexedDictionary<ushort, TrafficData>    segmentCount   = new IndexedDictionary<ushort, TrafficData>();
+    public IndexedDictionary<ushort, TrafficData>    datagramCount  = new IndexedDictionary<ushort, TrafficData>();
+    public IndexedDictionary<ushort, Count>          networkCount   = new IndexedDictionary<ushort, Count>();
+    public IndexedDictionary<byte, Count>            transportCount = new IndexedDictionary<byte, Count>();
 
     public long totalPackets=0, totalBytes=0;
 
@@ -73,15 +70,33 @@ public sealed partial class Sniffer : IDisposable {
         switch ((NetworkProtocol)networkProtocol) {
         case NetworkProtocol.IPv4:
             (l3Size, ttl, transportProtocol, ihl, sourceIP, destinationIP) = HandleV4Packet(buffer, 14);
-            Interlocked.Add(ref transportBytes[transportProtocol], buffer.Length);
-            Interlocked.Increment(ref transportPackets[transportProtocol]);
+
+            transportCount.AddOrUpdate(
+                transportProtocol,
+                new Count() { bytes = buffer.Length, packets = 1 },
+                (code, count) => {
+                    Interlocked.Add(ref count.bytes, buffer.Length);
+                    Interlocked.Increment(ref count.packets);
+                    return count;
+                }
+            );
+
             break;
 
         case NetworkProtocol.IPv6:
             (l3Size, transportProtocol, ttl, sourceIP, destinationIP) = HandleV6Packet(buffer, 14);
             ihl = 40;
-            Interlocked.Add(ref transportBytes[transportProtocol], buffer.Length);
-            Interlocked.Increment(ref transportPackets[transportProtocol]);
+
+            transportCount.AddOrUpdate(
+                transportProtocol,
+                new Count() { bytes = buffer.Length, packets = 1 },
+                (code, count) => {
+                    Interlocked.Add(ref count.bytes, buffer.Length);
+                    Interlocked.Increment(ref count.packets);
+                    return count;
+                }
+            );
+
             break;
         }
 

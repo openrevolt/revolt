@@ -3,13 +3,14 @@
 public class IndexedDictionary<TKey, TValue>
     where TKey : notnull
     where TValue : class {
-    private readonly ConcurrentDictionary<TKey, TValue> _dictionary     = new ConcurrentDictionary<TKey, TValue>();
-    private readonly ConcurrentDictionary<long, TValue> _indexMapping   = new ConcurrentDictionary<long, TValue>();
-    private readonly ConcurrentDictionary<TValue, TKey> _reverseLookup = new ConcurrentDictionary<TValue, TKey>();
-    private long _count;
+
+    private readonly ConcurrentDictionary<TKey, TValue> _dictionary  = new ConcurrentDictionary<TKey, TValue>();
+    private readonly ConcurrentDictionary<int, TValue> _indexMapping = new ConcurrentDictionary<int, TValue>();
+    private readonly ConcurrentDictionary<int, TKey> _indexToKey     = new ConcurrentDictionary<int, TKey>();
+    private int _count;
 
     public int Count =>
-        (int)Interlocked.Read(ref _count);
+        Volatile.Read(ref _count);
 
     public TValue this[int index] {
         get {
@@ -19,48 +20,36 @@ public class IndexedDictionary<TKey, TValue>
 
     public bool TryAdd(TKey key, TValue value) {
         if (!_dictionary.TryAdd(key, value)) return false;
-        long newIndex = Interlocked.Increment(ref _count) - 1;
-        _indexMapping.TryAdd(newIndex, value);
-        _reverseLookup.TryAdd(value, key);
+
+        int newIndex = Interlocked.Increment(ref _count) - 1;
+        if (!_indexMapping.TryAdd(newIndex, value) || !_indexToKey.TryAdd(newIndex, key)) {
+            _dictionary.TryRemove(key, out _);
+            Interlocked.Decrement(ref _count);
+            return false;
+        }
         return true;
     }
 
     public TValue AddOrUpdate(TKey key, TValue value, Func<TKey, TValue, TValue> updateValueFactory) {
         if (_dictionary.TryGetValue(key, out TValue existingValue)) {
-            TValue updatedValue = updateValueFactory(key, existingValue);
-            _dictionary[key] = updatedValue;
-
-            _reverseLookup.TryRemove(existingValue, out _);
-            _reverseLookup.TryAdd(updatedValue, key);
-            return updatedValue;
+            return _dictionary[key] = updateValueFactory(key, existingValue);
         }
 
         TryAdd(key, value);
         return value;
     }
 
-    public TKey GetKeyByIndex(long index) {
-        if (!_indexMapping.TryGetValue(index, out TValue item)) {
-            return default;
-        }
+    public TKey GetKeyByIndex(int index) =>
+        _indexToKey.TryGetValue(index, out TKey key) ? key : default;
 
-        if (!_reverseLookup.TryGetValue(item, out TKey key)) {
-            return default;
-        }
-
-        return key;
-    }
-
-    public bool ContainsKey(TKey key)
-        => _dictionary.ContainsKey(key);
+    public bool ContainsKey(TKey key) =>
+        _dictionary.ContainsKey(key);
 
     public void Clear() {
         _dictionary.Clear();
         _indexMapping.Clear();
-        _reverseLookup.Clear();
+        _indexToKey.Clear();
+        Interlocked.Exchange(ref _count, 0);
     }
-
-    public List<TValue> ToList =>
-        _indexMapping.Values.ToList();
 
 }
