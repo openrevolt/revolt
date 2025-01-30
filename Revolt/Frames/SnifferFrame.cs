@@ -188,6 +188,12 @@ internal class SnifferFrame : Tui.Frame {
         return true;
     }
 
+    public override string[][] GetKeyShortcuts() =>
+    [
+        ["F1", "Help"],
+        ["F5", "Refresh"],
+    ];
+
     private void Tabs_OnChange() {
         bool flag = focusedElement == elements[1];
 

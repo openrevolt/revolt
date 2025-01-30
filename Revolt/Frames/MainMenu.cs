@@ -100,6 +100,12 @@ public sealed class MainMenu : Tui.Frame {
         return true;
     }
 
+    public override string[][] GetKeyShortcuts() =>
+    [
+        ["F1", "Help"],
+            ["F5", "Refresh"],
+    ];
+
     public bool Enter() {
         switch (menu[index]) {
         case "Ping":

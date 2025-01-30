@@ -100,6 +100,13 @@ public sealed class DnsFrame : Tui.Frame {
         return true;
     }
 
+    public override string[][] GetKeyShortcuts() =>
+    [
+        ["F1", "Help"],
+        ["F5", "Refresh"],
+    ];
+    
+
     private void DrawDnsItem(int index, int x, int y, int width) {
         if (list.items is null || list.items.Count == 0) return;
         if (index >= list.items.Count) return;

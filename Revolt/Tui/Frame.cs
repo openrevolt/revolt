@@ -117,4 +117,6 @@ public abstract class Frame {
 
     public abstract bool HandleKey(ConsoleKeyInfo key);
 
+    public abstract string[][] GetKeyShortcuts();
+
 }

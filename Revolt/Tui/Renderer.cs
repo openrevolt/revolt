@@ -29,6 +29,8 @@ public static class Renderer {
 
     public static void HandleKeys() {
         while (isRunning) {
+            if (ActiveFrame is null) continue;
+
             ConsoleKeyInfo key;
             try {
                 key = Console.ReadKey(true);
@@ -37,9 +39,13 @@ public static class Renderer {
                 continue;
             }
 
-            if (ActiveFrame is null) continue;
+            switch (key.Key) {
+            case ConsoleKey.F1:
+                Tui.PopupDialog popup = new Tui.PopupDialog();
+                popup.Show();
+                continue;
 
-            if (key.Key == ConsoleKey.F5) {
+            case ConsoleKey.F5:
                 Ansi.ResetAll();
                 Redraw(true);
                 continue;

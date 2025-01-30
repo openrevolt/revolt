@@ -99,6 +99,12 @@ public sealed class NetMapperFrame : Tui.Frame {
         return true;
     }
 
+    public override string[][] GetKeyShortcuts() =>
+    [
+        ["F1", "Help"],
+        ["F5", "Refresh"],
+    ];
+
     private void DrawMap(int width, int height) {
         uint gate  = networkRange.Item1.ToUInt32();
         uint mask  = networkRange.Item2.ToUInt32();
