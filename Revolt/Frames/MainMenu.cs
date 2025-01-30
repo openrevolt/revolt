@@ -102,8 +102,9 @@ public sealed class MainMenu : Tui.Frame {
 
     public override string[][] GetKeyShortcuts() =>
     [
-        ["F1", "Help"],
-            ["F5", "Refresh"],
+        ["ESC", "Quit"],
+        ["F1",  "Help"],
+        ["F5",  "Refresh"],
     ];
 
     public bool Enter() {

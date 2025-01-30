@@ -39,11 +39,7 @@ public class DialogBox : Frame {
         return true;
     }
 
-    public override string[][] GetKeyShortcuts() =>
-    [
-        ["F1", "Help"],
-        ["F5", "Refresh"],
-    ];
+    public override string[][] GetKeyShortcuts() => [];
 
     public override void Show(bool draw = true) {
         Renderer.ActiveDialog = this;

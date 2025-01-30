@@ -99,11 +99,19 @@ public sealed class NetMapperFrame : Tui.Frame {
         return true;
     }
 
-    public override string[][] GetKeyShortcuts() =>
-    [
-        ["F1", "Help"],
-        ["F5", "Refresh"],
-    ];
+    public override string[][] GetKeyShortcuts() {
+        List<string[]> list = new List<string[]>();
+
+        list.Add(["F1", "Help"]);
+        list.Add(["F5", "Refresh"]);
+        list.Add([String.Empty, String.Empty]);
+
+        for (int i = 0; i < toolbar.items.Length; i++) {
+            list.Add([toolbar.items[i].key, toolbar.items[i].text]);
+        }
+
+        return list.ToArray();
+    }
 
     private void DrawMap(int width, int height) {
         uint gate  = networkRange.Item1.ToUInt32();

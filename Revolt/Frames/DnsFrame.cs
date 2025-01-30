@@ -100,12 +100,19 @@ public sealed class DnsFrame : Tui.Frame {
         return true;
     }
 
-    public override string[][] GetKeyShortcuts() =>
-    [
-        ["F1", "Help"],
-        ["F5", "Refresh"],
-    ];
-    
+    public override string[][] GetKeyShortcuts() {
+        List<string[]> list = new List<string[]>();
+
+        list.Add(["F1", "Help"]);
+        list.Add(["F5", "Refresh"]);
+        list.Add([String.Empty, String.Empty]);
+
+        for (int i = 0; i < toolbar.items.Length; i++) {
+            list.Add([toolbar.items[i].key, toolbar.items[i].text]);
+        }
+
+        return list.ToArray();
+    }
 
     private void DrawDnsItem(int index, int x, int y, int width) {
         if (list.items is null || list.items.Count == 0) return;

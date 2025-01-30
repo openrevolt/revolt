@@ -41,7 +41,8 @@ public static class Renderer {
 
             switch (key.Key) {
             case ConsoleKey.F1:
-                Tui.PopupDialog popup = new Tui.PopupDialog();
+                if (ActiveDialog is not null) break;
+                Tui.HelpDialog popup = new Tui.HelpDialog(ActiveFrame.GetKeyShortcuts());
                 popup.Show();
                 continue;
 
