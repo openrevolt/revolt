@@ -21,7 +21,6 @@ public sealed partial class Sniffer : IDisposable {
     private ICaptureDevice device;
     private PhysicalAddress deviceMac;
 
-    //private bool captureOnlyWellKnownPort = true;
     private const ushort maxPort = 1024; //49152
 
     public Sniffer(ICaptureDevice device) {

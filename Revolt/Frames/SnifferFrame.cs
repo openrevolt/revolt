@@ -22,6 +22,8 @@ internal class SnifferFrame : Tui.Frame {
     private Tui.ShadowIndexListBox<ushort, TrafficData>    datagramList;
     private Tui.ShadowIndexListBox<ushort, Count>          layer3ProtocolList;
     private Tui.ShadowIndexListBox<byte, Count>            layer4ProtocolList;
+    private Tui.ListBox<SniffOverviewItem>                 overviewList;
+    private Tui.ListBox<SniffIssuesItem>                   issuesList;
 
     private Tui.Element currentList;
 
@@ -29,7 +31,6 @@ internal class SnifferFrame : Tui.Frame {
     private Sniffer sniffer;
     
     private long lastUpdate = 0;
-
 
     public SnifferFrame() {
         tabs = new Tui.Tabs(this) {
@@ -95,12 +96,30 @@ internal class SnifferFrame : Tui.Frame {
         };
 
         layer4ProtocolList = new Tui.ShadowIndexListBox<byte, Count>(this) {
+            left = 0,
+            right = 0,
+            top = 3,
+            bottom = 2,
+            backgroundColor = Glyphs.PANE_COLOR,
+            drawItemHandler = DrawLayer4Item
+        };
+
+        overviewList = new Tui.ListBox<SniffOverviewItem>(this) {
             left            = 0,
             right           = 0,
             top             = 3,
             bottom          = 2,
             backgroundColor = Glyphs.PANE_COLOR,
-            drawItemHandler = DrawLayer4Item
+            drawItemHandler = DrawOverviewItem
+        };
+
+        issuesList = new Tui.ListBox<SniffIssuesItem>(this) {
+            left = 0,
+            right = 0,
+            top = 3,
+            bottom = 2,
+            backgroundColor = Glyphs.PANE_COLOR,
+            drawItemHandler = DrawIssuesItem
         };
 
         toolbar = new Tui.Toolbar(this) {
@@ -223,10 +242,13 @@ internal class SnifferFrame : Tui.Frame {
             3 => datagramList,
             4 => layer3ProtocolList,
             5 => layer4ProtocolList,
+            6 => overviewList,
+            7 => issuesList,
             _ => datagramList
         };
 
         elements[1] = currentList;
+        defaultElement = currentList;
 
         if (flag) {
             focusedElement = elements[1];
@@ -281,6 +303,7 @@ internal class SnifferFrame : Tui.Frame {
 
         string vendorString;
         if (mac.IsBroadcast()) {
+            Ansi.SetFgColor([0, 160, 255]);
             vendorString = "Broadcast";
         }
         else if (mac.IsEthernetMulticast()) {
@@ -642,6 +665,13 @@ internal class SnifferFrame : Tui.Frame {
         Ansi.SetBgColor(Glyphs.DARK_COLOR);
 
         lastUpdate = Stopwatch.GetTimestamp();
+    }
+
+    private void DrawOverviewItem(int index, int x, int y, int width) {
+
+    }
+    private void DrawIssuesItem(int index, int x, int y, int width) {
+
     }
 
     private void DrawTraffic(TrafficData traffic) {
