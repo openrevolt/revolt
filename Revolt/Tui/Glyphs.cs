@@ -7,11 +7,11 @@ public static class Glyphs {
     public static readonly byte[] HIGHLIGHT_COLOR = [48, 48, 48];
     public static readonly byte[] RED_COLOR       = [224, 48, 0];
 
-    public static readonly byte[] PANE_COLOR         = [32, 32, 32];
-    public static readonly byte[] TOOLBAR_COLOR      = [56, 56, 56];
-    public static readonly byte[] CONTROL_COLOR      = [72, 72, 72];
-    public static readonly byte[] INPUT_COLOR        = [96, 96, 96];
-    public static readonly byte[] DIALOG_COLOR       = [160, 160, 160];
+    public static readonly byte[] PANE_COLOR      = [32, 32, 32];
+    public static readonly byte[] TOOLBAR_COLOR   = [56, 56, 56];
+    public static readonly byte[] CONTROL_COLOR   = [72, 72, 72];
+    public static readonly byte[] INPUT_COLOR     = [96, 96, 96];
+    public static readonly byte[] DIALOG_COLOR    = [160, 160, 160];
 
     public static ushort BRAILLE_BASE = 0x2800;
 
@@ -35,7 +35,7 @@ public static class Glyphs {
     public const char LEFT_TRIANGLE  = '\u25C2';
     public const char RIGHT_TRIANGLE = '\u25B8';
     
-    public const char BULLET = '\u2B24';
+    public const char BULLET = '\u25CF';
 
     public const char TOGGLE_BOX = '\u25A0';
 

@@ -39,6 +39,9 @@ public class IndexedDictionary<TKey, TValue>
         return value;
     }
 
+    public bool TryGetValue(TKey key, out TValue value) =>
+        _dictionary.TryGetValue(key, out value);
+
     public TKey GetKeyByIndex(int index) =>
         _indexToKey.TryGetValue(index, out TKey key) ? key : default;
 

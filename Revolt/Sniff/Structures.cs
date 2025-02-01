@@ -95,10 +95,6 @@ public sealed partial class Sniffer {
         public uint      window { init; get; }
     }
 
-    public readonly struct SniffOverviewItem {
-
-    }
-
     public readonly struct SniffIssuesItem {
 
     }

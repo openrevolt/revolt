@@ -22,8 +22,8 @@ internal class SnifferFrame : Tui.Frame {
     private Tui.ShadowIndexListBox<ushort, TrafficData>    datagramList;
     private Tui.ShadowIndexListBox<ushort, Count>          layer3ProtocolList;
     private Tui.ShadowIndexListBox<byte, Count>            layer4ProtocolList;
-    private Tui.ListBox<SniffOverviewItem>                 overviewList;
     private Tui.ListBox<SniffIssuesItem>                   issuesList;
+    private Tui.ListBox<byte>                              overviewList;
 
     private Tui.Element currentList;
 
@@ -44,8 +44,8 @@ internal class SnifferFrame : Tui.Frame {
                 new Tui.Tabs.TabItem() { text="Datagrams", key="D" },
                 new Tui.Tabs.TabItem() { text="L3",        key="3" },
                 new Tui.Tabs.TabItem() { text="L4",        key="4" },
-                new Tui.Tabs.TabItem() { text="Overview",  key="O" },
                 new Tui.Tabs.TabItem() { text="Issues",    key="I" },
+                new Tui.Tabs.TabItem() { text="Overview",  key="O" },
             ],
             OnChange   = Tabs_OnChange,
             DrawLabels = DrawPacketsLabels
@@ -97,30 +97,31 @@ internal class SnifferFrame : Tui.Frame {
         };
 
         layer4ProtocolList = new Tui.ShadowIndexListBox<byte, Count>(this) {
-            left = 0,
-            right = 0,
-            top = 3,
-            bottom = 2,
+            left            = 0,
+            right           = 0,
+            top             = 3,
+            bottom          = 2,
             backgroundColor = Glyphs.PANE_COLOR,
             drawItemHandler = DrawLayer4Item
         };
 
-        overviewList = new Tui.ListBox<SniffOverviewItem>(this) {
+        issuesList = new Tui.ListBox<SniffIssuesItem>(this) {
             left            = 0,
             right           = 0,
             top             = 3,
-            bottom          = 0.4f,
-            backgroundColor = Glyphs.PANE_COLOR,
-            drawItemHandler = DrawOverviewItem
-        };
-
-        issuesList = new Tui.ListBox<SniffIssuesItem>(this) {
-            left = 0,
-            right = 0,
-            top = 3,
-            bottom = 2,
+            bottom          = 2,
             backgroundColor = Glyphs.PANE_COLOR,
             drawItemHandler = DrawIssuesItem
+        };
+
+        overviewList = new Tui.ListBox<byte>(this) {
+            left            = 0,
+            right           = 0,
+            top             = 3,
+            bottom          = 2,
+            backgroundColor = Glyphs.PANE_COLOR,
+            drawItemHandler = DrawOverviewItem,
+            items           = [0, 0, 0, 0, 0]
         };
 
         toolbar = new Tui.Toolbar(this) {
@@ -184,11 +185,11 @@ internal class SnifferFrame : Tui.Frame {
             tabs.SetIndex(5);
             break;
 
-        case ConsoleKey.O:
+        case ConsoleKey.I:
             tabs.SetIndex(6);
             break;
 
-        case ConsoleKey.I:
+        case ConsoleKey.O:
             tabs.SetIndex(7);
             break;
 
@@ -243,9 +244,8 @@ internal class SnifferFrame : Tui.Frame {
             3 => datagramList,
             4 => layer3ProtocolList,
             5 => layer4ProtocolList,
-            6 => overviewList,
-            7 => issuesList,
-            _ => datagramList
+            6 => issuesList,
+            _ => overviewList
         };
 
         elements[1] = currentList;
@@ -678,12 +678,107 @@ internal class SnifferFrame : Tui.Frame {
         lastUpdate = Stopwatch.GetTimestamp();
     }
 
-    private void DrawOverviewItem(int index, int x, int y, int width) {
+    private void DrawIssuesItem(int index, int x, int y, int width) {
+        if (issuesList.items.Count == 0) return;
+        if (index < 0) return;
+        if (index >= issuesList.items.Count) return;
+
+        int adjustedY = y + index - issuesList.scrollOffset;
+        if (adjustedY < y || adjustedY > Renderer.LastHeight) return;
+
+        bool isSelected = index == layer4ProtocolList.index;
 
     }
 
-    private void DrawIssuesItem(int index, int x, int y, int width) {
+    private void DrawOverviewItem(int index, int x, int y, int width) {
+        if (overviewList.items.Count == 0) return;
+        if (index < 0) return;
+        if (index >= overviewList.items.Count) return;
 
+        int adjustedY = y + index - overviewList.scrollOffset;
+        if (adjustedY < y || adjustedY > Renderer.LastHeight) return;
+
+        bool isSelected = index == overviewList.index;
+
+        string name = index switch {
+            0 => " Total:             ",
+            1 => " IPv4:              ",
+            2 => " IPv6:              ",
+            3 => " TCP:               ",
+            4 => " UDP:               ",
+            _ => String.Empty
+        };
+
+        Ansi.SetCursorPosition(1, adjustedY);
+
+        if (isSelected) {
+            Ansi.SetFgColor(overviewList.isFocused && !String.IsNullOrEmpty(name) ? [16, 16, 16] : Glyphs.LIGHT_COLOR);
+            Ansi.SetBgColor(overviewList.isFocused && !String.IsNullOrEmpty(name) ? Glyphs.FOCUS_COLOR : Glyphs.HIGHLIGHT_COLOR);
+        }
+        else {
+            Ansi.SetFgColor(Glyphs.LIGHT_COLOR);
+            Ansi.SetBgColor(Glyphs.PANE_COLOR);
+        }
+
+        Ansi.Write(String.IsNullOrEmpty(name) ? new String(' ', 20) : name);
+
+        Ansi.SetFgColor(Glyphs.LIGHT_COLOR);
+        Ansi.SetBgColor(isSelected ? Glyphs.HIGHLIGHT_COLOR : Glyphs.PANE_COLOR);
+
+        switch (index) {
+        case 0:
+            DrawNumber(sniffer?.totalPackets ?? 0, 16, Glyphs.LIGHT_COLOR);
+            DrawBytes(sniffer?.totalBytes ?? 0, 16, Glyphs.LIGHT_COLOR);
+            Ansi.Write(new String(' ', 8));
+            break;
+
+        case 1: {
+            if (sniffer is null) goto default;
+            if (sniffer.networkCount.TryGetValue((ushort)NetworkProtocol.IPv4, out Count count)) {
+                DrawNumber(count.packets, 16, Glyphs.LIGHT_COLOR);
+                DrawBytes(count.bytes, 16, Glyphs.LIGHT_COLOR);
+                Ansi.Write($"   {(((double)count.bytes * 100 / sniffer.totalBytes)).ToString("0.0")}%".PadRight(8));
+                break;
+            }
+            goto default;
+        }
+        case 2: {
+            if (sniffer is null) goto default;
+            if (sniffer.networkCount.TryGetValue((ushort)NetworkProtocol.IPv6, out Count count)) {
+                DrawNumber(count.packets, 16, Glyphs.LIGHT_COLOR);
+                DrawBytes(count.bytes, 16, Glyphs.LIGHT_COLOR);
+                Ansi.Write($"   {(((double)count.bytes * 100 / sniffer.totalBytes)).ToString("0.0")}%".PadRight(8));
+                break;
+            }
+            goto default;
+        }
+        case 3: {
+            if (sniffer is null) goto default;
+            if (sniffer.transportCount.TryGetValue((byte)TransportProtocol.TCP, out Count count)) {
+                DrawNumber(count.packets, 16, Glyphs.LIGHT_COLOR);
+                DrawBytes(count.bytes, 16, Glyphs.LIGHT_COLOR);
+                Ansi.Write($"   {(((double)count.bytes * 100 / sniffer.totalBytes)).ToString("0.0")}%".PadRight(8));
+                break;
+            }
+            goto default;
+        }
+        case 4: {
+            if (sniffer is null) goto default;
+            if (sniffer.transportCount.TryGetValue((byte)TransportProtocol.UDP, out Count count)) {
+                DrawNumber(count.packets, 16, Glyphs.LIGHT_COLOR);
+                DrawBytes(count.bytes, 16, Glyphs.LIGHT_COLOR);
+                Ansi.Write($"   {(((double)count.bytes * 100 / sniffer.totalBytes)).ToString("0.0")}%".PadRight(8));
+                break;
+            }
+            goto default;
+        }
+        default:
+            Ansi.Write(new String(' ', 40));
+            Ansi.Push();
+            break;
+        }
+
+        Ansi.Write(new String(' ', width - 60));
     }
 
     private void DrawTraffic(TrafficData traffic) {
