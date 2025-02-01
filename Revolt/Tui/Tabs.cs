@@ -11,6 +11,7 @@ public sealed class Tabs(Frame parentFrame) : Element(parentFrame) {
     public TabItem[] items;
     public int index = 0;
     public Action OnChange;
+    public Action DrawLabels;
 
     public override void Draw(bool push) {
         (int left, int top, int width, int _) = GetBounding();
@@ -27,6 +28,10 @@ public sealed class Tabs(Frame parentFrame) : Element(parentFrame) {
         Ansi.SetCursorPosition(left, top + 2);
         Ansi.SetBgColor(Glyphs.PANE_COLOR);
         Ansi.Write(new String(' ', width));
+
+        if (DrawLabels is not null) {
+            DrawLabels();
+        }
 
         if (push) {
             Ansi.Push();
@@ -85,23 +90,23 @@ public sealed class Tabs(Frame parentFrame) : Element(parentFrame) {
         case ConsoleKey.LeftArrow:
             index = Math.Max(0, index - 1);
             if (lastIndex == index) break;
-            Draw(true);
 
             if (OnChange is not null) {
                 OnChange();
             }
 
+            Draw(true);
             break;
 
         case ConsoleKey.RightArrow:
             index = Math.Min(items.Length - 1, index + 1);
             if (lastIndex == index) break;
-            Draw(true);
 
             if (OnChange is not null) {
                 OnChange();
             }
 
+            Draw(true);
             break;
         }
     }

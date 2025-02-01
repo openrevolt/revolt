@@ -12,9 +12,7 @@ public sealed class HelpDialog : DialogBox {
     }
 
     public override void Draw(int width, int height) {
-        int left;
-        int top;
-
+        int left, top;
         if (width < 80 || height < 20) {
             left   = 0;
             top    = 0;
@@ -42,9 +40,6 @@ public sealed class HelpDialog : DialogBox {
         list.top = top;
         list.right = left;
         list.bottom = top;
-
-        okButton.left = left + (width - 8) / 2;
-        okButton.top = height + top - 2;
 
         for (int i = 0; i < elements.Count; i++) {
             elements[i].Draw(false);
@@ -74,10 +69,11 @@ public sealed class ShortcutListBox(Frame parentFrame, string[][] shortcuts) : E
         (int left, int top, int width, int height) = GetBounding();
 
         Ansi.SetFgColor(Glyphs.DARK_COLOR);
-        Ansi.SetBgColor(Glyphs.DIALOG_COLOR);
 
         for (int i = 0; i < shortcuts.Length; i++ ) {
-            Frame.WriteLabel(shortcuts[i][0], left + 1, top + 1 + i, 8);
+            Ansi.SetBgColor(i % 2 == 0 ? [144, 144, 144] : Glyphs.DIALOG_COLOR);
+
+            Frame.WriteLabel(shortcuts[i][0], left + 2, top + 1 + i, 8);
             Frame.WriteLabel(shortcuts[i][1], left + 8, top + 1 + i, width - 12);
         }
 

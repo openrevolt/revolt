@@ -25,7 +25,7 @@ public sealed partial class Sniffer {
                 ((ulong)buffer[offset + 2] << 24) |
                 ((ulong)buffer[offset + 3] << 16) |
                 ((ulong)buffer[offset + 4] << 8) |
-                (ulong)buffer[offset + 5];
+                 (ulong)buffer[offset + 5];
 
             return mac;
         }

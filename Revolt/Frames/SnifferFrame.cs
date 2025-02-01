@@ -47,7 +47,8 @@ internal class SnifferFrame : Tui.Frame {
                 new Tui.Tabs.TabItem() { text="Overview",  key="O" },
                 new Tui.Tabs.TabItem() { text="Issues",    key="I" },
             ],
-            OnChange = Tabs_OnChange
+            OnChange   = Tabs_OnChange,
+            DrawLabels = DrawPacketsLabels
         };
 
         framesList = new Tui.ShadowIndexListBox<Mac, TrafficData>(this) {
@@ -108,7 +109,7 @@ internal class SnifferFrame : Tui.Frame {
             left            = 0,
             right           = 0,
             top             = 3,
-            bottom          = 2,
+            bottom          = 0.4f,
             backgroundColor = Glyphs.PANE_COLOR,
             drawItemHandler = DrawOverviewItem
         };
@@ -255,7 +256,17 @@ internal class SnifferFrame : Tui.Frame {
             elements[1].Focus();
         }
 
-        elements[1].Draw(true);
+        if (tabs.index < 4) {
+            tabs.DrawLabels = DrawPacketsLabels;
+        }
+        else if (tabs.index < 6) {
+            tabs.DrawLabels = DrawProtocolsLabels;
+        }
+        else {
+            tabs.DrawLabels = null;
+        }
+
+        elements[1].Draw(false);
 
         lastUpdate = Stopwatch.GetTimestamp();
     }
@@ -303,11 +314,11 @@ internal class SnifferFrame : Tui.Frame {
 
         string vendorString;
         if (mac.IsBroadcast()) {
-            Ansi.SetFgColor([0, 160, 255]);
+            Ansi.SetFgColor([0, 172, 255]);
             vendorString = "Broadcast";
         }
         else if (mac.IsEthernetMulticast()) {
-            Ansi.SetFgColor([0, 224, 255]);
+            Ansi.SetFgColor([0, 208, 255]);
             vendorString = "Ethernet multicast";
         }
         else if (mac.IsPVv4Multicast()) {
@@ -397,7 +408,7 @@ internal class SnifferFrame : Tui.Frame {
         else if (ip.AddressFamily == System.Net.Sockets.AddressFamily.InterNetwork) {
             byte[] bytes = ip.GetAddressBytes();
             if (bytes.All(o => o == 255)) {
-                Ansi.SetFgColor([0, 160, 255]);
+                Ansi.SetFgColor([0, 172, 255]);
                 noteString = "Broadcast";
             }
             else if (bytes[0] > 223 && bytes[0] < 240) {
@@ -670,6 +681,7 @@ internal class SnifferFrame : Tui.Frame {
     private void DrawOverviewItem(int index, int x, int y, int width) {
 
     }
+
     private void DrawIssuesItem(int index, int x, int y, int width) {
 
     }
@@ -733,6 +745,26 @@ internal class SnifferFrame : Tui.Frame {
             Ansi.SetFgColor(color);
             Ansi.Write(text);
         }
+    }
+
+    private void DrawPacketsLabels() {
+        int left = Renderer.LastWidth - 49;
+        if (left < 48) return;
+
+        Ansi.SetFgColor(Glyphs.INPUT_COLOR);
+        Tui.Frame.WriteLabel("Tx Packets", left, 3, 12);
+        Tui.Frame.WriteLabel("Rx Packets", left + 12, 3, 12);
+        Tui.Frame.WriteLabel("  Tx Bytes", left + 24, 3, 12);
+        Tui.Frame.WriteLabel("  Rx Bytes", left + 36, 3, 12);
+    }
+
+    private void DrawProtocolsLabels() {
+        int left = Renderer.LastWidth - 23;
+        if (left < 48) return;
+
+        Ansi.SetFgColor(Glyphs.INPUT_COLOR);
+        Tui.Frame.WriteLabel("   Packets", left, 3, 12);
+        Tui.Frame.WriteLabel("     Bytes", left + 12, 3, 12);
     }
 
     private static string SizeToString(long size) {
