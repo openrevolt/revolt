@@ -6,17 +6,20 @@ using SharpPcap;
 namespace Revolt.Sniff;
 
 public sealed partial class Sniffer : IDisposable {
+    public long totalPackets=0, totalBytes=0;
+
     public IndexedDictionary<Mac, TrafficData>       framesCount    = new IndexedDictionary<Mac, TrafficData>();
     public IndexedDictionary<IPAddress, TrafficData> packetCount    = new IndexedDictionary<IPAddress, TrafficData>();
     public IndexedDictionary<ushort, TrafficData>    segmentCount   = new IndexedDictionary<ushort, TrafficData>();
     public IndexedDictionary<ushort, TrafficData>    datagramCount  = new IndexedDictionary<ushort, TrafficData>();
-    public IndexedDictionary<ushort, Count>          networkCount   = new IndexedDictionary<ushort, Count>();
+    public IndexedDictionary<ushort, Count>          etherTypeCount = new IndexedDictionary<ushort, Count>();
     public IndexedDictionary<byte, Count>            transportCount = new IndexedDictionary<byte, Count>();
-
-    public long totalPackets=0, totalBytes=0;
 
     private ulong frameIndex = 0;
     private ConcurrentDictionary<ulong, Frame> frames = new ConcurrentDictionary<ulong, Frame>();
+
+    private ulong segmentIndex = 0;
+    private ConcurrentDictionary<ulong, (Frame, Segment)> segments = new ConcurrentDictionary<ulong, (Frame, Segment)>();
 
     private ICaptureDevice device;
     private PhysicalAddress deviceMac;
@@ -30,6 +33,12 @@ public sealed partial class Sniffer : IDisposable {
 
         this.device = device;
         deviceMac = device.MacAddress;
+
+        etherTypeCount.TryAdd(0x0800, new Count() { packets = 0, bytes = 0 });
+        etherTypeCount.TryAdd(0x86DD, new Count() { packets = 0, bytes = 0 });
+
+        transportCount.TryAdd(6, new Count() { packets = 0, bytes = 0 });
+        transportCount.TryAdd(17, new Count() { packets = 0, bytes = 0 });
     }
 
     public void Start() {
@@ -66,8 +75,8 @@ public sealed partial class Sniffer : IDisposable {
         ushort sourcePort           = default;
         ushort destinationPort      = default;
 
-        switch ((NetworkProtocol)networkProtocol) {
-        case NetworkProtocol.IPv4:
+        switch ((etherTypes)networkProtocol) {
+        case etherTypes.IPv4:
             (l3Size, ttl, transportProtocol, ihl, sourceIP, destinationIP) = HandleV4Packet(buffer, 14);
 
             transportCount.AddOrUpdate(
@@ -82,7 +91,7 @@ public sealed partial class Sniffer : IDisposable {
 
             break;
 
-        case NetworkProtocol.IPv6:
+        case etherTypes.IPv6:
             (l3Size, transportProtocol, ttl, sourceIP, destinationIP) = HandleV6Packet(buffer, 14);
             ihl = 40;
 
@@ -230,10 +239,22 @@ public sealed partial class Sniffer : IDisposable {
         frames.TryAdd(frameIndex, frame);
         Interlocked.Increment(ref frameIndex);
 
+        if (transportProtocol == (byte)TransportProtocol.TCP) {
+            Segment segment = new Segment() {
+                initialSequence = 0,
+                seqNumber       = 0,
+                ackNumber       = 0,
+                window          = 0
+            };
+
+            segments.TryAdd(segmentIndex, (frame, segment));
+            Interlocked.Increment(ref segmentIndex);
+        }
+
         Interlocked.Increment(ref totalPackets);
         Interlocked.Add(ref totalBytes, buffer.Length);
 
-        networkCount.AddOrUpdate(
+        etherTypeCount.AddOrUpdate(
             networkProtocol,
             new Count() { bytes = buffer.Length, packets = 1 },
             (code, count) => {

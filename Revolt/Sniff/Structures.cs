@@ -89,10 +89,13 @@ public sealed partial class Sniffer {
 
         public ushort    sourcePort { init; get; }
         public ushort    destinationPort { init; get; }
-        public uint      initialSequence { init; get;  }
-        public uint      seqNumber { init; get; }
-        public uint      ackNumber { init; get; }
-        public uint      window { init; get; }
+    }
+
+    public readonly struct Segment {
+        public uint initialSequence { init; get; }
+        public uint seqNumber { init; get; }
+        public uint ackNumber { init; get; }
+        public uint window { init; get; }
     }
 
     public readonly struct SniffIssuesItem {

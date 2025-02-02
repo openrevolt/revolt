@@ -4,7 +4,7 @@ namespace Revolt.Sniff;
 
 public sealed partial class Sniffer {
 
-    public enum NetworkProtocol : ushort {
+    public enum etherTypes : ushort {
         none   = 0,
         IPv4   = 0x0800,
         ARP    = 0x0806,
@@ -14,7 +14,7 @@ public sealed partial class Sniffer {
         LLDP   = 0x88CC
     }
 
-    private static readonly FrozenDictionary<ushort, string> networkProtocolNames = new Dictionary<ushort, string>() {
+    private static readonly FrozenDictionary<ushort, string> etherTypeNames = new Dictionary<ushort, string>() {
         { 0x0600, "XEROX NS IDP" },
         { 0x0800, "IPv4 - Internet Protocol v4" },
         { 0x0801, "X.75 Internet" },
@@ -91,7 +91,7 @@ public sealed partial class Sniffer {
         { 0xA0ED, "LoWPAN encapsulation" },
     }.ToFrozenDictionary();
 
-    public static string GetNetworkProtocolName(ushort etherType) =>
-        networkProtocolNames.TryGetValue(etherType, out string name) ? name : "-";
+    public static string GetEtherTypeName(ushort etherType) =>
+        etherTypeNames.TryGetValue(etherType, out string name) ? name : "-";
 
 }

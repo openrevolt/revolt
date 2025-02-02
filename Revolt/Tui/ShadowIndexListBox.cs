@@ -16,7 +16,6 @@ public sealed class ShadowIndexListBox<TKey, TValue>(Frame parentFrame) : Elemen
 
     public void BindDictionary(IndexedDictionary<TKey, TValue> shadow) {
         this.shadow = shadow;
-        this.Draw(true);
     }
 
     public int Count => shadow?.Count ?? 0;
