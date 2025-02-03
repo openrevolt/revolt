@@ -16,10 +16,10 @@ public sealed partial class Sniffer : IDisposable {
     public IndexedDictionary<byte, Count>            transportCount = new IndexedDictionary<byte, Count>();
 
     private ulong frameIndex = 0;
-    private ConcurrentDictionary<ulong, Frame> frames = new ConcurrentDictionary<ulong, Frame>();
+    private ConcurrentDictionary<ulong, Packet> frames = new ConcurrentDictionary<ulong, Packet>();
 
     private ulong segmentIndex = 0;
-    private ConcurrentDictionary<ulong, (Frame, Segment)> segments = new ConcurrentDictionary<ulong, (Frame, Segment)>();
+    private ConcurrentDictionary<ulong, (Packet, Segment)> segments = new ConcurrentDictionary<ulong, (Packet, Segment)>();
 
     private ICaptureDevice device;
     private PhysicalAddress deviceMac;
@@ -219,7 +219,7 @@ public sealed partial class Sniffer : IDisposable {
             }
         }
 
-        Frame frame = new Frame() {
+        Packet frame = new Packet() {
             timestamp         = timestamp,
             size              = l3Size,
 

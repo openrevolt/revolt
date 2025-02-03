@@ -51,7 +51,7 @@ internal class SnifferFrame : Tui.Frame {
                 new Tui.Tabs.TabItem() { text="Overview",    key="O" },
             ],
             OnChange   = Tabs_OnChange,
-            DrawLabels = DrawPacketsLabels
+            DrawLabels = WritePacketsLabels
         };
 
         framesList = new Tui.ShadowIndexListBox<Mac, TrafficData>(this) {
@@ -263,10 +263,10 @@ internal class SnifferFrame : Tui.Frame {
         }
 
         if (tabs.index < 4) {
-            tabs.DrawLabels = DrawPacketsLabels;
+            tabs.DrawLabels = WritePacketsLabels;
         }
         else if (tabs.index < 6) {
-            tabs.DrawLabels = DrawProtocolsLabels;
+            tabs.DrawLabels = WriteProtocolsLabels;
         }
         else {
             tabs.DrawLabels = null;
@@ -280,8 +280,8 @@ internal class SnifferFrame : Tui.Frame {
     private void DrawStatus() {
         Ansi.SetCursorPosition(Renderer.LastWidth - 25, Math.Max(Renderer.LastHeight, 0));
         Ansi.SetBgColor(Glyphs.TOOLBAR_COLOR);
-        DrawNumber(sniffer?.totalPackets ?? 0, 12, Glyphs.LIGHT_COLOR);
-        DrawBytes(sniffer?.totalBytes ?? 0, 12, Glyphs.LIGHT_COLOR);
+        WriteNumber(sniffer?.totalPackets ?? 0, 12, Glyphs.LIGHT_COLOR);
+        WriteBytes(sniffer?.totalBytes ?? 0, 12, Glyphs.LIGHT_COLOR);
     }
 
     private void DrawFrameItem(int index, int x, int y, int width) {
@@ -365,7 +365,7 @@ internal class SnifferFrame : Tui.Frame {
             : vendorString.PadRight(vendorWidth));
         }
 
-        DrawTraffic(traffic);
+        WriteTraffic(traffic);
 
         Ansi.Write(' ');
         Ansi.SetBgColor(Glyphs.DARK_COLOR);
@@ -474,7 +474,7 @@ internal class SnifferFrame : Tui.Frame {
             : noteString.PadRight(noteWidth));
         }
 
-        DrawTraffic(traffic);
+        WriteTraffic(traffic);
 
         Ansi.Write(' ');
         Ansi.SetBgColor(Glyphs.DARK_COLOR);
@@ -521,7 +521,7 @@ internal class SnifferFrame : Tui.Frame {
             ? noteString[..(noteWidth - 1)] + Glyphs.ELLIPSIS
             : noteString.PadRight(noteWidth));
 
-        DrawTraffic(traffic);
+        WriteTraffic(traffic);
 
         Ansi.Write(' ');
         Ansi.SetBgColor(Glyphs.DARK_COLOR);
@@ -568,7 +568,7 @@ internal class SnifferFrame : Tui.Frame {
             ? noteString[..(noteWidth - 1)] + Glyphs.ELLIPSIS
             : noteString.PadRight(noteWidth));
 
-        DrawTraffic(traffic);
+        WriteTraffic(traffic);
 
         Ansi.Write(' ');
         Ansi.SetBgColor(Glyphs.DARK_COLOR);
@@ -621,8 +621,8 @@ internal class SnifferFrame : Tui.Frame {
 
         Ansi.Write(new String(' ', noteWidth));
 
-        DrawNumber(count.packets, 12, Glyphs.LIGHT_COLOR);
-        DrawBytes(count.bytes, 12, Glyphs.LIGHT_COLOR);
+        WriteNumber(count.packets, 12, Glyphs.LIGHT_COLOR);
+        WriteBytes(count.bytes, 12, Glyphs.LIGHT_COLOR);
 
         Ansi.Write(' ');
         Ansi.SetBgColor(Glyphs.DARK_COLOR);
@@ -674,8 +674,8 @@ internal class SnifferFrame : Tui.Frame {
 
         Ansi.Write(new String(' ', noteWidth));
 
-        DrawNumber(count.packets, 12, Glyphs.LIGHT_COLOR);
-        DrawBytes(count.bytes, 12, Glyphs.LIGHT_COLOR);
+        WriteNumber(count.packets, 12, Glyphs.LIGHT_COLOR);
+        WriteBytes(count.bytes, 12, Glyphs.LIGHT_COLOR);
 
         Ansi.Write(' ');
 
@@ -733,16 +733,16 @@ internal class SnifferFrame : Tui.Frame {
 
         switch (index) {
         case 0:
-            DrawNumber(sniffer?.totalPackets ?? 0, 16, Glyphs.LIGHT_COLOR);
-            DrawBytes(sniffer?.totalBytes ?? 0, 16, Glyphs.LIGHT_COLOR);
+            WriteNumber(sniffer?.totalPackets ?? 0, 16, Glyphs.LIGHT_COLOR);
+            WriteBytes(sniffer?.totalBytes ?? 0, 16, Glyphs.LIGHT_COLOR);
             Ansi.Write(new String(' ', 8));
             break;
 
         case 1: {
             if (sniffer is null) goto default;
             sniffer.etherTypeCount.TryGetValue((ushort)etherTypes.IPv4, out Count count);
-            DrawNumber(count.packets, 16, Glyphs.LIGHT_COLOR);
-            DrawBytes(count.bytes, 16, Glyphs.LIGHT_COLOR);
+            WriteNumber(count.packets, 16, Glyphs.LIGHT_COLOR);
+            WriteBytes(count.bytes, 16, Glyphs.LIGHT_COLOR);
             if (count.packets > 0) {
                 Ansi.Write($"   {(((double)count.bytes * 100 / sniffer.totalBytes)).ToString("0.0")}%".PadRight(8));
             }
@@ -755,8 +755,8 @@ internal class SnifferFrame : Tui.Frame {
         case 2: {
             if (sniffer is null) goto default;
             sniffer.etherTypeCount.TryGetValue((ushort)etherTypes.IPv6, out Count count);
-            DrawNumber(count.packets, 16, Glyphs.LIGHT_COLOR);
-            DrawBytes(count.bytes, 16, Glyphs.LIGHT_COLOR);
+            WriteNumber(count.packets, 16, Glyphs.LIGHT_COLOR);
+            WriteBytes(count.bytes, 16, Glyphs.LIGHT_COLOR);
             if (count.packets > 0) {
                 Ansi.Write($"   {(((double)count.bytes * 100 / sniffer.totalBytes)).ToString("0.0")}%".PadRight(8));
             }
@@ -769,8 +769,8 @@ internal class SnifferFrame : Tui.Frame {
         case 3: {
             if (sniffer is null) goto default;
             sniffer.transportCount.TryGetValue((byte)TransportProtocol.TCP, out Count count);
-            DrawNumber(count.packets, 16, Glyphs.LIGHT_COLOR);
-            DrawBytes(count.bytes, 16, Glyphs.LIGHT_COLOR);
+            WriteNumber(count.packets, 16, Glyphs.LIGHT_COLOR);
+            WriteBytes(count.bytes, 16, Glyphs.LIGHT_COLOR);
             if (count.packets > 0) {
                 Ansi.Write($"   {(((double)count.bytes * 100 / sniffer.totalBytes)).ToString("0.0")}%".PadRight(8));
             }
@@ -783,8 +783,8 @@ internal class SnifferFrame : Tui.Frame {
         case 4: {
             if (sniffer is null) goto default;
             sniffer.transportCount.TryGetValue((byte)TransportProtocol.UDP, out Count count);
-            DrawNumber(count.packets, 16, Glyphs.LIGHT_COLOR);
-            DrawBytes(count.bytes, 16, Glyphs.LIGHT_COLOR);
+            WriteNumber(count.packets, 16, Glyphs.LIGHT_COLOR);
+            WriteBytes(count.bytes, 16, Glyphs.LIGHT_COLOR);
             if (count.packets > 0) {
                 Ansi.Write($"   {(((double)count.bytes * 100 / sniffer.totalBytes)).ToString("0.0")}%".PadRight(8));
             }
@@ -803,11 +803,11 @@ internal class SnifferFrame : Tui.Frame {
         Ansi.Write(new String(' ', width - 60));
     }
 
-    private void DrawTraffic(TrafficData traffic) {
-        DrawNumber(traffic.packetsTx, 12, [232, 118, 0]);
-        DrawNumber(traffic.packetsRx, 12, [122, 212, 43]);
-        DrawBytes(traffic.bytesTx, 12, [232, 118, 0]);
-        DrawBytes(traffic.bytesRx, 12, [122, 212, 43]);
+    private void WriteTraffic(TrafficData traffic) {
+        WriteNumber(traffic.packetsTx, 12, [232, 118, 0]);
+        WriteNumber(traffic.packetsRx, 12, [122, 212, 43]);
+        WriteBytes(traffic.bytesTx, 12, [232, 118, 0]);
+        WriteBytes(traffic.bytesRx, 12, [122, 212, 43]);
 
         long now = DateTime.UtcNow.Ticks;
         long delta = now - traffic.lastActivity;
@@ -821,7 +821,7 @@ internal class SnifferFrame : Tui.Frame {
         }
     }
 
-    private void DrawNumber(long value, int padding, byte[] color) {
+    private void WriteNumber(long value, int padding, byte[] color) {
         if (value == 0) {
             Ansi.SetFgColor(color);
             Ansi.Write("-".PadLeft(padding));
@@ -840,7 +840,7 @@ internal class SnifferFrame : Tui.Frame {
         }
     }
 
-    private void DrawBytes(long value, int padding, byte[] color) {
+    private void WriteBytes(long value, int padding, byte[] color) {
         if (value == 0) {
             Ansi.SetFgColor(color);
             Ansi.Write("-   ".PadLeft(padding));
@@ -864,7 +864,7 @@ internal class SnifferFrame : Tui.Frame {
         }
     }
 
-    private void DrawPacketsLabels() {
+    private void WritePacketsLabels() {
         int left = Renderer.LastWidth - 49;
         if (left < 48) return;
 
@@ -875,7 +875,7 @@ internal class SnifferFrame : Tui.Frame {
         Tui.Frame.WriteLabel("  Rx Bytes", left + 36, 3, 12);
     }
 
-    private void DrawProtocolsLabels() {
+    private void WriteProtocolsLabels() {
         int left = Renderer.LastWidth - 23;
         if (left < 48) return;
 

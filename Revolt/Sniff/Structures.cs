@@ -74,7 +74,55 @@ public sealed partial class Sniffer {
             (value & 0x020000000000) != 0x00;
     }
 
-    public readonly struct Frame {
+    public interface IP {
+    }
+
+    public struct IPv4 : IP {
+        public uint address;
+
+        public IPv4(uint address) {
+            this.address = address;
+        }
+
+        public static bool operator ==(IPv4 left, IPv4 right) => left.address == right.address;
+
+        public static bool operator !=(IPv4 left, IPv4 right) => left.address != right.address;
+
+        public override bool Equals(object obj) => obj is IPv4 other && this.address == other.address;
+
+        public override int GetHashCode() => (int)address;
+    }
+
+    public unsafe struct IPv6 : IP {
+        public fixed byte address[16];
+        public static bool operator ==(IPv6 left, IPv6 right) {
+            for (int i = 0; i < 16; i++) {
+                if (left.address[i] != right.address[i])
+                    return false;
+            }
+            return true;
+        }
+
+        public static bool operator !=(IPv6 left, IPv6 right) => !(left == right);
+
+        public override bool Equals(object obj) {
+            if (obj is not IPv6 ipv6) return false;
+            return this == ipv6;
+        }
+
+        public override int GetHashCode() {
+            unchecked {
+                int hash = 17;
+                for (int i = 0; i < 16; i++) {
+                    hash = hash * 31 + address[i];
+                }
+                return hash;
+            }
+        }
+    }
+
+
+    public readonly struct Packet {
         public long      timestamp { init; get; }
         public ushort    size { init; get; }
 
