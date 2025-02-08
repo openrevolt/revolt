@@ -964,6 +964,7 @@ internal class SnifferFrame : Tui.Frame {
         };
 
         dialog.okButton.action = () => {
+            sniffer.Stop();
             cancellationTokenSource?.Cancel();
             dialog.Close();
         };

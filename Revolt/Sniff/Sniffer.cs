@@ -248,12 +248,12 @@ public sealed partial class Sniffer : IDisposable {
             );
         }
 
-        Segment segment = new Segment() {
-            initialSequence = 0,
-            seqNumber       = 0,
-            ackNumber       = 0,
-            window          = 0
-        };
+        Segment segment = new Segment(
+            new FourTuple(sourceIP, destinationIP, sourcePort, destinationPort),
+            0,
+            0,
+            0,
+            0);
 
         segments.TryAdd(segmentIndex, segment);
         Interlocked.Increment(ref segmentIndex);
