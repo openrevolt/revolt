@@ -164,8 +164,11 @@ public sealed partial class Sniffer {
                 if (segments[i] == 0) {
                     if (currentStart == -1) {
                         currentStart = i;
+                        currentLength = 1;
                     }
-                    currentLength++;
+                    else {
+                        currentLength++;
+                    }
                 }
                 else {
                     if (currentLength > bestLength) {
@@ -187,6 +190,7 @@ public sealed partial class Sniffer {
             for (int i = 0; i < 8; i++) {
                 if (i == bestStart) {
                     buffer[index++] = ':';
+                    if (bestStart == 0) buffer[index++] = ':';
                     i += bestLength - 1;
                     continue;
                 }
