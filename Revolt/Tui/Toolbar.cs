@@ -3,11 +3,11 @@
 public sealed class Toolbar(Frame parentFrame) : Element(parentFrame) {
 
     public struct ToolbarItem {
-        public string text;
-        public string key;
-        public byte[] color;
-        public bool   disabled;
-        public Action action;
+        public string     text;
+        public string     key;
+        public Ansi.Color color;
+        public bool       disabled;
+        public Action     action;
     }
 
     public ToolbarItem[] items;
@@ -51,10 +51,10 @@ public sealed class Toolbar(Frame parentFrame) : Element(parentFrame) {
         Ansi.Write(' ');
 
         if (items[i].disabled) {
-            Ansi.SetFgColor([96,96,96]);
+            Ansi.SetFgColor(Glyphs.INPUT_COLOR);
         }
-        if (items[i].color is null) {
-            Ansi.SetFgColor(this.isFocused && i == index ? [16, 16, 16] : Glyphs.LIGHT_COLOR);
+        if (items[i].color == default) {
+            Ansi.SetFgColor(this.isFocused && i == index ? Glyphs.DARKGRAY_COLOR : Glyphs.LIGHT_COLOR);
         }
         else {
             Ansi.SetFgColor(items[i].color);

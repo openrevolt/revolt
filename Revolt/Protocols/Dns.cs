@@ -91,17 +91,17 @@ public static class Dns {
         RecordType.ANY
     ];
 
-    public static readonly byte[][] typesColors = [
-        [236, 91, 19],
-        [236, 200, 19],
-        [164, 236, 19],
-        [19, 236, 91],
-        [43, 173, 238],
-        [81, 109, 251],
-        [137, 81, 251],
-        [205, 43, 238],
-        [236, 19, 164],
-        [255, 255, 255]
+    public static readonly Ansi.Color[] typesColors = [
+        new Ansi.Color(236, 91, 19),
+        new Ansi.Color(236, 200, 19),
+        new Ansi.Color(164, 236, 19),
+        new Ansi.Color(19, 236, 91),
+        new Ansi.Color(43, 173, 238),
+        new Ansi.Color(81, 109, 251),
+        new Ansi.Color(137, 81, 251),
+        new Ansi.Color(205, 43, 238),
+        new Ansi.Color(236, 19, 164),
+        new Ansi.Color(255, 255, 255)
     ];
 
     public static Answer[] Resolve(string name, string server, RecordType type, int timeout, TransportMethod transport, bool isStandard, bool isInverse, bool showServerStatus, bool isTruncated, bool isRecursive) {

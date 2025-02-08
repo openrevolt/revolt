@@ -18,7 +18,7 @@ public sealed class Toggle(Frame parentFrame, string text) : Element(parentFrame
     public override void Draw(bool push) {
         (int left, int top, _, _) = GetBounding();
 
-        byte[] backColor = isFocused ? Glyphs.FOCUS_COLOR : Glyphs.DIALOG_COLOR;
+        Ansi.Color backColor = isFocused ? Glyphs.FOCUS_COLOR : Glyphs.DIALOG_COLOR;
 
         DrawValue(false);
 
@@ -47,7 +47,7 @@ public sealed class Toggle(Frame parentFrame, string text) : Element(parentFrame
             Ansi.Write(Glyphs.TOGGLE_BOX);
         }
         else {
-            Ansi.SetBgColor([128,128,128]);
+            Ansi.SetBgColor(Glyphs.GRAY_COLOR);
             Ansi.SetFgColor(Glyphs.CONTROL_COLOR);
             Ansi.Write(Glyphs.TOGGLE_BOX);
             Ansi.Write(' ');

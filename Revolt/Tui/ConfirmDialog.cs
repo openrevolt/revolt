@@ -13,7 +13,7 @@ public sealed class ConfirmDialog : DialogBox {
 
         string blank = new String(' ', width);
 
-        Ansi.SetFgColor([16, 16, 16]);
+        Ansi.SetFgColor(Glyphs.DARKGRAY_COLOR);
         Ansi.SetBgColor(Glyphs.DIALOG_COLOR);
         Ansi.SetCursorPosition(left, top++);
         Ansi.Write(blank);

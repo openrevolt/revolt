@@ -5,9 +5,9 @@ namespace Revolt.Tui;
 public sealed class ShadowIndexListBox<TKey, TValue>(Frame parentFrame) : Element(parentFrame)
     where TValue : class {
 
-    public int index              = -1;
-    public int scrollOffset       = 0;
-    public byte[] backgroundColor = Glyphs.DARK_COLOR;
+    public int        index           = -1;
+    public int        scrollOffset    = 0;
+    public Ansi.Color backgroundColor = Glyphs.DARK_COLOR;
 
     public delegate void DrawItemDelegate(int i, int x, int y, int width);
     public DrawItemDelegate drawItemHandler;

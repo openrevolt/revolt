@@ -19,6 +19,10 @@ public sealed class PingFrame : Tui.Frame {
     public Tui.ListBox<PingItem> list;
     public Tui.Toolbar toolbar;
 
+    private static readonly Ansi.Color REACHABLE_COLOR   = new Ansi.Color (128, 224, 48);
+    private static readonly Ansi.Color UNREACHABLE_COLOR = new Ansi.Color (240, 32, 32);
+    private static readonly Ansi.Color INVALID_COLOR     = new Ansi.Color (176, 0, 0);
+
     private CancellationTokenSource cancellationTokenSource;
     private CancellationToken cancellationToken;
 
@@ -138,7 +142,7 @@ public sealed class PingFrame : Tui.Frame {
 
     private void DrawItemLabel(PingItem item, int index, int y) {
         if (index == list.index) {
-            Ansi.SetFgColor(list.isFocused ? [16, 16, 16] : Glyphs.LIGHT_COLOR);
+            Ansi.SetFgColor(list.isFocused ? Glyphs.DARKGRAY_COLOR : Glyphs.LIGHT_COLOR);
             Ansi.SetBgColor(list.isFocused ? Glyphs.FOCUS_COLOR : Glyphs.HIGHLIGHT_COLOR);
         }
         else {
@@ -166,12 +170,12 @@ public sealed class PingFrame : Tui.Frame {
         Ansi.SetCursorPosition(x + 24, y);
         Ansi.Write(' ');
 
-        byte[] lastColor = new byte[3];
+        Ansi.Color lastColor = default;
         for (int t = 0; t < usableWidth; t++) {
-            byte[] color = DetermineRttColor(item.history[(historyOffset + t) % HISTORY_LEN]);
-            if (!color.SequenceEqual(lastColor)) {
+            Ansi.Color color = DetermineRttColor(item.history[(historyOffset + t) % HISTORY_LEN]);
+            if (color != lastColor) {
                 Ansi.SetFgColor(color);
-                Array.Copy(color, lastColor, 3);
+                lastColor = color;
             }
             Ansi.Write(Glyphs.PING_CELL);
         }
@@ -201,17 +205,17 @@ public sealed class PingFrame : Tui.Frame {
 
         Ansi.SetCursorPosition(Renderer.LastWidth - statusLength + 1, Math.Max(Renderer.LastHeight, 0));
 
-        Ansi.SetFgColor([16, 16, 16]);
-        Ansi.SetBgColor([128, 224, 48]);
+        Ansi.SetFgColor(Glyphs.DARKGRAY_COLOR);
+        Ansi.SetBgColor(REACHABLE_COLOR);
         Ansi.Write(reachableString);
 
         if (unreachable > 0) {
-            Ansi.SetFgColor([16, 16, 16]);
-            Ansi.SetBgColor([240, 32, 32]);
+            Ansi.SetFgColor(Glyphs.DARKGRAY_COLOR);
+            Ansi.SetBgColor(UNREACHABLE_COLOR);
             Ansi.Write(unreachableString);
         }
 
-        Ansi.SetFgColor([16, 16, 16]);
+        Ansi.SetFgColor(Glyphs.DARKGRAY_COLOR);
         Ansi.SetBgColor(Glyphs.LIGHT_COLOR);
         Ansi.Write(totalString);
         
@@ -220,22 +224,22 @@ public sealed class PingFrame : Tui.Frame {
         lastStatusLength = statusLength;
     }
 
-    private static byte[] DetermineRttColor(short rtt) => rtt switch {
-        Icmp.TIMEDOUT        => [240, 32, 32],
-        Icmp.UNREACHABLE     => [240, 128, 0],
-        Icmp.INVALID_ADDRESS => [176, 0, 0],
-        Icmp.GENERAL_FAILURE => [176, 0, 0],
-        Icmp.ERROR           => [176, 0, 0],
-        Icmp.UNKNOWN         => [176, 0, 0],
+    private static Ansi.Color DetermineRttColor(short rtt) => rtt switch {
+        Icmp.TIMEDOUT        => UNREACHABLE_COLOR,
+        Icmp.UNREACHABLE     => new Ansi.Color(240, 128, 0),
+        Icmp.INVALID_ADDRESS => INVALID_COLOR,
+        Icmp.GENERAL_FAILURE => INVALID_COLOR,
+        Icmp.ERROR           => INVALID_COLOR,
+        Icmp.UNKNOWN         => INVALID_COLOR,
         Icmp.UNDEFINED       => Glyphs.CONTROL_COLOR,
-        < 5   => [128, 224, 48],
-        < 10  => [48, 224, 128],
-        < 20  => [48, 224, 160],
-        < 50  => [48, 224, 224],
-        < 100 => [64, 128, 224],
-        < 200 => [128, 96, 232],
-        < 400 => [160, 64, 232],
-        _     => [224, 52, 192]
+        < 5   => REACHABLE_COLOR,
+        < 10  => new Ansi.Color(48, 224, 128),
+        < 20  => new Ansi.Color(48, 224, 160),
+        < 50  => new Ansi.Color(48, 224, 224),
+        < 100 => new Ansi.Color(64, 128, 224),
+        < 200 => new Ansi.Color(128, 96, 232),
+        < 400 => new Ansi.Color(160, 64, 232),
+        _     => new Ansi.Color(224, 52, 192)
     };
 
     private static string DetermineRttText(short rtt) => rtt switch {
@@ -492,7 +496,7 @@ public sealed class PingFrame : Tui.Frame {
         if (status) {
             Start();
             toolbar.items[2].text = "Pause";
-            toolbar.items[2].color = null;
+            toolbar.items[2].color = default;
         }
         else {
             Stop();
@@ -549,7 +553,7 @@ file sealed class ClearDialog : Tui.DialogBox {
 
         string blank = new String(' ', width);
 
-        Ansi.SetFgColor([16, 16, 16]);
+        Ansi.SetFgColor(Glyphs.DARKGRAY_COLOR);
         Ansi.SetBgColor(Glyphs.DIALOG_COLOR);
 
         Ansi.SetCursorPosition(left, top);
@@ -654,7 +658,7 @@ file sealed class OptionsDialog : Tui.DialogBox {
 
         string blank = new String(' ', width);
 
-        Ansi.SetFgColor([16, 16, 16]);
+        Ansi.SetFgColor(Glyphs.DARKGRAY_COLOR);
         Ansi.SetBgColor(Glyphs.DIALOG_COLOR);
 
         Ansi.SetCursorPosition(left, top);

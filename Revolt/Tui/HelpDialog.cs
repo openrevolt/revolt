@@ -28,7 +28,7 @@ public sealed class HelpDialog : DialogBox {
 
         string blank = new String(' ', width);
 
-        Ansi.SetFgColor([16, 16, 16]);
+        Ansi.SetFgColor(Glyphs.DARKGRAY_COLOR);
         Ansi.SetBgColor(Glyphs.DIALOG_COLOR);
 
         for (int i = 0; i <= height; i++) {
@@ -71,7 +71,7 @@ public sealed class ShortcutListBox(Frame parentFrame, string[][] shortcuts) : E
         Ansi.SetFgColor(Glyphs.DARK_COLOR);
 
         for (int i = 0; i < shortcuts.Length; i++ ) {
-            Ansi.SetBgColor(i % 2 == 0 ? [144, 144, 144] : Glyphs.DIALOG_COLOR);
+            Ansi.SetBgColor(i % 2 == 0 ? new Ansi.Color(144, 144, 144) : Glyphs.DIALOG_COLOR);
 
             Frame.WriteLabel(shortcuts[i][0], left + 2, top + 1 + i, 8);
             Frame.WriteLabel(shortcuts[i][1], left + 8, top + 1 + i, width - 12);

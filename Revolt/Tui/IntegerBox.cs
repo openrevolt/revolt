@@ -3,7 +3,7 @@
 public sealed class IntegerBox(Frame parentFrame) : Element(parentFrame) {
     const int scrollInterval = 16;
 
-    public byte[] backColor = Glyphs.DARK_COLOR;
+    public Ansi.Color backColor = Glyphs.DARK_COLOR;
     public string placeholder = String.Empty;
     public Action action;
 
@@ -56,7 +56,7 @@ public sealed class IntegerBox(Frame parentFrame) : Element(parentFrame) {
         Ansi.SetCursorPosition(left, top);
 
         if (!String.IsNullOrEmpty(placeholder) && _value.Length == 0) {
-            Ansi.SetFgColor([64, 64, 64]);
+            Ansi.SetFgColor(Glyphs.DIMGRAY_COLOR);
             Ansi.Write(placeholder);
             Ansi.Write(new String(' ', usableWidth - placeholder.Length));
             Ansi.SetCursorPosition(left + index, top);

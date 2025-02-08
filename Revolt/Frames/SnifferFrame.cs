@@ -10,11 +10,17 @@ using static Revolt.Sniff.Sniffer;
 namespace Revolt.Frames;
 
 internal class SnifferFrame : Tui.Frame {
-
     public static SnifferFrame Instance { get; } = new SnifferFrame();
 
     public Tui.Tabs tabs;
     public Tui.Toolbar toolbar;
+
+    private static readonly Ansi.Color TX_COLOR = new Ansi.Color(232, 118, 0);
+    private static readonly Ansi.Color RX_COLOR = new Ansi.Color(122, 212, 43);
+
+    private static readonly Ansi.Color BROADCAST_COLOR = new Ansi.Color(0, 172, 255);
+    private static readonly Ansi.Color MULTICAST_COLOR = new Ansi.Color(0, 255, 255);
+    private static readonly Ansi.Color INVALID_COLOR   = new Ansi.Color(176, 0, 0);
 
     private Tui.ShadowIndexListBox<Mac, TrafficData>    framesList;
     private Tui.ShadowIndexListBox<IP, TrafficData>     packetList;
@@ -301,7 +307,7 @@ internal class SnifferFrame : Tui.Frame {
         Ansi.SetCursorPosition(1, adjustedY);
         
         if (isSelected) {
-            Ansi.SetFgColor(framesList.isFocused ? [16, 16, 16] : Glyphs.LIGHT_COLOR);
+            Ansi.SetFgColor(framesList.isFocused ? Glyphs.DARKGRAY_COLOR : Glyphs.LIGHT_COLOR);
             Ansi.SetBgColor(framesList.isFocused ? Glyphs.FOCUS_COLOR : Glyphs.HIGHLIGHT_COLOR);
         }
         else {
@@ -320,41 +326,33 @@ internal class SnifferFrame : Tui.Frame {
 
         string vendorString;
         if (mac.IsBroadcast()) {
-            Ansi.SetFgColor([0, 172, 255]);
+            Ansi.SetFgColor(BROADCAST_COLOR);
             vendorString = "Broadcast";
         }
         else if (mac.IsEthernetMulticast()) {
-            Ansi.SetFgColor([0, 208, 255]);
+            Ansi.SetFgColor(0, 208, 255);
             vendorString = "Ethernet multicast";
         }
         else if (mac.IsPVv4Multicast()) {
-            Ansi.SetFgColor([0, 255, 255]);
+            Ansi.SetFgColor(MULTICAST_COLOR);
             vendorString = "IPv4 multicast";
         }
         else if (mac.IsPVv6Multicast()) {
-            Ansi.SetFgColor([0, 255, 255]);
+            Ansi.SetFgColor(MULTICAST_COLOR);
             vendorString = "IPv6 multicast";
         }
         else if ((mac.value & 0xfffffffffffe) == 0x01_00_0C_CC_CC_CC) {
-            Ansi.SetFgColor([0, 255, 255]);
+            Ansi.SetFgColor(MULTICAST_COLOR);
             vendorString = "Multicast (CISCO)";
         }
         else if (mac.IsMulticast()) {
-            Ansi.SetFgColor([0, 255, 255]);
+            Ansi.SetFgColor(MULTICAST_COLOR);
             vendorString = "Multicast";
         }
         else if (mac.IsLocallyAdministered()) {
-            Ansi.SetFgColor([0, 255, 192]);
+            Ansi.SetFgColor(0, 255, 192);
             vendorString = "Locally administered";
         }
-        /*else if ((mac.value & 0xffffff000000) == 0x00_50_56_00_00_00) {
-            Ansi.SetFgColor([255, 255, 255]);
-            vendorString = "Generated (VMware)";
-        }
-        else if ((mac.value & 0xffffff000000) == 0x00_15_5d_00_00_00) {
-            Ansi.SetFgColor([255, 255, 255]);
-            vendorString = "Generated (Hyper-V)";
-        }*/
         else {
             vendorString = MacLookup.Lookup(mac);
         }
@@ -392,7 +390,7 @@ internal class SnifferFrame : Tui.Frame {
         Ansi.SetCursorPosition(1, adjustedY);
 
         if (isSelected) {
-            Ansi.SetFgColor(packetList.isFocused ? [16, 16, 16] : Glyphs.LIGHT_COLOR);
+            Ansi.SetFgColor(packetList.isFocused ? Glyphs.DARKGRAY_COLOR : Glyphs.LIGHT_COLOR);
             Ansi.SetBgColor(packetList.isFocused ? Glyphs.FOCUS_COLOR : Glyphs.HIGHLIGHT_COLOR);
         }
         else {
@@ -409,43 +407,39 @@ internal class SnifferFrame : Tui.Frame {
         string noteString;
 
         if (ip.IsBroadcast()) {
-            Ansi.SetFgColor([0, 172, 255]);
+            Ansi.SetFgColor(BROADCAST_COLOR);
             noteString = "Broadcast";
         }
-        else if (ip.IsLoopback()) {
-            Ansi.SetFgColor([0, 255, 255]);
-            noteString = "Loopback";
-        }
         else if (ip.IsMulticast()) {
-            Ansi.SetFgColor([0, 255, 255]);
+            Ansi.SetFgColor(MULTICAST_COLOR);
             noteString = "Multicast";
         }
         else if (ip.IsApipa()) {
-            Ansi.SetFgColor([128, 128, 128]);
+            Ansi.SetFgColor(Glyphs.GRAY_COLOR);
             noteString = "APIPA";
         }
         else if (ip.IsIPv6LinkLocal()) {
-            Ansi.SetFgColor([128, 128, 128]);
+            Ansi.SetFgColor(Glyphs.GRAY_COLOR);
             noteString = "Link local";
         }
         else if (ip.IsIPv6Teredo()) {
-            Ansi.SetFgColor([128, 128, 128]);
+            Ansi.SetFgColor(Glyphs.GRAY_COLOR);
             noteString = "Teredo";
         }
         else if (ip.IsIPv6UniqueLocal()) {
-            Ansi.SetFgColor([128, 128, 128]);
+            Ansi.SetFgColor(Glyphs.GRAY_COLOR);
             noteString = "Unique local";
         }
         else if (ip.IsIPv6SiteLocal()) {
-            Ansi.SetFgColor([255, 32, 32]);
+            Ansi.SetFgColor(Glyphs.GRAY_COLOR);
             noteString = "Site local";
         }
         else if (ip.IsIPv4MappedIPv6()) {
-            Ansi.SetFgColor([128, 128, 128]);
+            Ansi.SetFgColor(Glyphs.GRAY_COLOR);
             noteString = "Mapped IPv4";
         }
         else if (ip.IsIPv4Private()) {
-            Ansi.SetFgColor([128, 128, 128]);
+            Ansi.SetFgColor(Glyphs.GRAY_COLOR);
             noteString = "Private";
         }
         else {
@@ -487,11 +481,11 @@ internal class SnifferFrame : Tui.Frame {
         Ansi.SetCursorPosition(1, adjustedY);
 
         if (isSelected) {
-            Ansi.SetFgColor(segmentList.isFocused ? [16, 16, 16] : Glyphs.LIGHT_COLOR);
+            Ansi.SetFgColor(segmentList.isFocused ? Glyphs.DARKGRAY_COLOR : Glyphs.LIGHT_COLOR);
             Ansi.SetBgColor(segmentList.isFocused ? Glyphs.FOCUS_COLOR : Glyphs.HIGHLIGHT_COLOR);
         }
         else {
-            Ansi.SetFgColor(port < 1024 ? Glyphs.LIGHT_COLOR : [128, 128, 128]);
+            Ansi.SetFgColor(port < 1024 ? Glyphs.LIGHT_COLOR : Glyphs.GRAY_COLOR);
             Ansi.SetBgColor(Glyphs.PANE_COLOR);
         }
 
@@ -534,11 +528,11 @@ internal class SnifferFrame : Tui.Frame {
         Ansi.SetCursorPosition(1, adjustedY);
 
         if (isSelected) {
-            Ansi.SetFgColor(datagramList.isFocused ? [16, 16, 16] : Glyphs.LIGHT_COLOR);
+            Ansi.SetFgColor(datagramList.isFocused ? Glyphs.DARKGRAY_COLOR : Glyphs.LIGHT_COLOR);
             Ansi.SetBgColor(datagramList.isFocused ? Glyphs.FOCUS_COLOR : Glyphs.HIGHLIGHT_COLOR);
         }
         else {
-            Ansi.SetFgColor(port < 1024 ? Glyphs.LIGHT_COLOR : [128, 128, 128]);
+            Ansi.SetFgColor(port < 1024 ? Glyphs.LIGHT_COLOR : Glyphs.GRAY_COLOR);
             Ansi.SetBgColor(Glyphs.PANE_COLOR);
         }
 
@@ -584,7 +578,7 @@ internal class SnifferFrame : Tui.Frame {
         Ansi.SetCursorPosition(1, adjustedY);
 
         if (isSelected) {
-            Ansi.SetFgColor(etherTypeList.isFocused ? [16, 16, 16] : Glyphs.LIGHT_COLOR);
+            Ansi.SetFgColor(etherTypeList.isFocused ? Glyphs.DARKGRAY_COLOR : Glyphs.LIGHT_COLOR);
             Ansi.SetBgColor(etherTypeList.isFocused ? Glyphs.FOCUS_COLOR : Glyphs.HIGHLIGHT_COLOR);
         }
         else {
@@ -637,7 +631,7 @@ internal class SnifferFrame : Tui.Frame {
         Ansi.SetCursorPosition(1, adjustedY);
 
         if (isSelected) {
-            Ansi.SetFgColor(layer4ProtocolList.isFocused ? [16, 16, 16] : Glyphs.LIGHT_COLOR);
+            Ansi.SetFgColor(layer4ProtocolList.isFocused ? Glyphs.DARKGRAY_COLOR : Glyphs.LIGHT_COLOR);
             Ansi.SetBgColor(layer4ProtocolList.isFocused ? Glyphs.FOCUS_COLOR : Glyphs.HIGHLIGHT_COLOR);
         }
         else {
@@ -703,7 +697,7 @@ internal class SnifferFrame : Tui.Frame {
         Ansi.SetCursorPosition(1, adjustedY);
 
         if (isSelected) {
-            Ansi.SetFgColor(overviewList.isFocused && !String.IsNullOrEmpty(name) ? [16, 16, 16] : Glyphs.LIGHT_COLOR);
+            Ansi.SetFgColor(overviewList.isFocused && !String.IsNullOrEmpty(name) ? Glyphs.DARKGRAY_COLOR : Glyphs.LIGHT_COLOR);
             Ansi.SetBgColor(overviewList.isFocused && !String.IsNullOrEmpty(name) ? Glyphs.FOCUS_COLOR : Glyphs.HIGHLIGHT_COLOR);
         }
         else {
@@ -789,16 +783,16 @@ internal class SnifferFrame : Tui.Frame {
     }
 
     private void WriteTraffic(TrafficData traffic) {
-        WriteNumber(traffic.packetsTx, 12, [232, 118, 0]);
-        WriteNumber(traffic.packetsRx, 12, [122, 212, 43]);
-        WriteBytes(traffic.bytesTx, 12, [232, 118, 0]);
-        WriteBytes(traffic.bytesRx, 12, [122, 212, 43]);
+        WriteNumber(traffic.packetsTx, 12, TX_COLOR);
+        WriteNumber(traffic.packetsRx, 12, RX_COLOR);
+        WriteBytes(traffic.bytesTx, 12, TX_COLOR);
+        WriteBytes(traffic.bytesRx, 12, RX_COLOR);
 
         long now = DateTime.UtcNow.Ticks;
         long delta = now - traffic.lastActivity;
         if (delta < 100_000_000) {
             byte v = (byte)(255 - delta * 223 / 100_000_000);
-            Ansi.SetFgColor([v, v, 32]);
+            Ansi.SetFgColor(v, v, 32);
             Ansi.Write($" {Glyphs.BULLET}");
         }
         else {
@@ -806,7 +800,7 @@ internal class SnifferFrame : Tui.Frame {
         }
     }
 
-    private void WriteNumber(long value, int padding, byte[] color) {
+    private void WriteNumber(long value, int padding, Ansi.Color color) {
         if (value == 0) {
             Ansi.SetFgColor(color);
             Ansi.Write("-".PadLeft(padding));
@@ -819,13 +813,13 @@ internal class SnifferFrame : Tui.Frame {
 
         for (int i = 0; i < text.Length; i++) {
             int groupIndex = (text.Length - i - 1) / 3;
-            byte[] groupColor = color.Select(c => (byte)Math.Min(c + groupIndex * 56, 255)).ToArray();
+            Ansi.Color groupColor = color + (groupIndex * 56);
             Ansi.SetFgColor(groupColor);
             Ansi.Write(text[i]);
         }
     }
 
-    private void WriteBytes(long value, int padding, byte[] color) {
+    private void WriteBytes(long value, int padding, Ansi.Color color) {
         if (value == 0) {
             Ansi.SetFgColor(color);
             Ansi.Write("-   ".PadLeft(padding));
@@ -837,7 +831,7 @@ internal class SnifferFrame : Tui.Frame {
         Ansi.Write(new String(' ', Math.Max(padding - text.Length, 0)));
 
         if (text.Length > 6) {
-            Ansi.SetFgColor(color.Select(c => (byte)Math.Min(c + 56, 255)).ToArray());
+            Ansi.SetFgColor(color + 56);
             Ansi.Write(text.Substring(0, text.Length - 6));
 
             Ansi.SetFgColor(color);
@@ -1024,7 +1018,7 @@ file sealed class StartDialog : Tui.DialogBox {
 
         string blank = new String(' ', width);
 
-        Ansi.SetFgColor([16, 16, 16]);
+        Ansi.SetFgColor(Glyphs.DARKGRAY_COLOR);
         Ansi.SetBgColor(Glyphs.DIALOG_COLOR);
 
         Ansi.SetCursorPosition(left, top);

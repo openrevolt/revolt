@@ -47,7 +47,7 @@ public sealed class MainMenu : Tui.Frame {
         int length = Math.Min(width / 2, 28);
 
         if (String.IsNullOrEmpty(menu[i])) {
-            Ansi.SetFgColor([64, 64, 64]);
+            Ansi.SetFgColor(Glyphs.DIMGRAY_COLOR);
             Ansi.SetBgColor(Glyphs.DARK_COLOR);
             Ansi.SetCursorPosition(3, y);
 
@@ -63,7 +63,7 @@ public sealed class MainMenu : Tui.Frame {
         Ansi.SetCursorPosition(3, y);
 
         if (i == index) {
-            Ansi.SetFgColor([16, 16, 16]);
+            Ansi.SetFgColor(Glyphs.DARKGRAY_COLOR);
             Ansi.SetBgColor(Glyphs.FOCUS_COLOR);
         }
         else {

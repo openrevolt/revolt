@@ -11,15 +11,15 @@ public sealed class SelectBox(Frame parentFrame) : Element(parentFrame) {
         (int left, int top, int width, _) = GetBounding();
         int usableWidth = Math.Max(width, 6);
 
-        byte[] foreColor = isFocused ? [16, 16, 16] : Glyphs.LIGHT_COLOR;
-        byte[] backColor = isFocused ? Glyphs.FOCUS_COLOR : Glyphs.INPUT_COLOR;
+        Ansi.Color foreColor = isFocused ? Glyphs.DARKGRAY_COLOR : Glyphs.LIGHT_COLOR;
+        Ansi.Color backColor = isFocused ? Glyphs.FOCUS_COLOR : Glyphs.INPUT_COLOR;
         string selectedString = options.Length == 0 ? placeholder : options[index];
 
         Ansi.SetBgColor(backColor);
         Ansi.SetCursorPosition(left, top);
 
         if (options.Length == 0) {
-            Ansi.SetFgColor([128, 128, 128]);
+            Ansi.SetFgColor(Glyphs.GRAY_COLOR);
             Ansi.Write(' ');
             Ansi.Write(Glyphs.LEFT_TRIANGLE);
             Ansi.Write(' ');
@@ -39,7 +39,7 @@ public sealed class SelectBox(Frame parentFrame) : Element(parentFrame) {
         }
 
         if (index == 0) {
-            Ansi.SetFgColor([128, 128, 128]);
+            Ansi.SetFgColor(Glyphs.GRAY_COLOR);
         }
         else {
             Ansi.SetFgColor(foreColor);
@@ -53,7 +53,7 @@ public sealed class SelectBox(Frame parentFrame) : Element(parentFrame) {
         Ansi.Write(new string(' ', Math.Max(usableWidth - selectedString.Length - 6, 0)));
 
         if (index == options.Length - 1) {
-            Ansi.SetFgColor([128, 128, 128]);
+            Ansi.SetFgColor(Glyphs.GRAY_COLOR);
         }
         Ansi.Write(' ');
         Ansi.Write(Glyphs.RIGHT_TRIANGLE);

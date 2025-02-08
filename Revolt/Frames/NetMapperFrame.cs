@@ -129,7 +129,7 @@ public sealed class NetMapperFrame : Tui.Frame {
         Ansi.SetFgColor(Glyphs.LIGHT_COLOR);
 
         if (discovered.IsEmpty) {
-            Ansi.SetBgColor([48, 48, 48]);
+            Ansi.SetBgColor(Glyphs.HIGHLIGHT_COLOR);
             Ansi.Write(new string(' ', (int)actualWidth));
             return;
         }
@@ -157,7 +157,7 @@ public sealed class NetMapperFrame : Tui.Frame {
             }
         }
 
-        Ansi.SetBgColor([48, 48, 48]);
+        Ansi.SetBgColor(Glyphs.HIGHLIGHT_COLOR);
         Ansi.Write(new String(' ', (int)(actualWidth - i)));
     }
 
@@ -172,7 +172,7 @@ public sealed class NetMapperFrame : Tui.Frame {
             Ansi.Write(new String(' ', lastStatusLength));
 
             Ansi.SetCursorPosition(Renderer.LastWidth - totalString.Length + 1, Math.Max(Renderer.LastHeight, 0));
-            Ansi.SetFgColor([16, 16, 16]);
+            Ansi.SetFgColor(Glyphs.DARKGRAY_COLOR);
             Ansi.SetBgColor(Glyphs.LIGHT_COLOR);
             Ansi.Write(totalString);
             Ansi.SetBgColor(Glyphs.DARK_COLOR);
@@ -197,10 +197,10 @@ public sealed class NetMapperFrame : Tui.Frame {
 
         DiscoverItem item = list.items[index];
         bool isSelected = index == list.index;
-        byte[] foreColor, backColor;
+        Ansi.Color foreColor, backColor;
 
         if (isSelected) {
-            foreColor = list.isFocused ? [16, 16, 16] : Glyphs.LIGHT_COLOR;
+            foreColor = list.isFocused ? Glyphs.DARKGRAY_COLOR : Glyphs.LIGHT_COLOR;
             backColor = list.isFocused ? Glyphs.FOCUS_COLOR : Glyphs.HIGHLIGHT_COLOR;
         }
         else {
@@ -519,7 +519,7 @@ file sealed class OptionsDialog : Tui.DialogBox {
 
         string blank = new String(' ', width);
 
-        Ansi.SetFgColor([16, 16, 16]);
+        Ansi.SetFgColor(Glyphs.DARKGRAY_COLOR);
         Ansi.SetBgColor(Glyphs.DIALOG_COLOR);
 
         Ansi.SetCursorPosition(left, top);

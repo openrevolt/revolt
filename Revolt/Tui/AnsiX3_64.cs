@@ -1,9 +1,45 @@
-﻿using System.Collections.Concurrent;
+﻿using Microsoft.CodeAnalysis.CSharp.Syntax;
+using System.Collections.Concurrent;
+using System.Drawing;
 using System.Text;
+using static Revolt.Ansi;
 
 namespace Revolt;
 
 public static class Ansi {
+
+    public readonly struct Color {
+        public readonly byte r, g, b;
+
+        public Color(byte r, byte g, byte b) {
+            this.r = r;
+            this.g = g;
+            this.b = b;
+        }
+
+        public static Color operator +(Color left, int right) =>
+            new Color(
+                (byte)Math.Min(left.r + right, 255),
+                (byte)Math.Min(left.g + right, 255),
+                (byte)Math.Min(left.b + right, 255)
+            );
+
+        public static bool operator ==(Color left, Color right) =>
+             left.r == right.r && left.g == right.g && left.b == right.b;
+        
+        public static bool operator !=(Color left, Color right) =>
+             left.r != right.r || left.g != right.g || left.b != right.b;
+
+        public override bool Equals(object obj) {
+            if (obj is Color other) return this == other;
+            return false;
+        }
+
+        public override int GetHashCode() =>
+            (r << 16) + (g << 8) + b;
+
+    }
+
     private static readonly ConcurrentQueue<string> queue = new ConcurrentQueue<string>();
 
 #if NET9_0_OR_GREATER
@@ -27,14 +63,14 @@ public static class Ansi {
         }
     }
 
-    private static int Basic256Color(byte[] rgb) {
-        if (rgb[0] == rgb[1] && rgb[1] == rgb[2]) {
-            if (rgb[1] < 8) return 16;
-            if (rgb[1] > 248) return 231;
-            return 232 + (rgb[1] - 8) / 10;
+    private static int Basic256Color(Color color) {
+        if (color.r == color.g && color.g == color.b) {
+            if (color.g < 8) return 16;
+            if (color.g > 248) return 231;
+            return 232 + (color.g - 8) / 10;
         }
         
-        return (rgb[0]/ 51) * 36 + (rgb[1] / 51) * 6 + (rgb[2] / 51) + 16;
+        return (color.r / 51) * 36 + (color.g / 51) * 6 + (color.b / 51) + 16;
     }
     
     private static int Basic256Color(byte r, byte g, byte b) {
@@ -87,12 +123,12 @@ public static class Ansi {
         }
     }
 
-    public static void SetFgColor(byte[] rgb) {
+    public static void SetFgColor(Color color) {
         if (colorMode256) {
-            queue.Enqueue($"\x1b[38;5;{Basic256Color(rgb)}m");
+            queue.Enqueue($"\x1b[38;5;{Basic256Color(color)}m");
         }
         else {
-            queue.Enqueue($"\x1b[38;2;{rgb[0]};{rgb[1]};{rgb[2]}m");
+            queue.Enqueue($"\x1b[38;2;{color.r};{color.g};{color.b}m");
         }
     }
 
@@ -105,12 +141,12 @@ public static class Ansi {
         }
     }
 
-    public static void SetBgColor(byte[] rgb) {
+    public static void SetBgColor(Color color) {
         if (colorMode256) {
-            queue.Enqueue($"\x1b[48;5;{Basic256Color(rgb)}m");
+            queue.Enqueue($"\x1b[48;5;{Basic256Color(color)}m");
         }
         else {
-            queue.Enqueue($"\x1b[48;2;{rgb[0]};{rgb[1]};{rgb[2]}m");
+            queue.Enqueue($"\x1b[48;2;{color.r};{color.g};{color.b}m");
         }
     }
 

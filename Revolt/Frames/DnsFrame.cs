@@ -6,13 +6,13 @@ namespace Revolt.Frames;
 
 public sealed class DnsFrame : Tui.Frame {
     public struct DnsItem {
-        public string questionString;
-        public int    questionType;
-        public byte[] questionColor;
-        public string answerString;
-        public int    answerType;
-        public byte[] answerColor;
-        public int    ttl;
+        public string     questionString;
+        public int        questionType;
+        public Ansi.Color questionColor;
+        public string     answerString;
+        public int        answerType;
+        public Ansi.Color answerColor;
+        public int        ttl;
     }
 
     public static DnsFrame Instance { get; } = new DnsFrame();
@@ -129,12 +129,12 @@ public sealed class DnsFrame : Tui.Frame {
 
         DnsItem item = list.items[index];
         bool isSelected = index == list.index;
-        byte[] foreColor, backColor;
+        Ansi.Color foreColor, backColor;
 
         string questionTypeString = Dns.typeStrings[item.questionType];
 
         if (isSelected) {
-            foreColor = list.isFocused ? [16, 16, 16] : Glyphs.LIGHT_COLOR;
+            foreColor = list.isFocused ? Glyphs.DARKGRAY_COLOR : Glyphs.LIGHT_COLOR;
             backColor = list.isFocused ? Glyphs.FOCUS_COLOR : Glyphs.HIGHLIGHT_COLOR;
         }
         else {
@@ -146,7 +146,7 @@ public sealed class DnsFrame : Tui.Frame {
         Ansi.SetFgColor(foreColor);
         Ansi.Write(new String(' ', Math.Max(6 - questionTypeString.Length, 0)));
 
-        Ansi.SetFgColor([16, 16, 16]);
+        Ansi.SetFgColor(Glyphs.DARKGRAY_COLOR);
         Ansi.SetBgColor(item.questionColor);
         Ansi.Write($" {questionTypeString} ");
 
@@ -168,7 +168,7 @@ public sealed class DnsFrame : Tui.Frame {
 
             Ansi.Write(new String(' ', Math.Max(6 - answerTypeString.Length, 0)));
 
-            Ansi.SetFgColor([16, 16, 16]);
+            Ansi.SetFgColor(Glyphs.DARKGRAY_COLOR);
             Ansi.SetBgColor(item.answerColor);
             Ansi.Write($" {answerTypeString} ");
 
@@ -180,7 +180,7 @@ public sealed class DnsFrame : Tui.Frame {
         }
 
         Ansi.SetCursorPosition(questionWidth + 12, adjustedY);
-        Ansi.SetFgColor(item.answerType < 0 ? [176, 0, 0] : Glyphs.LIGHT_COLOR);
+        Ansi.SetFgColor(item.answerType < 0 ? new Ansi.Color(176, 0, 0) : Glyphs.LIGHT_COLOR);
         Ansi.Write(item.answerString.Length > adjustedAnswerWidth ? item.answerString[..(adjustedAnswerWidth - 1)] + Glyphs.ELLIPSIS : item.answerString.PadRight(adjustedAnswerWidth));
 
         if (item.answerType >= 0) {
@@ -207,7 +207,7 @@ public sealed class DnsFrame : Tui.Frame {
         }
 
         Ansi.SetCursorPosition(Renderer.LastWidth - totalString.Length + 1, Math.Max(Renderer.LastHeight, 0));
-        Ansi.SetFgColor([16, 16, 16]);
+        Ansi.SetFgColor(Glyphs.DARKGRAY_COLOR);
         Ansi.SetBgColor(Glyphs.LIGHT_COLOR);
         Ansi.Write(totalString);
         Ansi.SetBgColor(Glyphs.DARK_COLOR);
@@ -226,7 +226,7 @@ public sealed class DnsFrame : Tui.Frame {
                 questionColor  = Dns.typesColors[questionTypeIndex],
                 answerString   = errorMessage,
                 answerType     = -1,
-                answerColor    = [255, 255, 255],
+                answerColor    = Glyphs.WHITE_COLOR,
                 ttl            = 0,
             };
         }
@@ -240,7 +240,7 @@ public sealed class DnsFrame : Tui.Frame {
                 questionColor  = Dns.typesColors[questionTypeIndex],
                 answerString   = errorMessage,
                 answerType     = -1,
-                answerColor    = [255, 255, 255],
+                answerColor    = Glyphs.WHITE_COLOR,
                 ttl            = 0,
             };
         }
@@ -382,7 +382,7 @@ file sealed class AddDialog : Tui.DialogBox {
 
         string blank = new String(' ', width);
 
-        Ansi.SetFgColor([16, 16, 16]);
+        Ansi.SetFgColor(Glyphs.DARKGRAY_COLOR);
         Ansi.SetBgColor(Glyphs.DIALOG_COLOR);
 
         Ansi.SetCursorPosition(left, top);
@@ -420,14 +420,14 @@ file sealed class AddDialog : Tui.DialogBox {
         cancelButton.top = top;
 
         typeSelectBox.afterChange = () => {
-            byte[] typeColor = Dns.typesColors[typeSelectBox.index];
+            Ansi.Color typeColor = Dns.typesColors[typeSelectBox.index];
 
             string text = Dns.typeStrings[typeSelectBox.index];
             string padding = new String(' ', (7 - text.Length) / 2);
 
             Ansi.SetCursorPosition(left + width - 8, 6);
 
-            Ansi.SetFgColor([16, 16, 16]);
+            Ansi.SetFgColor(Glyphs.DARKGRAY_COLOR);
             Ansi.SetBgColor(typeColor);
             Ansi.Write(padding);
             Ansi.Write(text);
@@ -539,7 +539,7 @@ file sealed class OptionsDialog : Tui.DialogBox {
 
         string blank = new String(' ', width);
 
-        Ansi.SetFgColor([16, 16, 16]);
+        Ansi.SetFgColor(Glyphs.DARKGRAY_COLOR);
         Ansi.SetBgColor(Glyphs.DIALOG_COLOR);
 
         Ansi.SetCursorPosition(left, top);

@@ -2,10 +2,10 @@
 
 public sealed class ListBox<T>(Frame parentFrame) : Element(parentFrame) {
     public SyncedList<T> items    = [];
-    public int itemHeight         = 1;
-    public int index              = -1;
-    public int scrollOffset       = 0;
-    public byte[] backgroundColor = Glyphs.DARK_COLOR;
+    public int        itemHeight      = 1;
+    public int        index           = -1;
+    public int        scrollOffset    = 0;
+    public Ansi.Color backgroundColor = Glyphs.DARK_COLOR;
 
     public delegate void DrawItemDelegate(int i, int x, int y, int width);
     public DrawItemDelegate drawItemHandler;

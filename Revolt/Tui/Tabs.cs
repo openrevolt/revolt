@@ -41,7 +41,7 @@ public sealed class Tabs(Frame parentFrame) : Element(parentFrame) {
     private int DrawItem(int i, int offset, int top, bool isFocused) {
         int keyIndex = items[i].text.IndexOf(items[i].key, StringComparison.OrdinalIgnoreCase);
 
-        byte[] backgroundColor = i == index ? Glyphs.PANE_COLOR : [16, 16, 16];
+        Ansi.Color backgroundColor = i == index ? Glyphs.PANE_COLOR : Glyphs.DARKGRAY_COLOR;
 
         int length = items[i].text.Length + 2 + (String.IsNullOrEmpty(items[i].label) ? 0 : items[i].label.Length + 1);
 
@@ -59,7 +59,7 @@ public sealed class Tabs(Frame parentFrame) : Element(parentFrame) {
         Ansi.SetBgColor(Glyphs.DARK_COLOR);
         Ansi.Write(' ');
 
-        Ansi.SetFgColor(i == index ? [255, 255, 255] : Glyphs.LIGHT_COLOR);
+        Ansi.SetFgColor(i == index ? Glyphs.WHITE_COLOR : Glyphs.LIGHT_COLOR);
         Ansi.SetBgColor(backgroundColor);
 
         if (keyIndex == -1) {
