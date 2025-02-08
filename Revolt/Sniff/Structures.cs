@@ -1,5 +1,6 @@
 ﻿using System.Runtime.InteropServices;
 using System.Text;
+using static Revolt.Sniff.Sniffer;
 
 namespace Revolt.Sniff;
 
@@ -7,27 +8,23 @@ public sealed partial class Sniffer {
 
     private static readonly char[]  macLookup = "0123456789ABCDEF".ToCharArray();
 
-    [StructLayout(LayoutKind.Explicit, Size = 8)]
-    public struct Mac {
-        [FieldOffset(0)] public ulong value;
-        [FieldOffset(5)] public byte a;
-        [FieldOffset(4)] public byte b;
-        [FieldOffset(3)] public byte c;
-        [FieldOffset(2)] public byte d;
-        [FieldOffset(1)] public byte e;
-        [FieldOffset(0)] public byte f;
+    [StructLayout(LayoutKind.Explicit)]
+    public readonly struct Mac {
+        [FieldOffset(0)] public readonly ulong value;
+        [FieldOffset(5)] public readonly byte a;
+        [FieldOffset(4)] public readonly byte b;
+        [FieldOffset(3)] public readonly byte c;
+        [FieldOffset(2)] public readonly byte d;
+        [FieldOffset(1)] public readonly byte e;
+        [FieldOffset(0)] public readonly byte f;
 
-        public static Mac Parse(byte[] buffer, int offset) {
-            Mac mac = default;
-            mac.value =
-                ((ulong)buffer[offset] << 40) |
-                ((ulong)buffer[offset + 1] << 32) |
-                ((ulong)buffer[offset + 2] << 24) |
-                ((ulong)buffer[offset + 3] << 16) |
-                ((ulong)buffer[offset + 4] << 8) |
-                 (ulong)buffer[offset + 5];
-
-            return mac;
+        public Mac(byte[] buffer, int offset) {
+            a = buffer[offset];
+            b = buffer[offset + 1];
+            c = buffer[offset + 2];
+            d = buffer[offset + 3];
+            e = buffer[offset + 4];
+            f = buffer[offset + 5];
         }
 
         public string ToFormattedString() {
@@ -88,17 +85,17 @@ public sealed partial class Sniffer {
         [FieldOffset(8)] private readonly ulong upper;
 #endif
 
-        public IP(uint ipv4) {
-            this.ipv4 = ipv4;
-            this.ipv6 = default;
-            this.isIPv6 = false;
-        }
+        /*public IP(uint ip) {
+            ipv6   = default;
+            ipv4   = ip;
+            isIPv6 = false;
+        }*/
 
-        public IP(UInt128 ipv6) {
-            this.ipv6 = ipv6;
-            this.ipv4 = default;
-            this.isIPv6 = true;
-        }
+        /*public IP(UInt128 ip) {
+            ipv4   = default;
+            ipv6   = ip;
+            isIPv6 = true;
+        }*/
 
         public IP(ReadOnlySpan<byte> bytes) {
             if (bytes.Length == 4) {
@@ -243,21 +240,20 @@ public sealed partial class Sniffer {
         }
     }
 
-    public readonly struct Packet {
-        public long timestamp { init; get; }
-        public ushort size { init; get; }
+    public readonly struct Packet(
+        long timestamp, ushort size,
+        Mac sourceMac, Mac destinationMac, ushort networkProtocol,
+        IP sourceIP, IP destinationIP, byte ttl, byte transportProtocol) {
 
-        public Mac sourceMac { init; get; }
-        public Mac destinationMac { init; get; }
-        public ushort networkProtocol { init; get; }
-
-        public IP sourceIP { init; get; }
-        public IP destinationIP { init; get; }
-        public byte ttl { init; get; }
-        public byte transportProtocol { init; get; }
-
-        public ushort sourcePort { init; get; }
-        public ushort destinationPort { init; get; }
+        public long   Timestamp { get; } = timestamp;
+        public ushort Size { get; } = size;
+        public Mac    SourceMac { get; } = sourceMac;
+        public Mac    DestinationMac { get; } = destinationMac;
+        public ushort NetworkProtocol { get; } = networkProtocol;
+        public IP     SourceIP { get; } = sourceIP;
+        public IP     DestinationIP { get; } = destinationIP;
+        public byte   Ttl { get; } = ttl;
+        public byte   TransportProtocol { get; } = transportProtocol;
     }
 
     public readonly struct Segment {
@@ -265,6 +261,8 @@ public sealed partial class Sniffer {
         public uint seqNumber { init; get; }
         public uint ackNumber { init; get; }
         public uint window { init; get; }
+        //public ushort SourcePort { get; }
+        //public ushort DestinationPort { get; }
     }
 
     public readonly struct SniffIssuesItem {
