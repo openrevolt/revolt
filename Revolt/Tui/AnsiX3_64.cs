@@ -26,7 +26,7 @@ public static class Ansi {
 
         public static bool operator ==(Color left, Color right) =>
              left.r == right.r && left.g == right.g && left.b == right.b;
-        
+
         public static bool operator !=(Color left, Color right) =>
              left.r != right.r || left.g != right.g || left.b != right.b;
 
