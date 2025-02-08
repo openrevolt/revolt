@@ -6,14 +6,14 @@ using SharpPcap;
 namespace Revolt.Sniff;
 
 public sealed partial class Sniffer : IDisposable {
-    public long totalPackets=0, totalBytes=0;
+    public long totalPackets = 0, totalBytes = 0;
 
-    public IndexedDictionary<Mac, TrafficData>       framesCount    = new IndexedDictionary<Mac, TrafficData>();
-    public IndexedDictionary<IPAddress, TrafficData> packetCount    = new IndexedDictionary<IPAddress, TrafficData>();
-    public IndexedDictionary<ushort, TrafficData>    segmentCount   = new IndexedDictionary<ushort, TrafficData>();
-    public IndexedDictionary<ushort, TrafficData>    datagramCount  = new IndexedDictionary<ushort, TrafficData>();
-    public IndexedDictionary<ushort, Count>          etherTypeCount = new IndexedDictionary<ushort, Count>();
-    public IndexedDictionary<byte, Count>            transportCount = new IndexedDictionary<byte, Count>();
+    public IndexedDictionary<Mac, TrafficData>    framesCount    = new IndexedDictionary<Mac, TrafficData>();
+    public IndexedDictionary<IP, TrafficData>     packetCount    = new IndexedDictionary<IP, TrafficData>();
+    public IndexedDictionary<ushort, TrafficData> segmentCount   = new IndexedDictionary<ushort, TrafficData>();
+    public IndexedDictionary<ushort, TrafficData> datagramCount  = new IndexedDictionary<ushort, TrafficData>();
+    public IndexedDictionary<ushort, Count>       etherTypeCount = new IndexedDictionary<ushort, Count>();
+    public IndexedDictionary<byte, Count>         transportCount = new IndexedDictionary<byte, Count>();
 
     private ulong frameIndex = 0;
     private ConcurrentDictionary<ulong, Packet> frames = new ConcurrentDictionary<ulong, Packet>();
@@ -69,8 +69,8 @@ public sealed partial class Sniffer : IDisposable {
         byte      ttl               = default;
         byte      transportProtocol = default;
         byte      ihl               = default;
-        IPAddress sourceIP          = null;
-        IPAddress destinationIP     = null;
+        IP        sourceIP          = default;
+        IP        destinationIP     = default;
 
         ushort sourcePort           = default;
         ushort destinationPort      = default;
@@ -130,7 +130,7 @@ public sealed partial class Sniffer : IDisposable {
             }
         );
 
-        if (sourceIP is not null && destinationIP is not null) {
+        if (sourceIP.ipv6 != 0 && destinationIP.ipv6 != 0) {
             packetCount.AddOrUpdate(
                 sourceIP,
                 new TrafficData() { bytesRx = 0, bytesTx = buffer.Length, packetsRx = 0, packetsTx = 1, lastActivity = timestamp },
@@ -265,7 +265,7 @@ public sealed partial class Sniffer : IDisposable {
         );
     }
 
-    private (ushort, byte, byte, byte, IPAddress, IPAddress) HandleV4Packet(byte[] buffer, int offset) {
+    private (ushort, byte, byte, byte, IP, IP) HandleV4Packet(byte[] buffer, int offset) {
         if (buffer.Length < 20) return (0, 0, 0, 0, default, default); //invalid traffic
 
         byte   ihl      = (byte)((buffer[offset] & 0x0F) << 2);
@@ -274,21 +274,21 @@ public sealed partial class Sniffer : IDisposable {
         byte   protocol = buffer[offset+9];
         //ushort checksum = (ushort)(buffer[offset+10] << 8 | buffer[offset+11]);
 
-        IPAddress source      = new IPAddress(buffer.AsSpan(offset+12, 4));
-        IPAddress destination = new IPAddress(buffer.AsSpan(offset+16, 4));
+        IP source      = new IP(buffer.AsSpan(offset+12, 4));
+        IP destination = new IP(buffer.AsSpan(offset+16, 4));
 
         return (size, ttl, protocol, ihl, source, destination);
     }
 
-    private (ushort, byte, byte, IPAddress, IPAddress) HandleV6Packet(byte[] buffer, int offset) {
+    private (ushort, byte, byte, IP, IP) HandleV6Packet(byte[] buffer, int offset) {
         if (buffer.Length < 40) return (0, 0, 0, default, default); //invalid traffic
 
         ushort size     = (ushort)((buffer[offset+4] << 8 | buffer[offset+5]) + 40);
         byte   protocol = buffer[offset+6];
         byte   ttl      = buffer[offset+7];
 
-        IPAddress source      = new IPAddress(buffer.AsSpan(offset+8, 16));
-        IPAddress destination = new IPAddress(buffer.AsSpan(offset+24, 16));
+        IP source      = new IP(buffer.AsSpan(offset+8, 16));
+        IP destination = new IP(buffer.AsSpan(offset+24, 16));
 
         return (size, protocol, ttl, source, destination);
     }

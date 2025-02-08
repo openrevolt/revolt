@@ -1,5 +1,5 @@
-﻿using System.Net;
-using System.Runtime.InteropServices;
+﻿using System.Runtime.InteropServices;
+using System.Text;
 
 namespace Revolt.Sniff;
 
@@ -7,7 +7,7 @@ public sealed partial class Sniffer {
 
     private static readonly char[]  macLookup = "0123456789ABCDEF".ToCharArray();
 
-    [StructLayout(LayoutKind.Explicit)]
+    [StructLayout(LayoutKind.Explicit, Size = 8)]
     public struct Mac {
         [FieldOffset(0)] public ulong value;
         [FieldOffset(5)] public byte a;
@@ -20,7 +20,7 @@ public sealed partial class Sniffer {
         public static Mac Parse(byte[] buffer, int offset) {
             Mac mac = default;
             mac.value =
-                ((ulong)buffer[offset]     << 40) |
+                ((ulong)buffer[offset] << 40) |
                 ((ulong)buffer[offset + 1] << 32) |
                 ((ulong)buffer[offset + 2] << 24) |
                 ((ulong)buffer[offset + 3] << 16) |
@@ -74,69 +74,190 @@ public sealed partial class Sniffer {
             (value & 0x020000000000) != 0x00;
     }
 
-    public interface IP {
-    }
+    [StructLayout(LayoutKind.Explicit)]
+    public readonly struct IP {
+        [FieldOffset(0)]  public readonly uint    ipv4;
+        [FieldOffset(0)]  public readonly UInt128 ipv6;
+        [FieldOffset(16)] public readonly bool    isIPv6;
 
-    public struct IPv4 : IP {
-        public uint address;
+#if BIGENDIAN
+        [FieldOffset(0)] private readonly ulong upper;
+        [FieldOffset(8)] private readonly ulong lower;
+#else
+        [FieldOffset(0)] private readonly ulong lower;
+        [FieldOffset(8)] private readonly ulong upper;
+#endif
 
-        public IPv4(uint address) {
-            this.address = address;
+        public IP(uint ipv4) {
+            this.ipv4 = ipv4;
+            this.ipv6 = default;
+            this.isIPv6 = false;
         }
 
-        public static bool operator ==(IPv4 left, IPv4 right) => left.address == right.address;
+        public IP(UInt128 ipv6) {
+            this.ipv6 = ipv6;
+            this.ipv4 = default;
+            this.isIPv6 = true;
+        }
 
-        public static bool operator !=(IPv4 left, IPv4 right) => left.address != right.address;
-
-        public override bool Equals(object obj) => obj is IPv4 other && this.address == other.address;
-
-        public override int GetHashCode() => (int)address;
-    }
-
-    public unsafe struct IPv6 : IP {
-        public fixed byte address[16];
-        public static bool operator ==(IPv6 left, IPv6 right) {
-            for (int i = 0; i < 16; i++) {
-                if (left.address[i] != right.address[i])
-                    return false;
+        public IP(ReadOnlySpan<byte> bytes) {
+            if (bytes.Length == 4) {
+                ipv4 = (uint)((bytes[0] << 24) | (bytes[1] << 16) | (bytes[2] << 8) | bytes[3]);
+                isIPv6 = false;
             }
-            return true;
+            else if (bytes.Length == 16) {
+                ulong high = (ulong)bytes[0] << 56 | (ulong)bytes[1] << 48 | (ulong)bytes[2] << 40 | (ulong)bytes[3] << 32 |
+                     (ulong)bytes[4] << 24 | (ulong)bytes[5] << 16 | (ulong)bytes[6] << 8  | (ulong)bytes[7];
+
+                ulong low  = (ulong)bytes[8] << 56  | (ulong)bytes[9] << 48  | (ulong)bytes[10] << 40 | (ulong)bytes[11] << 32 |
+                     (ulong)bytes[12] << 24 | (ulong)bytes[13] << 16 | (ulong)bytes[14] << 8  | (ulong)bytes[15];
+
+                ipv6 = new UInt128(high, low);
+                isIPv6 = true;
+            }
+            else {
+                throw new ArgumentException("Invalid IP address length.");
+            }
         }
 
-        public static bool operator !=(IPv6 left, IPv6 right) => !(left == right);
-
-        public override bool Equals(object obj) {
-            if (obj is not IPv6 ipv6) return false;
-            return this == ipv6;
+        public static bool operator ==(IP left, IP right) {
+            if (left.isIPv6 != right.isIPv6) return false;
+            return left.isIPv6 ? left.ipv6 == right.ipv6 : left.ipv4 == right.ipv4;
         }
+
+        public static bool operator !=(IP left, IP right) {
+            if (left.isIPv6 != right.isIPv6) return true;
+            return left.isIPv6 ? left.ipv6 != right.ipv6 : left.ipv4 != right.ipv4;
+        }
+
+        public override bool Equals(object obj) => obj is IP other && this == other;
 
         public override int GetHashCode() {
             unchecked {
-                int hash = 17;
-                for (int i = 0; i < 16; i++) {
-                    hash = hash * 31 + address[i];
-                }
-                return hash;
+                return isIPv6 ? ipv6.GetHashCode() : (int)ipv4;
             }
+        }
+
+        public override string ToString() {
+            if (!isIPv6) {
+                return $"{(ipv4 >> 24) & 0xFF}.{(ipv4 >> 16) & 0xFF}.{(ipv4 >> 8) & 0xFF}.{ipv4 & 0xFF}";
+            }
+
+            Span<ushort> segments = stackalloc ushort[8];
+            ulong high = upper, low = lower;
+
+            for (int i = 0; i < 4; i++) {
+                segments[i] = (ushort)(high >> (48 - i * 16));
+                segments[i + 4] = (ushort)(low >> (48 - i * 16));
+            }
+
+            int bestStart = -1, bestLength = 0, currentStart = -1, currentLength = 0;
+
+            for (int i = 0; i < 8; i++) {
+                if (segments[i] == 0) {
+                    if (currentStart == -1) {
+                        currentStart = i;
+                        currentLength = 1;
+                    }
+                    else {
+                        currentLength++;
+                    }
+                }
+                else {
+                    if (currentLength > bestLength) {
+                        bestStart = currentStart;
+                        bestLength = currentLength;
+                    }
+                    currentStart = -1;
+                }
+            }
+
+            if (currentLength > bestLength) {
+                bestStart = currentStart;
+                bestLength = currentLength;
+            }
+
+            StringBuilder sb = new System.Text.StringBuilder();
+            for (int i = 0; i < 8; i++) {
+                if (bestStart == i) {
+                    sb.Append(":");
+                    i += bestLength - 1;
+                    continue;
+                }
+                if (i > 0) sb.Append(':');
+                sb.Append(segments[i].ToString("x"));
+            }
+
+            return sb.ToString();
+        }
+
+        public bool IsBroadcast() {
+            if (isIPv6) return false;
+            return ipv4 == 0xffffffff;
+        }
+
+        public bool IsMulticast() {
+            if (isIPv6) {
+                return (upper & 0xff00000000000000) == 0xff00000000000000;
+            }
+            return (ipv4 & 0xf0000000) == 0xe0000000;
+        }
+
+        public bool IsLoopback() {
+            if (isIPv6) return ipv6 == 1 || IsIPv4MappedIPv6() && (ipv4 & 0xff000000) == 0x7f000000;
+            return (ipv4 & 0xff000000) == 0x7f000000;
+        }
+
+        public bool IsApipa() {
+            if (isIPv6) return false;
+            return (ipv4 & 0xffff0000) == 0xa9fe0000;
+        }
+
+        public bool IsIPv6LinkLocal() {
+            if (!isIPv6) return false;
+            return (upper & 0xffff000000000000) == 0xfe80000000000000;
+        }
+
+        public bool IsIPv6Teredo() {
+            if (!isIPv6) return false;
+            return (upper & 0xffffffff00000000) == (0x2001000000000000UL); ;
+        }
+
+        public bool IsIPv6UniqueLocal() {
+            if (!isIPv6) return false;
+            return (upper & 0xfe00000000000000) == 0xfc00000000000000;
+        }
+
+        public bool IsIPv6SiteLocal() {
+            if (!isIPv6) return false;
+            return (upper & 0xffc0000000000000) == 0xfec0000000000000;
+        }
+
+        public bool IsIPv4MappedIPv6() {
+            return upper == 0x0000000000000000FFFF000000000000;
+        }
+
+        public bool IsIPv4Private() {
+            if (isIPv6) return false;
+            return (ipv4 & 0xff000000) == 0x0a000000 || (ipv4 & 0xfff00000) == 0xac100000 || (ipv4 & 0xffff0000) == 0xc0a80000;
         }
     }
 
-
     public readonly struct Packet {
-        public long      timestamp { init; get; }
-        public ushort    size { init; get; }
+        public long timestamp { init; get; }
+        public ushort size { init; get; }
 
-        public Mac       sourceMac { init; get; }
-        public Mac       destinationMac { init; get; }
-        public ushort    networkProtocol { init; get; }
+        public Mac sourceMac { init; get; }
+        public Mac destinationMac { init; get; }
+        public ushort networkProtocol { init; get; }
 
-        public IPAddress sourceIP { init; get; }
-        public IPAddress destinationIP { init; get; }
-        public byte      ttl { init; get; }
-        public byte      transportProtocol { init; get; }
+        public IP sourceIP { init; get; }
+        public IP destinationIP { init; get; }
+        public byte ttl { init; get; }
+        public byte transportProtocol { init; get; }
 
-        public ushort    sourcePort { init; get; }
-        public ushort    destinationPort { init; get; }
+        public ushort sourcePort { init; get; }
+        public ushort destinationPort { init; get; }
     }
 
     public readonly struct Segment {

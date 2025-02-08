@@ -16,14 +16,14 @@ internal class SnifferFrame : Tui.Frame {
     public Tui.Tabs tabs;
     public Tui.Toolbar toolbar;
 
-    private Tui.ShadowIndexListBox<Mac, TrafficData>       framesList;
-    private Tui.ShadowIndexListBox<IPAddress, TrafficData> packetList;
-    private Tui.ShadowIndexListBox<ushort, TrafficData>    segmentList;
-    private Tui.ShadowIndexListBox<ushort, TrafficData>    datagramList;
-    private Tui.ShadowIndexListBox<ushort, Count>          etherTypeList;
-    private Tui.ShadowIndexListBox<byte, Count>            layer4ProtocolList;
-    private Tui.ListBox<SniffIssuesItem>                   issuesList;
-    private Tui.ListBox<byte>                              overviewList;
+    private Tui.ShadowIndexListBox<Mac, TrafficData>    framesList;
+    private Tui.ShadowIndexListBox<IP, TrafficData>     packetList;
+    private Tui.ShadowIndexListBox<ushort, TrafficData> segmentList;
+    private Tui.ShadowIndexListBox<ushort, TrafficData> datagramList;
+    private Tui.ShadowIndexListBox<ushort, Count>       etherTypeList;
+    private Tui.ShadowIndexListBox<byte, Count>         layer4ProtocolList;
+    private Tui.ListBox<SniffIssuesItem>                issuesList;
+    private Tui.ListBox<byte>                           overviewList;
 
     private Tui.Element currentList;
 
@@ -63,7 +63,7 @@ internal class SnifferFrame : Tui.Frame {
             drawItemHandler = DrawFrameItem
         };
 
-        packetList = new Tui.ShadowIndexListBox<IPAddress, TrafficData>(this) {
+        packetList = new Tui.ShadowIndexListBox<IP, TrafficData>(this) {
             left            = 0,
             right           = 0,
             top             = 3,
@@ -384,8 +384,8 @@ internal class SnifferFrame : Tui.Frame {
         TrafficData traffic = packetList[index];
         bool isSelected = index == packetList.index;
 
-        IPAddress ip       = packetList.shadow.GetKeyByIndex(index) ?? new IPAddress(0);
-        string    ipString = ip.ToString();
+        IP     ip       = packetList.shadow.GetKeyByIndex(index);
+        string ipString = ip.ToString();
         
         int noteWidth = Math.Max(width - 93, 0);
 
@@ -407,61 +407,46 @@ internal class SnifferFrame : Tui.Frame {
         Ansi.SetBgColor(isSelected ? Glyphs.HIGHLIGHT_COLOR : Glyphs.PANE_COLOR);
 
         string noteString;
-        if (IPAddress.IsLoopback(ip)) {
+
+        if (ip.IsBroadcast()) {
+            Ansi.SetFgColor([0, 172, 255]);
+            noteString = "Broadcast";
+        }
+        else if (ip.IsLoopback()) {
             Ansi.SetFgColor([0, 255, 255]);
             noteString = "Loopback";
         }
-        else if (ip.AddressFamily == System.Net.Sockets.AddressFamily.InterNetwork) {
-            byte[] bytes = ip.GetAddressBytes();
-            if (bytes.All(o => o == 255)) {
-                Ansi.SetFgColor([0, 172, 255]);
-                noteString = "Broadcast";
-            }
-            else if (bytes[0] > 223 && bytes[0] < 240) {
-                Ansi.SetFgColor([0, 255, 255]);
-                noteString = "Multicast";
-            }
-            else if (ip.IsApipa()) {
-                Ansi.SetFgColor([128, 128, 128]);
-                noteString = "APIPA";
-            }
-            else if (ip.IsPrivate()) {
-                Ansi.SetFgColor([128, 128, 128]);
-                noteString = "Private";
-            }
-            else {
-                noteString = String.Empty;
-            }
+        else if (ip.IsMulticast()) {
+            Ansi.SetFgColor([0, 255, 255]);
+            noteString = "Multicast";
         }
-        else if (ip.AddressFamily == System.Net.Sockets.AddressFamily.InterNetworkV6) {
-            if (ip.IsIPv6Multicast) {
-                Ansi.SetFgColor([0, 255, 255]);
-                noteString = "Multicast";
-            }
-            else if (ip.IsIPv6Teredo) {
-                Ansi.SetFgColor([128, 128, 128]);
-                noteString = "Teredo";
-            }
-            else if (ip.IsIPv4MappedToIPv6) {
-                Ansi.SetFgColor([128, 128, 128]);
-                noteString = "Mapped IPv4";
-            }
-            else if (ip.IsIPv6UniqueLocal) {
-                Ansi.SetFgColor([128, 128, 128]);
-                noteString = "Unique local";
-            }
-            else if (ip.IsIPv6LinkLocal) {
-                Ansi.SetFgColor([128, 128, 128]);
-                noteString = "Link local";
-            }
-            else if (ip.IsIPv6SiteLocal) {
-                byte b = 255;
-                Ansi.SetFgColor([b, 32, 32]);
-                noteString = "Site local";
-            }
-            else {
-                noteString = String.Empty;
-            }
+        else if (ip.IsApipa()) {
+            Ansi.SetFgColor([128, 128, 128]);
+            noteString = "APIPA";
+        }
+        else if (ip.IsIPv6LinkLocal()) {
+            Ansi.SetFgColor([128, 128, 128]);
+            noteString = "Link local";
+        }
+        else if (ip.IsIPv6Teredo()) {
+            Ansi.SetFgColor([128, 128, 128]);
+            noteString = "Teredo";
+        }
+        else if (ip.IsIPv6UniqueLocal()) {
+            Ansi.SetFgColor([128, 128, 128]);
+            noteString = "Unique local";
+        }
+        else if (ip.IsIPv6SiteLocal()) {
+            Ansi.SetFgColor([255, 32, 32]);
+            noteString = "Site local";
+        }
+        else if (ip.IsIPv4MappedIPv6()) {
+            Ansi.SetFgColor([128, 128, 128]);
+            noteString = "Mapped IPv4";
+        }
+        else if (ip.IsIPv4Private()) {
+            Ansi.SetFgColor([128, 128, 128]);
+            noteString = "Private";
         }
         else {
             noteString = String.Empty;
