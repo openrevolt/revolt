@@ -26,7 +26,7 @@ internal class SnifferFrame : Tui.Frame {
     private Tui.ShadowIndexListBox<IP, TrafficData>     packetList;
     private Tui.ShadowIndexListBox<ushort, TrafficData> segmentList;
     private Tui.ShadowIndexListBox<ushort, TrafficData> datagramList;
-    private Tui.ShadowIndexListBox<ushort, Count>       layer3ProtocolList;
+    private Tui.ShadowIndexListBox<ushort, Count>       etherTypeList;
     private Tui.ShadowIndexListBox<byte, Count>         layer4ProtocolList;
     private Tui.ListBox<SniffIssuesItem>                issuesList;
     private Tui.ListBox<byte>                           overviewList;
@@ -51,7 +51,7 @@ internal class SnifferFrame : Tui.Frame {
                 new Tui.Tabs.TabItem() { text="L3",          key="3" },
                 new Tui.Tabs.TabItem() { text="L4 TCP",      key="4" },
                 new Tui.Tabs.TabItem() { text="L4 UDP",      key="4" },
-                new Tui.Tabs.TabItem() { text="Network",     key="N" },
+                new Tui.Tabs.TabItem() { text="Ether-types", key="E" },
                 new Tui.Tabs.TabItem() { text="Transport",   key="T" },
                 new Tui.Tabs.TabItem() { text="Issues",      key="I" },
                 new Tui.Tabs.TabItem() { text="Overview",    key="O" },
@@ -96,13 +96,13 @@ internal class SnifferFrame : Tui.Frame {
             drawItemHandler = DrawDatagramItem
         };
 
-        layer3ProtocolList = new Tui.ShadowIndexListBox<ushort, Count>(this) {
+        etherTypeList = new Tui.ShadowIndexListBox<ushort, Count>(this) {
             left            = 0,
             right           = 0,
             top             = 3,
             bottom          = 2,
             backgroundColor = Glyphs.PANE_COLOR,
-            drawItemHandler = DrawNetworkItem
+            drawItemHandler = DrawEtherItem
         };
 
         layer4ProtocolList = new Tui.ShadowIndexListBox<byte, Count>(this) {
@@ -138,7 +138,7 @@ internal class SnifferFrame : Tui.Frame {
             right = 0,
             items = [
                 new Tui.Toolbar.ToolbarItem() { text="Start",  key="F2", action=StartDialog },
-                new Tui.Toolbar.ToolbarItem() { text="Deep analysis", key="F3", action=FiltersDialog },
+                new Tui.Toolbar.ToolbarItem() { text="Deep-analysis", key="F3", action=FiltersDialog },
                 //new Tui.Toolbar.ToolbarItem() { text="Filter", key="F4", action=FiltersDialog },
             ],
             drawStatus = DrawStatus
@@ -197,7 +197,7 @@ internal class SnifferFrame : Tui.Frame {
             }
             break;
 
-        case ConsoleKey.N:
+        case ConsoleKey.E:
             tabs.SetIndex(4);
             break;
 
@@ -254,7 +254,7 @@ internal class SnifferFrame : Tui.Frame {
             1 => packetList,
             2 => segmentList,
             3 => datagramList,
-            4 => layer3ProtocolList,
+            4 => etherTypeList,
             5 => layer4ProtocolList,
             6 => issuesList,
             _ => overviewList
@@ -316,7 +316,7 @@ internal class SnifferFrame : Tui.Frame {
         }
 
         Ansi.Write(' ');
-        Ansi.Write(mac.ToFormattedString());
+        Ansi.Write(mac.ToString());
         Ansi.Write(' ');
 
         Ansi.SetFgColor(Glyphs.LIGHT_COLOR);
@@ -555,31 +555,31 @@ internal class SnifferFrame : Tui.Frame {
         lastUpdate = Stopwatch.GetTimestamp();
     }
 
-    private void DrawNetworkItem(int index, int x, int y, int width) {
-        if (layer3ProtocolList.Count == 0) return;
+    private void DrawEtherItem(int index, int x, int y, int width) {
+        if (etherTypeList.Count == 0) return;
         if (index < 0) return;
-        if (index >= layer3ProtocolList.Count) return;
+        if (index >= etherTypeList.Count) return;
 
-        int adjustedY = y + index - layer3ProtocolList.scrollOffset;
+        int adjustedY = y + index - etherTypeList.scrollOffset;
         if (adjustedY < y || adjustedY > Renderer.LastHeight) return;
 
-        bool isSelected = index == layer3ProtocolList.index;
+        bool isSelected = index == etherTypeList.index;
 
-        Count count = layer3ProtocolList[index];
+        Count count = etherTypeList[index];
 
-        ushort protocol       = layer3ProtocolList.shadow.GetKeyByIndex(index);
+        ushort protocol       = etherTypeList.shadow.GetKeyByIndex(index);
         string protocolString = "0x" + protocol.ToString("X2").PadLeft(4, '0');
 
         int nameWidth = Math.Max(56, 0);
         int noteWidth = Math.Max(width - nameWidth - 34, 0);
 
-        string nameString = GetL3ProtocolName(protocol);
+        string nameString = GetEtherTypeName(protocol);
 
         Ansi.SetCursorPosition(1, adjustedY);
 
         if (isSelected) {
-            Ansi.SetFgColor(layer3ProtocolList.isFocused ? Glyphs.DARKGRAY_COLOR : Glyphs.LIGHT_COLOR);
-            Ansi.SetBgColor(layer3ProtocolList.isFocused ? Glyphs.FOCUS_COLOR : Glyphs.HIGHLIGHT_COLOR);
+            Ansi.SetFgColor(etherTypeList.isFocused ? Glyphs.DARKGRAY_COLOR : Glyphs.LIGHT_COLOR);
+            Ansi.SetBgColor(etherTypeList.isFocused ? Glyphs.FOCUS_COLOR : Glyphs.HIGHLIGHT_COLOR);
         }
         else {
             Ansi.SetFgColor(Glyphs.LIGHT_COLOR);
@@ -719,7 +719,7 @@ internal class SnifferFrame : Tui.Frame {
 
         case 1: {
             if (sniffer is null) goto default;
-            sniffer.networkCount.TryGetValue((ushort)etherTypes.IPv4, out Count count);
+            sniffer.etherTypeCount.TryGetValue((ushort)etherTypes.IPv4, out Count count);
             WriteNumber(count.packets, 16, Glyphs.LIGHT_COLOR);
             WriteBytes(count.bytes, 16, Glyphs.LIGHT_COLOR);
             if (count.packets > 0) {
@@ -733,7 +733,7 @@ internal class SnifferFrame : Tui.Frame {
         
         case 2: {
             if (sniffer is null) goto default;
-            sniffer.networkCount.TryGetValue((ushort)etherTypes.IPv6, out Count count);
+            sniffer.etherTypeCount.TryGetValue((ushort)etherTypes.IPv6, out Count count);
             WriteNumber(count.packets, 16, Glyphs.LIGHT_COLOR);
             WriteBytes(count.bytes, 16, Glyphs.LIGHT_COLOR);
             if (count.packets > 0) {
@@ -929,7 +929,7 @@ internal class SnifferFrame : Tui.Frame {
                 packetList.BindDictionary(sniffer.packetCount);
                 segmentList.BindDictionary(sniffer.segmentCount);
                 datagramList.BindDictionary(sniffer.datagramCount);
-                layer3ProtocolList.BindDictionary(sniffer.networkCount);
+                etherTypeList.BindDictionary(sniffer.etherTypeCount);
                 layer4ProtocolList.BindDictionary(sniffer.transportCount);
 
                 sniffer.Start();

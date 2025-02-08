@@ -14,7 +14,7 @@ public sealed partial class Sniffer : IDisposable {
     public IndexedDictionary<IP, TrafficData>     packetCount    = new IndexedDictionary<IP, TrafficData>();
     public IndexedDictionary<ushort, TrafficData> segmentCount   = new IndexedDictionary<ushort, TrafficData>();
     public IndexedDictionary<ushort, TrafficData> datagramCount  = new IndexedDictionary<ushort, TrafficData>();
-    public IndexedDictionary<ushort, Count>       networkCount   = new IndexedDictionary<ushort, Count>();
+    public IndexedDictionary<ushort, Count>       etherTypeCount = new IndexedDictionary<ushort, Count>();
     public IndexedDictionary<byte, Count>         transportCount = new IndexedDictionary<byte, Count>();
 
     //private ulong frameIndex = 0;
@@ -36,8 +36,8 @@ public sealed partial class Sniffer : IDisposable {
         this.device = device;
         deviceMac = device.MacAddress;
 
-        networkCount.TryAdd(0x0800, new Count() { packets = 0, bytes = 0 });
-        networkCount.TryAdd(0x86DD, new Count() { packets = 0, bytes = 0 });
+        etherTypeCount.TryAdd(0x0800, new Count() { packets = 0, bytes = 0 });
+        etherTypeCount.TryAdd(0x86DD, new Count() { packets = 0, bytes = 0 });
 
         transportCount.TryAdd(6, new Count() { packets = 0, bytes = 0 });
         transportCount.TryAdd(17, new Count() { packets = 0, bytes = 0 });
@@ -119,7 +119,7 @@ public sealed partial class Sniffer : IDisposable {
         Interlocked.Increment(ref totalPackets);
         Interlocked.Add(ref totalBytes, buffer.Length);
 
-        networkCount.AddOrUpdate(
+        etherTypeCount.AddOrUpdate(
             networkProtocol,
             new Count() { bytes = buffer.Length, packets = 1 },
             (code, count) => {

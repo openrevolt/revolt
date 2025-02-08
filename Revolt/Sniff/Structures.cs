@@ -27,7 +27,7 @@ public sealed partial class Sniffer {
             f = buffer[offset + 5];
         }
 
-        public string ToFormattedString() {
+        public override string ToString() {
             Span<char> buffer = stackalloc char[17];
             buffer[0] = macLookup[(a >> 4) & 0xF];
             buffer[1] = macLookup[a & 0xF];
@@ -85,18 +85,6 @@ public sealed partial class Sniffer {
         [FieldOffset(8)] private readonly ulong upper;
 #endif
 
-        /*public IP(uint ip) {
-            ipv6   = default;
-            ipv4   = ip;
-            isIPv6 = false;
-        }*/
-
-        /*public IP(UInt128 ip) {
-            ipv4   = default;
-            ipv6   = ip;
-            isIPv6 = true;
-        }*/
-
         public IP(ReadOnlySpan<byte> bytes) {
             if (bytes.Length == 4) {
                 ipv4 = (uint)((bytes[0] << 24) | (bytes[1] << 16) | (bytes[2] << 8) | bytes[3]);
@@ -127,7 +115,8 @@ public sealed partial class Sniffer {
             return left.isIPv6 ? left.ipv6 != right.ipv6 : left.ipv4 != right.ipv4;
         }
 
-        public override bool Equals(object obj) => obj is IP other && this == other;
+        public override bool Equals(object obj) =>
+            obj is IP other && this == other;
 
         public override int GetHashCode() {
             unchecked {
@@ -135,11 +124,32 @@ public sealed partial class Sniffer {
             }
         }
 
-        public override string ToString() {
-            if (!isIPv6) {
-                return $"{(ipv4 >> 24) & 0xFF}.{(ipv4 >> 16) & 0xFF}.{(ipv4 >> 8) & 0xFF}.{ipv4 & 0xFF}";
-            }
+        public override string ToString() =>
+            isIPv6? IPv6ToString() : IPv4ToString();
 
+        private string IPv4ToString() {
+            Span<char> buffer = stackalloc char[15];
+            int pos = 0;
+
+            (ipv4 >> 24 & 0xFF).TryFormat(buffer[pos..], out int written);
+            pos += written;
+            buffer[pos++] = '.';
+
+            (ipv4 >> 16 & 0xFF).TryFormat(buffer[pos..], out written);
+            pos += written;
+            buffer[pos++] = '.';
+
+            (ipv4 >> 8 & 0xFF).TryFormat(buffer[pos..], out written);
+            pos += written;
+            buffer[pos++] = '.';
+
+            (ipv4 & 0xFF).TryFormat(buffer[pos..], out written);
+            pos += written;
+
+            return new string(buffer[..pos]);
+        }
+
+        private string IPv6ToString() {
             Span<ushort> segments = stackalloc ushort[8];
             ulong high = upper, low = lower;
 
@@ -154,11 +164,8 @@ public sealed partial class Sniffer {
                 if (segments[i] == 0) {
                     if (currentStart == -1) {
                         currentStart = i;
-                        currentLength = 1;
                     }
-                    else {
-                        currentLength++;
-                    }
+                    currentLength++;
                 }
                 else {
                     if (currentLength > bestLength) {
@@ -166,26 +173,30 @@ public sealed partial class Sniffer {
                         bestLength = currentLength;
                     }
                     currentStart = -1;
+                    currentLength = 0;
                 }
             }
-
             if (currentLength > bestLength) {
                 bestStart = currentStart;
                 bestLength = currentLength;
             }
 
-            StringBuilder sb = new System.Text.StringBuilder();
+            Span<char> buffer = stackalloc char[39];
+            int index = 0;
+
             for (int i = 0; i < 8; i++) {
-                if (bestStart == i) {
-                    sb.Append(":");
+                if (i == bestStart) {
+                    buffer[index++] = ':';
                     i += bestLength - 1;
                     continue;
                 }
-                if (i > 0) sb.Append(':');
-                sb.Append(segments[i].ToString("x"));
+
+                if (index > 0) buffer[index++] = ':';
+                segments[i].TryFormat(buffer[index..], out int written, format: "x");
+                index += written;
             }
 
-            return sb.ToString();
+            return new string(buffer[..index]);
         }
 
         public bool IsBroadcast() {
