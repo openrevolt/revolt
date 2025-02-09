@@ -17,7 +17,7 @@ public sealed class NetMapperFrame : Tui.Frame {
         public uint   ipInt;
     }
 
-    public static NetMapperFrame Instance { get; } = new NetMapperFrame();
+    public static readonly NetMapperFrame instance = new NetMapperFrame();
 
     public Tui.ListBox<DiscoverItem> list;
     public Tui.Toolbar toolbar;
@@ -80,7 +80,7 @@ public sealed class NetMapperFrame : Tui.Frame {
             break;
 
         case ConsoleKey.Escape:
-            MainMenu.Instance.Show();
+            MainMenu.instance.Show();
             break;
 
         case ConsoleKey.F2:

@@ -14,7 +14,7 @@ public sealed class PingFrame : Tui.Frame {
         OnRiseAndFall = 3
     }
 
-    public static PingFrame Instance { get; } = new PingFrame();
+    public static readonly PingFrame instance = new PingFrame();
 
     public Tui.ListBox<PingItem> list;
     public Tui.Toolbar toolbar;
@@ -82,7 +82,7 @@ public sealed class PingFrame : Tui.Frame {
             break;
 
         case ConsoleKey.Escape:
-            MainMenu.Instance.Show();
+            MainMenu.instance.Show();
             break;
 
         case ConsoleKey.Insert:

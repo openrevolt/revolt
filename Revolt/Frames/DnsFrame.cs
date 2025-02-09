@@ -14,7 +14,7 @@ public sealed class DnsFrame : Tui.Frame {
         public int        ttl;
     }
 
-    public static DnsFrame Instance { get; } = new DnsFrame();
+    public static readonly DnsFrame instance = new DnsFrame();
 
     public Tui.ListBox<DnsItem> list;
     public Tui.Toolbar toolbar;
@@ -72,7 +72,7 @@ public sealed class DnsFrame : Tui.Frame {
             break;
 
         case ConsoleKey.Escape:
-            MainMenu.Instance.Show();
+            MainMenu.instance.Show();
             break;
 
         case ConsoleKey.Insert:

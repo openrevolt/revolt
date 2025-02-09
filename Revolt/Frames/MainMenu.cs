@@ -16,7 +16,7 @@ public sealed class MainMenu : Tui.Frame {
         "Quit"
     ];
 
-    public static MainMenu Instance { get; } = new MainMenu();
+    public static readonly MainMenu instance = new MainMenu();
 
     public override void Show(bool draw = true) {
         Ansi.HideCursor();
@@ -31,7 +31,7 @@ public sealed class MainMenu : Tui.Frame {
 
         Ansi.SetCursorPosition(0, 0);
 
-        Program.DrawBanner();
+        Program.WriteBanner();
 
         for (int i = 0; i < menu.Length; i++) {
             DrawItem(i, width, height);
@@ -110,19 +110,19 @@ public sealed class MainMenu : Tui.Frame {
     public bool Enter() {
         switch (menu[index]) {
         case "Ping":
-            PingFrame.Instance.Show();
+            PingFrame.instance.Show();
             return true;
 
         case "DNS lookup":
-            DnsFrame.Instance.Show();
+            DnsFrame.instance.Show();
             return true;
 
         case "Network mapper":
-            NetMapperFrame.Instance.Show();
+            NetMapperFrame.instance.Show();
             return true;
 
         case "Packet sniffer":
-            SnifferFrame.Instance.Show();
+            SnifferFrame.instance.Show();
             return true;
 
         case "Quit":

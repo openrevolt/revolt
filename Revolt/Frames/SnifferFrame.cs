@@ -8,8 +8,8 @@ using static Revolt.Sniff.Sniffer;
 
 namespace Revolt.Frames;
 
-internal class SnifferFrame : Tui.Frame {
-    public static SnifferFrame Instance { get; } = new SnifferFrame();
+public class SnifferFrame : Tui.Frame {
+    public static readonly SnifferFrame instance = new SnifferFrame();
 
     public Tui.Tabs tabs;
     public Tui.Toolbar toolbar;
@@ -39,6 +39,10 @@ internal class SnifferFrame : Tui.Frame {
     private Sniffer sniffer;
     
     private long lastUpdate = 0;
+
+    static SnifferFrame() {
+        PCap.Init();
+    }
 
     public SnifferFrame() {
         tabs = new Tui.Tabs(this) {
@@ -165,7 +169,7 @@ internal class SnifferFrame : Tui.Frame {
             break;
 
         case ConsoleKey.Escape:
-            MainMenu.Instance.Show();
+            MainMenu.instance.Show();
             break;
 
         case ConsoleKey.F2:

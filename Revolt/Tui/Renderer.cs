@@ -12,7 +12,7 @@ public static class Renderer {
     static Renderer() {
         LastWidth = 80;
         LastHeight = 20;
-        Frames.MainMenu.Instance.Show(false);
+        Frames.MainMenu.instance.Show(false);
     }
 
     public static void Initialize() {

@@ -16,7 +16,7 @@ public class Program {
         Renderer.Initialize();
     }
 
-    public static void DrawBanner() {
+    public static void WriteBanner() {
         Ansi.WriteLine(@"  ______                _ _");
         Ansi.WriteLine(@"  | ___ \              | | |");
         Ansi.WriteLine(@"  | |_/ /_____   _____ | | |_");
