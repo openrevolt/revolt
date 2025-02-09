@@ -1,8 +1,5 @@
-﻿using Microsoft.CodeAnalysis.CSharp.Syntax;
-using System.Collections.Concurrent;
-using System.Drawing;
+﻿using System.Collections.Concurrent;
 using System.Text;
-using static Revolt.Ansi;
 
 namespace Revolt;
 
@@ -25,10 +22,10 @@ public static class Ansi {
             );
 
         public static bool operator ==(Color left, Color right) =>
-             left.r == right.r && left.g == right.g && left.b == right.b;
+            left.r == right.r && left.g == right.g && left.b == right.b;
 
         public static bool operator !=(Color left, Color right) =>
-             left.r != right.r || left.g != right.g || left.b != right.b;
+            left.r != right.r || left.g != right.g || left.b != right.b;
 
         public override bool Equals(object obj) {
             if (obj is Color other) return this == other;

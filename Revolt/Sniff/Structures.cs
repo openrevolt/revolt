@@ -1,9 +1,4 @@
-﻿using System.Runtime.InteropServices;
-using System.Text;
-
-using static Revolt.Sniff.Sniffer;
-
-namespace Revolt.Sniff;
+﻿namespace Revolt.Sniff;
 
 public sealed partial class Sniffer {
     public readonly struct Packet(

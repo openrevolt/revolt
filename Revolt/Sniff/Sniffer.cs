@@ -1,9 +1,6 @@
 ﻿using System.Collections.Concurrent;
-using System.Net;
 using System.Net.NetworkInformation;
-using Revolt.Tui;
 using SharpPcap;
-using static Revolt.Sniff.Sniffer;
 
 namespace Revolt.Sniff;
 

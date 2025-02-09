@@ -1,6 +1,5 @@
 ﻿using Revolt.Protocols;
 using Revolt.Tui;
-using System.Threading;
 
 namespace Revolt.Frames;
 

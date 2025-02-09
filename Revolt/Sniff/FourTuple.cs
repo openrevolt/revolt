@@ -1,6 +1,4 @@
-﻿using static Revolt.Sniff.Sniffer;
-
-namespace Revolt.Sniff;
+﻿namespace Revolt.Sniff;
 
 public sealed partial class Sniffer {
 

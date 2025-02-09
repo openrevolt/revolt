@@ -1,5 +1,4 @@
 ﻿using System.Diagnostics;
-using System.Net;
 using Revolt.Protocols;
 using Revolt.Sniff;
 using Revolt.Tui;
