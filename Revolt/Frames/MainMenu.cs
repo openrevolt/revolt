@@ -1,4 +1,5 @@
 ﻿using Revolt.Tui;
+using System.Reflection;
 
 namespace Revolt.Frames;
 
@@ -31,13 +32,26 @@ public sealed class MainMenu : Tui.Frame {
 
         Ansi.SetCursorPosition(0, 0);
 
-        Program.WriteBanner();
+        WriteBanner();
 
         for (int i = 0; i < menu.Length; i++) {
             DrawItem(i, width, height);
         }
 
         Ansi.Push();
+    }
+
+    public static void WriteBanner() {
+        Ansi.WriteLine(@"  ______                _ _");
+        Ansi.WriteLine(@"  | ___ \              | | |");
+        Ansi.WriteLine(@"  | |_/ /_____   _____ | | |_");
+        Ansi.WriteLine(@"  |    // _ \ \ / / _ \| | __|");
+        Ansi.WriteLine(@"  | |\ \  __/\ V / (_) | | |_ ");
+        Ansi.WriteLine(@"  \_| \_\___| \_/ \___/|_|\__|");
+
+        Version ver = Assembly.GetExecutingAssembly().GetName()?.Version;
+        string version = $"{ver?.Major ?? 0}.{ver?.Minor ?? 0}.{ver?.Build ?? 0}.{ver?.Revision ?? 0}";
+        Ansi.WriteLine($"{version,30}");
     }
 
     public void DrawItem(int i, int width, int height) {
