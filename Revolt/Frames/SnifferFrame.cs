@@ -137,7 +137,7 @@ internal class SnifferFrame : Tui.Frame {
             right = 0,
             items = [
                 new Tui.Toolbar.ToolbarItem() { text="Start",  key="F2", action=StartDialog },
-                new Tui.Toolbar.ToolbarItem() { text="Deep-analysis", key="F3", action=FiltersDialog },
+                new Tui.Toolbar.ToolbarItem() { text="Analyze", key="F3", action=AnalyzeDialog },
                 //new Tui.Toolbar.ToolbarItem() { text="Filter", key="F4", action=FiltersDialog },
             ],
             drawStatus = DrawStatus
@@ -170,6 +170,10 @@ internal class SnifferFrame : Tui.Frame {
 
         case ConsoleKey.F2:
             StartDialog();
+            break;
+
+        case ConsoleKey.F3:
+            AnalyzeDialog();
             break;
 
         case ConsoleKey.F4:
@@ -969,6 +973,22 @@ internal class SnifferFrame : Tui.Frame {
         };
 
         dialog.Show();
+    }
+
+    private void AnalyzeDialog() {
+        if (sniffer is null) {
+            new MessageDialog() {
+                 text = "No data to analyze."
+            }.Show();
+        }
+        else if (captureDevice is not null && captureDevice.Started) {
+            new MessageDialog() {
+                 text = "A session is in progress."
+            }.Show();
+        }
+        else {
+            sniffer.Analyze();
+        }
     }
 
     private void FiltersDialog() {
