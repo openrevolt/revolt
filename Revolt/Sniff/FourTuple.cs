@@ -21,7 +21,10 @@ public sealed partial class Sniffer {
             left.destinationIP != right.destinationIP;
 
         public override bool Equals(object obj) =>
-            obj is FourTuple other && this == other;
+            obj is FourTuple other && BidirectionallyEquals(this, other);
+
+        public bool Equals(FourTuple fourtuple) =>
+            BidirectionallyEquals(this, fourtuple);
 
         public static bool BidirectionallyEquals(FourTuple left, FourTuple right) =>
             left == right ||
@@ -32,12 +35,24 @@ public sealed partial class Sniffer {
 
         public override int GetHashCode() {
             int hash = 17;
-            unchecked {
-                hash = hash * 31 + sourceIP.GetHashCode();
-                hash = hash * 31 + destinationIP.GetHashCode();
-                hash = hash * 31 + sourcePort;
-                hash = hash * 31 + destinationPort;
+
+            if (sourceIP.ipv6 < destinationIP.ipv6 || sourceIP == destinationIP && sourcePort < destinationPort) {
+                unchecked {
+                    hash = hash * 31 + sourceIP.GetHashCode();
+                    hash = hash * 31 + destinationIP.GetHashCode();
+                    hash = hash * 31 + sourcePort;
+                    hash = hash * 31 + destinationPort;
+                }
             }
+            else {
+                unchecked {
+                    hash = hash * 31 + destinationIP.GetHashCode();
+                    hash = hash * 31 + sourceIP.GetHashCode();
+                    hash = hash * 31 + destinationPort;
+                    hash = hash * 31 + sourcePort;
+                }
+            }
+
             return hash;
         }
     }

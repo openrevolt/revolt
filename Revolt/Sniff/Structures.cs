@@ -17,7 +17,8 @@ public sealed partial class Sniffer {
         public readonly byte   transportProtocol = transportProtocol;
     }
 
-    public readonly struct Segment (FourTuple fourTuple, uint initialSequence, uint seqNumber, uint ackNumber, uint window) {
+    public readonly struct Segment (long timestamp, FourTuple fourTuple, uint initialSequence, uint seqNumber, uint ackNumber, uint window) {
+        public readonly long      timestamp       = timestamp;
         public readonly FourTuple fourTuple       = fourTuple;
         public readonly uint      initialSequence = initialSequence;
         public readonly uint      seqNumber       = seqNumber;
