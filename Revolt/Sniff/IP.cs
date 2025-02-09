@@ -186,5 +186,4 @@ public sealed partial class Sniffer {
             return (ipv4 & 0xff000000) == 0x0a000000 || (ipv4 & 0xfff00000) == 0xac100000 || (ipv4 & 0xffff0000) == 0xc0a80000;
         }
     }
-
 }

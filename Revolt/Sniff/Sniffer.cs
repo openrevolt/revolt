@@ -1,5 +1,4 @@
 ﻿using System.Collections.Concurrent;
-using System.Net.NetworkInformation;
 using SharpPcap;
 
 namespace Revolt.Sniff;
@@ -21,17 +20,11 @@ public sealed partial class Sniffer : IDisposable {
     private ConcurrentDictionary<ulong, Segment> segments = new ConcurrentDictionary<ulong, Segment>();
 
     private ICaptureDevice device;
-    private PhysicalAddress deviceMac;
 
     private const ushort maxPort = 1024; //49152
 
     public Sniffer(ICaptureDevice device) {
-        if (device.MacAddress is null) {
-            throw new Exception("no mac address");
-        }
-
         this.device = device;
-        deviceMac = device.MacAddress;
 
         etherTypeCount.TryAdd(0x0800, new Count() { packets = 0, bytes = 0 });
         etherTypeCount.TryAdd(0x86DD, new Count() { packets = 0, bytes = 0 });

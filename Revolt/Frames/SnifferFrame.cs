@@ -982,22 +982,24 @@ file sealed class StartDialog : Tui.DialogBox {
     public List<ILiveDevice> devices;
 
     public StartDialog() {
-        CaptureDeviceList captureDevices = CaptureDeviceList.Instance;
+        ILiveDevice[] sortedDevices = CaptureDeviceList.Instance
+            .OrderByDescending(d => d.Description?.Contains("PCI", StringComparison.OrdinalIgnoreCase) == true ||d.Name?.Contains("PCI", StringComparison.OrdinalIgnoreCase) == true)
+            .ToArray();
 
         devices = [];
         List<string> strings = [];
 
-        for (int i = 0; i < captureDevices.Count; i++) {
-            if (captureDevices[i].MacAddress is null) continue;
-            devices.Add(captureDevices[i]);
+        for (int i = 0; i < sortedDevices.Length; i++) {
+            if (sortedDevices[i].MacAddress is null) continue;
+            devices.Add(sortedDevices[i]);
+            string description = sortedDevices[i].Description ?? (string.Join(':', sortedDevices[i].MacAddress.GetAddressBytes().Select(b => b.ToString("X2"))) + " - " + sortedDevices[i].Name);
+            strings.Add(description);
+        }
 
-            if (captureDevices[i].Description is null) {
-                string macString = string.Join(':', captureDevices[i].MacAddress.GetAddressBytes().Select(b => b.ToString("X2")));
-                strings.Add($"{macString} - {captureDevices[i].Name}");
-            }
-            else {
-                strings.Add(captureDevices[i].Description);
-            }
+        for (int i = 0; i < sortedDevices.Length; i++) {
+            if (sortedDevices[i].MacAddress is not null) continue;
+            devices.Add(sortedDevices[i]);
+            strings.Add(sortedDevices[i].Description ?? sortedDevices[i].Name);
         }
 
         okButton.text = "  Start  ";

@@ -3,7 +3,6 @@
 namespace Revolt.Sniff;
 
 public sealed partial class Sniffer {
-
     private static readonly char[]  macLookup = "0123456789ABCDEF".ToCharArray();
 
     [StructLayout(LayoutKind.Explicit)]
@@ -44,6 +43,9 @@ public sealed partial class Sniffer {
         public bool IsMulticast() =>
             (value & 0x010000000000) != 0x00;
 
+        public bool IsUnicast() =>
+            (value & 0x010000000000) == 0x00;
+
         public bool IsEthernetMulticast() =>
             (value & 0xffffff000000) == 0x01_80_c2_00_00_00;
 
@@ -53,8 +55,6 @@ public sealed partial class Sniffer {
         public bool IsPVv6Multicast() =>
             (value & 0xffff00000000) == 0x33_33_00_00_00_00;
 
-        public bool IsUnicast() =>
-            (value & 0x010000000000) == 0x00;
 
         public bool IsLocallyAdministered() =>
             (value & 0x020000000000) != 0x00;
