@@ -59,5 +59,25 @@ namespace Revolt.Properties {
                 resourceCulture = value;
             }
         }
+        
+        /// <summary>
+        ///   Looks up a localized resource of type System.Byte[].
+        /// </summary>
+        internal static byte[] Packet {
+            get {
+                object obj = ResourceManager.GetObject("Packet", resourceCulture);
+                return ((byte[])(obj));
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized resource of type System.Byte[].
+        /// </summary>
+        internal static byte[] wpcap {
+            get {
+                object obj = ResourceManager.GetObject("wpcap", resourceCulture);
+                return ((byte[])(obj));
+            }
+        }
     }
 }

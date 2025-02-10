@@ -1081,7 +1081,7 @@ file sealed class StartDialog : Tui.DialogBox {
     }
 
     public override void Draw() {
-        int width = Math.Min(Renderer.LastWidth, 48);
+        int width = Math.Min(Renderer.LastWidth, 56);
         Draw(width, 0);
     }
 
