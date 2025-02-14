@@ -17,13 +17,12 @@ public sealed partial class Sniffer {
         public readonly byte   transportProtocol = transportProtocol;
     }
 
-    public readonly struct Segment (long timestamp, FourTuple fourTuple, uint initialSequence, uint seqNumber, uint ackNumber, uint window) {
-        public readonly long      timestamp       = timestamp;
-        public readonly FourTuple fourTuple       = fourTuple;
-        public readonly uint      initialSequence = initialSequence;
-        public readonly uint      seqNumber       = seqNumber;
-        public readonly uint      ackNumber       = ackNumber;
-        public readonly uint      window          = window;
+    public readonly struct Segment (long timestamp, FourTuple fourTuple, uint sequenceNo, uint acknowledgmentNo, uint window) {
+        public readonly long      timestamp        = timestamp;
+        public readonly FourTuple fourTuple        = fourTuple;
+        public readonly uint      sequenceNo       = sequenceNo;
+        public readonly uint      acknowledgmentNo = acknowledgmentNo;
+        public readonly uint      window           = window;
     }
 
     public readonly struct SniffIssuesItem {

@@ -68,17 +68,20 @@ public static class Renderer {
 
     public static void ResizeLoop() {
         while (isRunning) {
-            Thread.Sleep(200);
+            Thread.Sleep(400);
 
-            int newWidth = Math.Min(Console.WindowWidth, MAX_WIDTH);
-            int newHeight = Math.Min(Console.WindowHeight, MAX_HEIGHT);
+            int width = Console.WindowWidth;
+            int height = Console.WindowHeight;
+
+            int newWidth = Math.Min(width, MAX_WIDTH);
+            int newHeight = Math.Min(height, MAX_HEIGHT);
 
             if (LastWidth == newWidth && LastHeight == newHeight) continue;
 
             if (newWidth <= 1 || newHeight <= 1) continue;
 
-            LastWidth = Math.Min(Console.WindowWidth, MAX_WIDTH);
-            LastHeight = Math.Min(Console.WindowHeight, MAX_HEIGHT);
+            LastWidth = Math.Min(width, MAX_WIDTH);
+            LastHeight = Math.Min(height, MAX_HEIGHT);
 
             Redraw();
         }

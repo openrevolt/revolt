@@ -238,7 +238,7 @@ public sealed partial class Sniffer : IDisposable {
         }
 
         FourTuple fourTuple = new FourTuple(sourceIP, destinationIP, sourcePort, destinationPort);
-        Segment segment = new Segment(timestamp, fourTuple, 0, 0, 0, 0);
+        Segment segment = new Segment(timestamp, fourTuple, 0, 0, 0);
 
         streams.AddOrUpdate(
             fourTuple,
