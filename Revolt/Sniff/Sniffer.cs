@@ -1,4 +1,5 @@
-﻿using System.Collections.Concurrent;
+﻿using System.Buffers.Binary;
+using System.Collections.Concurrent;
 using SharpPcap;
 
 namespace Revolt.Sniff;
@@ -209,7 +210,7 @@ public sealed partial class Sniffer : IDisposable {
     }
 
     private void HandleTCP(byte[] buffer, long timestamp, IP sourceIP, IP destinationIP, byte ihl) {
-        (ushort sourcePort, ushort destinationPort, _) = ParseSegmentHeader(buffer, 14 + ihl);
+        (ushort sourcePort, ushort destinationPort, uint sequenceNo, uint ackNo, ushort flags, ushort window, ushort checksum) = ParseSegmentHeader(buffer, 14 + ihl);
 
         if (sourcePort < maxPort) {
             segmentCount.AddOrUpdate(
@@ -238,7 +239,7 @@ public sealed partial class Sniffer : IDisposable {
         }
 
         FourTuple fourTuple = new FourTuple(sourceIP, destinationIP, sourcePort, destinationPort);
-        Segment segment = new Segment(timestamp, fourTuple, 0, 0, 0);
+        Segment segment = new Segment(timestamp, fourTuple, sequenceNo, ackNo, flags, window);
 
         streams.AddOrUpdate(
             fourTuple,
@@ -248,7 +249,6 @@ public sealed partial class Sniffer : IDisposable {
                 return queue;
             }
         );
-
     }
 
     private void HandleUDP(byte[] buffer, long timestamp, IP sourceIP, IP destinationIP, byte ihl) {
@@ -285,13 +285,13 @@ public sealed partial class Sniffer : IDisposable {
         if (buffer.Length < 20) return (0, 0, 0, 0, default, default); //invalid traffic
 
         byte   ihl      = (byte)((buffer[offset] & 0x0F) << 2);
-        ushort size     = (ushort)(buffer[offset+2] << 8 | buffer[offset+3]);
-        byte   ttl      = buffer[offset+8];
-        byte   protocol = buffer[offset+9];
-        //ushort checksum = (ushort)(buffer[offset+10] << 8 | buffer[offset+11]);
+        ushort size     = BinaryPrimitives.ReadUInt16BigEndian(buffer.AsSpan(offset + 2));
+        byte   ttl      = buffer[offset + 8];
+        byte   protocol = buffer[offset + 9];
+        //ushort checksum = BinaryPrimitives.ReadUInt16BigEndian(buffer.AsSpan(offset + 10));
 
-        IP source      = new IP(buffer.AsSpan(offset+12, 4));
-        IP destination = new IP(buffer.AsSpan(offset+16, 4));
+        IP source      = new IP(buffer.AsSpan(offset + 12, 4));
+        IP destination = new IP(buffer.AsSpan(offset + 16, 4));
 
         return (size, ttl, protocol, ihl, source, destination);
     }
@@ -299,30 +299,34 @@ public sealed partial class Sniffer : IDisposable {
     private (ushort, byte, byte, IP, IP) ParseV6PacketHeader(byte[] buffer, int offset) {
         if (buffer.Length < 40) return (0, 0, 0, default, default); //invalid traffic
 
-        ushort size     = (ushort)((buffer[offset+4] << 8 | buffer[offset+5]) + 40);
-        byte   protocol = buffer[offset+6];
-        byte   ttl      = buffer[offset+7];
-
-        IP source      = new IP(buffer.AsSpan(offset+8, 16));
-        IP destination = new IP(buffer.AsSpan(offset+24, 16));
-
-        return (size, protocol, ttl, source, destination);
-    }
-
-    private (ushort, ushort, ushort) ParseSegmentHeader(byte[] buffer, int offset) {
-        ushort source      = (ushort)(buffer[offset+0] << 8 | buffer[offset+1]);
-        ushort destination = (ushort)(buffer[offset+2] << 8 | buffer[offset+3]);
-        ushort size        = (ushort)(buffer[offset+14] << 8 | buffer[offset+15]);
-        //ushort checksum    = (ushort)(buffer[offset+16] << 8 | buffer[offset+17]);
-        return (source, destination, size);
+        return (
+            (ushort)(BinaryPrimitives.ReadUInt16BigEndian(buffer.AsSpan(offset + 4)) + 40), //size
+            buffer[offset + 6],                    //protocol
+            buffer[offset + 7],                    //ttl
+            new IP(buffer.AsSpan(offset + 8, 16)), //source
+            new IP(buffer.AsSpan(offset + 24, 16)) //destination
+            );
     }
 
     private (ushort, ushort, ushort) ParseDatagramHeader(byte[] buffer, int offset) {
-        ushort source      = (ushort)(buffer[offset+0] << 8 | buffer[offset+1]);
-        ushort destination = (ushort)(buffer[offset+2] << 8 | buffer[offset+3]);
-        ushort size        = (ushort)(buffer[offset+4] << 8 | buffer[offset+5]);
-        //ushort checksum    = (ushort)(buffer[offset+5] << 8 | buffer[offset+6]);
-        return (source, destination, size);
+        return (
+            BinaryPrimitives.ReadUInt16BigEndian(buffer.AsSpan(offset + 0)),  //source
+            BinaryPrimitives.ReadUInt16BigEndian(buffer.AsSpan(offset + 2)),  //destination
+            BinaryPrimitives.ReadUInt16BigEndian(buffer.AsSpan(offset + 4))   //size
+            //BinaryPrimitives.ReadUInt16BigEndian(buffer.AsSpan(offset + 6)) //checksum
+            );
+    }
+
+    private (ushort, ushort, uint, uint, ushort, ushort, ushort) ParseSegmentHeader(byte[] buffer, int offset) {
+        return (
+            BinaryPrimitives.ReadUInt16BigEndian(buffer.AsSpan(offset + 0)),  //source
+            BinaryPrimitives.ReadUInt16BigEndian(buffer.AsSpan(offset + 2)),  //destination
+            BinaryPrimitives.ReadUInt32BigEndian(buffer.AsSpan(offset + 4)),  //sequenceNo
+            BinaryPrimitives.ReadUInt32BigEndian(buffer.AsSpan(offset + 8)),  //acknowledgmentNo
+            BinaryPrimitives.ReadUInt16BigEndian(buffer.AsSpan(offset + 12)), //flags
+            BinaryPrimitives.ReadUInt16BigEndian(buffer.AsSpan(offset + 14)), //window
+            BinaryPrimitives.ReadUInt16BigEndian(buffer.AsSpan(offset + 16))  //checksum
+            );
     }
 
     public void Dispose() {

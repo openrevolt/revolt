@@ -991,7 +991,7 @@ public class SnifferFrame : Tui.Frame {
             }.Show();
         }
         else {
-            sniffer.Analyze();
+            sniffer.AnalyzeTCP();
         }
     }
 
