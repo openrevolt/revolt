@@ -13,6 +13,7 @@ public sealed partial class Sniffer : IDisposable {
     public IndexedDictionary<ushort, TrafficData> datagramCount  = new IndexedDictionary<ushort, TrafficData>();
     public IndexedDictionary<ushort, Count>       etherTypeCount = new IndexedDictionary<ushort, Count>();
     public IndexedDictionary<byte, Count>         transportCount = new IndexedDictionary<byte, Count>();
+    public IndexedDictionary<IPPair, StreamCount> streamsCount   = new IndexedDictionary<IPPair, StreamCount>();
 
     public ConcurrentDictionary<FourTuple, ConcurrentQueue<Segment>> streams = new ConcurrentDictionary<FourTuple, ConcurrentQueue<Segment>>();
 
@@ -239,9 +240,9 @@ public sealed partial class Sniffer : IDisposable {
         }
 
         FourTuple fourTuple = new FourTuple(sourceIP, destinationIP, sourcePort, destinationPort);
-        Segment segment = new Segment(timestamp, fourTuple, sequenceNo, ackNo, flags, window);
+        Segment   segment   = new Segment(timestamp, fourTuple, sequenceNo, ackNo, flags, window);
 
-        streams.AddOrUpdate(
+        ConcurrentQueue<Segment> stream = streams.AddOrUpdate(
             fourTuple,
             new ConcurrentQueue<Segment>([segment]),
             (tuple, queue) => {
@@ -249,6 +250,8 @@ public sealed partial class Sniffer : IDisposable {
                 return queue;
             }
         );
+
+        SegmentAnalysis(segment, stream);
     }
 
     private void HandleUDP(byte[] buffer, long timestamp, IP sourceIP, IP destinationIP, byte ihl) {

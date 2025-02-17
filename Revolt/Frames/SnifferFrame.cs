@@ -27,7 +27,7 @@ public class SnifferFrame : Tui.Frame {
     private Tui.ShadowIndexListBox<ushort, TrafficData>      datagramList;
     private Tui.ShadowIndexListBox<ushort, Count>            etherTypeList;
     private Tui.ShadowIndexListBox<byte, Count>              layer4ProtocolList;
-    private Tui.ShadowIndexListBox<IPPair, TcpStatCount>     hostList;
+    private Tui.ShadowIndexListBox<IPPair, StreamCount>     hostList;
 
     private Tui.ListBox<SniffIssuesItem>                     issuesList;
     private Tui.ListBox<byte>                                overviewList;
@@ -120,13 +120,13 @@ public class SnifferFrame : Tui.Frame {
             drawItemHandler = DrawLayer4Item
         };
 
-        hostList = new Tui.ShadowIndexListBox<IPPair, TcpStatCount>(this) {
-            left = 0,
-            right = 0,
-            top = 3,
-            bottom = 2,
+        hostList = new Tui.ShadowIndexListBox<IPPair, StreamCount>(this) {
+            left            = 0,
+            right           = 0,
+            top             = 3,
+            bottom          = 2,
             backgroundColor = Glyphs.PANE_COLOR,
-            drawItemHandler = DrawHostItem
+            drawItemHandler = DrawTcpStatItem
         };
 
         issuesList = new Tui.ListBox<SniffIssuesItem>(this) {
@@ -690,7 +690,7 @@ public class SnifferFrame : Tui.Frame {
         lastUpdate = Stopwatch.GetTimestamp();
     }
 
-    private void DrawHostItem(int index, int x, int y, int width) {
+    private void DrawTcpStatItem(int index, int x, int y, int width) {
         if (hostList.Count == 0) return;
         if (index < 0) return;
         if (index >= hostList.Count) return;
@@ -700,12 +700,12 @@ public class SnifferFrame : Tui.Frame {
 
         bool isSelected = index == hostList.index;
 
-        TcpStatCount count = hostList[index];
+        StreamCount count = hostList[index];
 
-        int nameWidth = 48;
-        int noteWidth = Math.Max(width - nameWidth - 45, 0);
+        int nameWidth = width > 140 ? 82 : 48;
+        int noteWidth = Math.Max(width - nameWidth - 44, 0);
 
-        IPPair ips = sniffer.tcpStatCount.GetKeyByIndex(index);
+        IPPair ips = sniffer.streamsCount.GetKeyByIndex(index);
         string nameString = ips.ToString();
 
         Ansi.Color fgColor = ips.a.IsIPv4Private() && ips.b.IsIPv4Private() ? Glyphs.WHITE_COLOR : Glyphs.LIGHT_COLOR;
@@ -953,7 +953,7 @@ public class SnifferFrame : Tui.Frame {
     }
 
     private void WriteTcpStatLabels() {
-        int left = 51;
+        int left = (Renderer.LastWidth > 140 ? 82 : 48) + 3; ;
         
         Ansi.SetFgColor(Glyphs.INPUT_COLOR);
         Tui.Frame.WriteLabel("   Packets", left, 3, 12);
@@ -1031,7 +1031,7 @@ public class SnifferFrame : Tui.Frame {
                 datagramList.BindDictionary(sniffer.datagramCount);
                 etherTypeList.BindDictionary(sniffer.etherTypeCount);
                 layer4ProtocolList.BindDictionary(sniffer.transportCount);
-                hostList.BindDictionary(sniffer.tcpStatCount);
+                hostList.BindDictionary(sniffer.streamsCount);
 
                 sniffer.Start();
 
@@ -1087,7 +1087,7 @@ public class SnifferFrame : Tui.Frame {
             }.Show();
         }
         else {
-            sniffer.AnalyzeTCP();
+            //sniffer.AnalyzeTCP();
         }
     }
 

@@ -4,28 +4,24 @@ using System.Collections.Concurrent;
 namespace Revolt.Sniff;
 
 public sealed partial class Sniffer {
-    public IndexedDictionary<IPPair, TcpStatCount> tcpStatCount = new IndexedDictionary<IPPair, TcpStatCount>();
+    
+    public void SegmentAnalysis(Segment segment, ConcurrentQueue<Segment> stream) {
+        IPPair pair = new IPPair(segment.fourTuple.sourceIP, segment.fourTuple.destinationIP);
 
-    public void AnalyzeTCP() {
-        foreach (ConcurrentQueue<Segment> stream in streams.Values) {
-            if (stream.Count == 0) return;
+        AnalyzeSequenceNumbers(pair, stream);
 
-            IPPair ips = new IPPair(stream.First().fourTuple.sourceIP, stream.First().fourTuple.destinationIP);
-
-            Analyze3WH(stream, ips);
-            AnalyzeSequenceNumbers(stream, ips);
+        if (stream.Count == 3) {
+            Analyze3WH(pair, stream);
         }
     }
 
-    private void Analyze3WH(ConcurrentQueue<Segment> segments, IPPair ips) {
-        if (segments.Count < 3) return;
-
+    private void Analyze3WH(IPPair ips, ConcurrentQueue<Segment> stream) {
         int index = 0;
         long timestampSyn = 0, timestampAck = 0;
         IP sourceIP = default;
         IP destinationIP = default;
 
-        foreach (Segment segment in segments) {
+        foreach (Segment segment in stream) {
             ushort flags = (ushort)(segment.flags & 0x0fff);
 
             if (index == 0 && flags == 0b00000000_00000010) { //SYN
@@ -50,9 +46,9 @@ public sealed partial class Sniffer {
 
         long delta = timestampAck - timestampSyn;
 
-        tcpStatCount.AddOrUpdate(
+        streamsCount.AddOrUpdate(
             ips,
-            new TcpStatCount() { total3wh = 1, totalRtt = delta, minRtt = delta, maxRtt = delta },
+            new StreamCount() { total3wh = 1, totalRtt = delta, minRtt = delta, maxRtt = delta },
             (ip, count) => {
                 Interlocked.Increment(ref count.total3wh);
                 Interlocked.Add(ref count.totalRtt, delta);
@@ -61,20 +57,19 @@ public sealed partial class Sniffer {
                 return count;
             }
         );
-
     }
 
-    private void AnalyzeSequenceNumbers(ConcurrentQueue<Segment> segments, IPPair ips) {
+    private void AnalyzeSequenceNumbers(IPPair pair, ConcurrentQueue<Segment> stream) {
 
-        foreach (Segment segment in segments) {
+        foreach (Segment segment in stream) {
 
         }
 
-        tcpStatCount.AddOrUpdate(
-            ips,
-            new TcpStatCount() { totalSegments = segments.Count },
+        streamsCount.AddOrUpdate(
+            pair,
+            new StreamCount() { totalSegments = stream.Count },
             (ip, count) => {
-                Interlocked.Add(ref count.totalSegments, segments.Count);
+                Interlocked.Add(ref count.totalSegments, stream.Count);
                 return count;
             }
         );

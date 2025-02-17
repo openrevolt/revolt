@@ -124,6 +124,7 @@ public sealed partial class Sniffer {
                     buffer[index++] = ':';
                     if (bestStart == 0) buffer[index++] = ':';
                     i += bestLength - 1;
+                    if (i == 7) buffer[index++] = ':';
                     continue;
                 }
 

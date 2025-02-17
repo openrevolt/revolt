@@ -43,7 +43,7 @@ public sealed partial class Sniffer {
         public long packets;
     }
 
-    public class TcpStatCount {
+    public class StreamCount {
         public long total3wh;
         public long totalRtt;
         public long minRtt;
