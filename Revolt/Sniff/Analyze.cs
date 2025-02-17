@@ -4,7 +4,7 @@ using System.Collections.Concurrent;
 namespace Revolt.Sniff;
 
 public sealed partial class Sniffer {
-    public IndexedDictionary<IPPair, TcpAnalysisCount> tcpAnalysis = new IndexedDictionary<IPPair, TcpAnalysisCount>();
+    public IndexedDictionary<IPPair, TcpStatCount> tcpStatCount = new IndexedDictionary<IPPair, TcpStatCount>();
 
     public void AnalyzeTCP() {
         foreach (ConcurrentQueue<Segment> stream in streams.Values) {
@@ -50,9 +50,9 @@ public sealed partial class Sniffer {
 
         long delta = timestampAck - timestampSyn;
 
-        tcpAnalysis.AddOrUpdate(
+        tcpStatCount.AddOrUpdate(
             ips,
-            new TcpAnalysisCount() { total3wh = 1, totalRtt = delta, minRtt = delta, maxRtt = delta },
+            new TcpStatCount() { total3wh = 1, totalRtt = delta, minRtt = delta, maxRtt = delta },
             (ip, count) => {
                 Interlocked.Increment(ref count.total3wh);
                 Interlocked.Add(ref count.totalRtt, delta);
@@ -70,9 +70,9 @@ public sealed partial class Sniffer {
 
         }
 
-        tcpAnalysis.AddOrUpdate(
+        tcpStatCount.AddOrUpdate(
             ips,
-            new TcpAnalysisCount() { totalSegments = segments.Count },
+            new TcpStatCount() { totalSegments = segments.Count },
             (ip, count) => {
                 Interlocked.Add(ref count.totalSegments, segments.Count);
                 return count;

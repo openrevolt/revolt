@@ -43,13 +43,14 @@ public sealed partial class Sniffer {
         public long packets;
     }
 
-    public class TcpAnalysisCount {
+    public class TcpStatCount {
         public long total3wh;
         public long totalRtt;
         public long minRtt;
         public long maxRtt;
 
         public long totalSegments;
+        public long totalBytes;
 
         public uint loss;
         public uint retransmission;

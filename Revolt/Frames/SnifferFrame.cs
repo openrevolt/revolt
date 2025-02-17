@@ -21,14 +21,16 @@ public class SnifferFrame : Tui.Frame {
     private static readonly Ansi.Color MULTICAST_COLOR = new Ansi.Color(0, 255, 255);
     private static readonly Ansi.Color INVALID_COLOR   = new Ansi.Color(176, 0, 0);
 
-    private Tui.ShadowIndexListBox<Mac, TrafficData>    framesList;
-    private Tui.ShadowIndexListBox<IP, TrafficData>     packetList;
-    private Tui.ShadowIndexListBox<ushort, TrafficData> segmentList;
-    private Tui.ShadowIndexListBox<ushort, TrafficData> datagramList;
-    private Tui.ShadowIndexListBox<ushort, Count>       etherTypeList;
-    private Tui.ShadowIndexListBox<byte, Count>         layer4ProtocolList;
-    private Tui.ListBox<SniffIssuesItem>                issuesList;
-    private Tui.ListBox<byte>                           overviewList;
+    private Tui.ShadowIndexListBox<Mac, TrafficData>         framesList;
+    private Tui.ShadowIndexListBox<IP, TrafficData>          packetList;
+    private Tui.ShadowIndexListBox<ushort, TrafficData>      segmentList;
+    private Tui.ShadowIndexListBox<ushort, TrafficData>      datagramList;
+    private Tui.ShadowIndexListBox<ushort, Count>            etherTypeList;
+    private Tui.ShadowIndexListBox<byte, Count>              layer4ProtocolList;
+    private Tui.ShadowIndexListBox<IPPair, TcpStatCount>     hostList;
+
+    private Tui.ListBox<SniffIssuesItem>                     issuesList;
+    private Tui.ListBox<byte>                                overviewList;
 
     private Tui.Element currentList;
 
@@ -56,6 +58,7 @@ public class SnifferFrame : Tui.Frame {
                 new Tui.Tabs.TabItem() { text="L4 UDP",     key="4" },
                 new Tui.Tabs.TabItem() { text="Ethertypes", key="E" },
                 new Tui.Tabs.TabItem() { text="Transport",  key="T" },
+                new Tui.Tabs.TabItem() { text="TCP stat",   key="S" },
                 new Tui.Tabs.TabItem() { text="Issues",     key="I" },
                 new Tui.Tabs.TabItem() { text="Overview",   key="O" },
             ],
@@ -117,13 +120,22 @@ public class SnifferFrame : Tui.Frame {
             drawItemHandler = DrawLayer4Item
         };
 
+        hostList = new Tui.ShadowIndexListBox<IPPair, TcpStatCount>(this) {
+            left = 0,
+            right = 0,
+            top = 3,
+            bottom = 2,
+            backgroundColor = Glyphs.PANE_COLOR,
+            drawItemHandler = DrawHostItem
+        };
+
         issuesList = new Tui.ListBox<SniffIssuesItem>(this) {
             left            = 0,
             right           = 0,
             top             = 3,
             bottom          = 2,
             backgroundColor = Glyphs.PANE_COLOR,
-            drawItemHandler = DrawIssuesItem
+            drawItemHandler = DrawIssueItem
         };
 
         overviewList = new Tui.ListBox<byte>(this) {
@@ -212,12 +224,16 @@ public class SnifferFrame : Tui.Frame {
             tabs.SetIndex(5);
             break;
 
-        case ConsoleKey.I:
+        case ConsoleKey.S:
             tabs.SetIndex(6);
             break;
 
-        case ConsoleKey.O:
+        case ConsoleKey.I:
             tabs.SetIndex(7);
+            break;
+
+        case ConsoleKey.O:
+            tabs.SetIndex(8);
             break;
 
         default:
@@ -263,7 +279,8 @@ public class SnifferFrame : Tui.Frame {
             3 => datagramList,
             4 => etherTypeList,
             5 => layer4ProtocolList,
-            6 => issuesList,
+            6 => hostList,
+            7 => issuesList,
             _ => overviewList
         };
 
@@ -280,6 +297,9 @@ public class SnifferFrame : Tui.Frame {
         }
         else if (tabs.index < 6) {
             tabs.DrawLabels = WriteProtocolsLabels;
+        }
+        else if (tabs.index == 6) {
+            tabs.DrawLabels = WriteTcpStatLabels;
         }
         else {
             tabs.DrawLabels = null;
@@ -630,7 +650,7 @@ public class SnifferFrame : Tui.Frame {
 
         byte protocolCode = layer4ProtocolList.shadow.GetKeyByIndex(index);
 
-        int nameWidth = Math.Max(56, 0);
+        int nameWidth = 56;
         int noteWidth = Math.Max(width - nameWidth - 34, 0);
 
         string nameString = transportProtocolNames[protocolCode];
@@ -670,7 +690,62 @@ public class SnifferFrame : Tui.Frame {
         lastUpdate = Stopwatch.GetTimestamp();
     }
 
-    private void DrawIssuesItem(int index, int x, int y, int width) {
+    private void DrawHostItem(int index, int x, int y, int width) {
+        if (hostList.Count == 0) return;
+        if (index < 0) return;
+        if (index >= hostList.Count) return;
+
+        int adjustedY = y + index - hostList.scrollOffset;
+        if (adjustedY < y || adjustedY > Renderer.LastHeight) return;
+
+        bool isSelected = index == hostList.index;
+
+        TcpStatCount count = hostList[index];
+
+        int nameWidth = 48;
+        int noteWidth = Math.Max(width - nameWidth - 45, 0);
+
+        IPPair ips = sniffer.tcpStatCount.GetKeyByIndex(index);
+        string nameString = ips.ToString();
+
+        Ansi.Color fgColor = ips.a.IsIPv4Private() && ips.b.IsIPv4Private() ? Glyphs.WHITE_COLOR : Glyphs.LIGHT_COLOR;
+
+        Ansi.SetCursorPosition(1, adjustedY);
+
+        if (isSelected) {
+            Ansi.SetFgColor(hostList.isFocused ? Glyphs.DARKGRAY_COLOR : fgColor);
+            Ansi.SetBgColor(hostList.isFocused ? Glyphs.FOCUS_COLOR : Glyphs.HIGHLIGHT_COLOR);
+        }
+        else {
+            Ansi.SetFgColor(fgColor);
+            Ansi.SetBgColor(Glyphs.PANE_COLOR);
+        }
+
+        Ansi.Write(' ');
+        Ansi.Write(nameString.Length > nameWidth
+            ? nameString[..(nameWidth - 1)] + Glyphs.ELLIPSIS
+            : nameString.PadRight(nameWidth));
+
+        Ansi.SetFgColor(Glyphs.LIGHT_COLOR);
+        Ansi.SetBgColor(isSelected ? Glyphs.HIGHLIGHT_COLOR : Glyphs.PANE_COLOR);
+
+        //WriteNumber(count.totalSegments, 12, Glyphs.LIGHT_COLOR);
+        WriteNumber(count.total3wh, 12, Glyphs.LIGHT_COLOR);
+        WriteBytes(count.totalBytes, 12, Glyphs.LIGHT_COLOR);
+
+        if (count.total3wh > 0) {
+            WriteTextWithPost((count.totalRtt / count.total3wh / 10_000).ToString(), 7, Glyphs.LIGHT_COLOR, "ms");
+        }
+        else {
+            Ansi.Write("   - ms");
+        }
+
+        WriteTextWithPost($"{count.minRtt / 10_000}-{count.maxRtt / 10_000}", 12, Glyphs.LIGHT_COLOR, "ms");
+
+        Ansi.Write(new String(' ', noteWidth));
+    }
+
+    private void DrawIssueItem(int index, int x, int y, int width) {
         if (issuesList.items.Count == 0) return;
         if (index < 0) return;
         if (index >= issuesList.items.Count) return;
@@ -678,7 +753,7 @@ public class SnifferFrame : Tui.Frame {
         int adjustedY = y + index - issuesList.scrollOffset;
         if (adjustedY < y || adjustedY > Renderer.LastHeight) return;
 
-        bool isSelected = index == layer4ProtocolList.index;
+        bool isSelected = index == issuesList.index;
 
     }
 
@@ -826,6 +901,13 @@ public class SnifferFrame : Tui.Frame {
         }
     }
 
+    private void WriteTextWithPost(string text, int padding, Ansi.Color color, string post) {
+        Ansi.Write(new String(' ', Math.Max(padding - text.Length - post.Length, 0)));
+        Ansi.SetFgColor(color);
+        Ansi.Write(text);
+        Ansi.Write(post);
+    }
+
     private void WriteBytes(long value, int padding, Ansi.Color color) {
         if (value == 0) {
             Ansi.SetFgColor(color);
@@ -868,6 +950,17 @@ public class SnifferFrame : Tui.Frame {
         Ansi.SetFgColor(Glyphs.INPUT_COLOR);
         Tui.Frame.WriteLabel("   Packets", left, 3, 12);
         Tui.Frame.WriteLabel("     Bytes", left + 12, 3, 12);
+    }
+
+    private void WriteTcpStatLabels() {
+        int left = 51;
+        
+        Ansi.SetFgColor(Glyphs.INPUT_COLOR);
+        Tui.Frame.WriteLabel("   Packets", left, 3, 12);
+        Tui.Frame.WriteLabel("     Bytes", left + 12, 3, 12);
+
+        Tui.Frame.WriteLabel("  avg", left + 24, 3, 7);
+        Tui.Frame.WriteLabel("   min-max", left + 31, 3, 12);
     }
 
     private static string SizeToString(long size) {
@@ -938,6 +1031,7 @@ public class SnifferFrame : Tui.Frame {
                 datagramList.BindDictionary(sniffer.datagramCount);
                 etherTypeList.BindDictionary(sniffer.etherTypeCount);
                 layer4ProtocolList.BindDictionary(sniffer.transportCount);
+                hostList.BindDictionary(sniffer.tcpStatCount);
 
                 sniffer.Start();
 
@@ -971,6 +1065,8 @@ public class SnifferFrame : Tui.Frame {
         };
 
         dialog.okButton.action = () => {
+            toolbar.items[0].text = "Start";
+
             sniffer.Stop();
             cancellationTokenSource?.Cancel();
             dialog.Close();

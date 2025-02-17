@@ -2,17 +2,17 @@
 
 public sealed partial class Sniffer {
 
-    public readonly struct IPPair(IP sourceIP, IP destinationIP) {
-        public readonly IP     sourceIP        = sourceIP;
-        public readonly IP     destinationIP   = destinationIP;
+    public readonly struct IPPair(IP a, IP b) {
+        public readonly IP a = a;
+        public readonly IP b = b;
 
         public static bool operator ==(IPPair left, IPPair right) =>
-             left.sourceIP == right.sourceIP &&
-             left.destinationIP == right.destinationIP;
+             left.a == right.a &&
+             left.b == right.b;
 
         public static bool operator !=(IPPair left, IPPair right) =>
-            left.sourceIP != right.sourceIP ||
-            left.destinationIP != right.destinationIP;
+            left.a != right.a ||
+            left.b != right.b;
 
         public override bool Equals(object obj) =>
             obj is IPPair other && BidirectionallyEquals(this, other);
@@ -22,26 +22,40 @@ public sealed partial class Sniffer {
 
         public static bool BidirectionallyEquals(IPPair left, IPPair right) =>
             left == right ||
-            left.sourceIP == right.destinationIP &&
-            left.destinationIP == right.sourceIP;
+            left.a == right.b &&
+            left.b == right.a;
 
         public override int GetHashCode() {
             int hash = 17;
 
-            if (sourceIP.ipv6 < destinationIP.ipv6 || sourceIP == destinationIP) {
+            if (a.ipv6 < b.ipv6 || a == b) {
                 unchecked {
-                    hash = hash * 31 + sourceIP.GetHashCode();
-                    hash = hash * 31 + destinationIP.GetHashCode();
+                    hash = hash * 31 + a.GetHashCode();
+                    hash = hash * 31 + b.GetHashCode();
                 }
             }
             else {
                 unchecked {
-                    hash = hash * 31 + destinationIP.GetHashCode();
-                    hash = hash * 31 + sourceIP.GetHashCode();
+                    hash = hash * 31 + b.GetHashCode();
+                    hash = hash * 31 + a.GetHashCode();
                 }
             }
 
             return hash;
         }
+
+        public override string ToString() {
+            if (a.IsIPv4Private() && !b.IsIPv4Private()) {
+                return $"{a} - {b}";
+            }
+            else if (b.IsIPv4Private()) {
+                return $"{b} - {a}";
+            }
+
+            return a.ipv6 < b.ipv6
+                ? $"{a} - {b}"
+                : $"{b} - {a}";
+        }
+
     }
 }
