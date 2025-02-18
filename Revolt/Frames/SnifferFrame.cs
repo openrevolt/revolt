@@ -27,7 +27,7 @@ public class SnifferFrame : Tui.Frame {
     private Tui.ShadowIndexListBox<ushort, TrafficData>      datagramList;
     private Tui.ShadowIndexListBox<ushort, Count>            etherTypeList;
     private Tui.ShadowIndexListBox<byte, Count>              layer4ProtocolList;
-    private Tui.ShadowIndexListBox<IPPair, StreamCount>     hostList;
+    private Tui.ShadowIndexListBox<IPPair, StreamCount>      tcpStatList;
 
     private Tui.ListBox<SniffIssuesItem>                     issuesList;
     private Tui.ListBox<byte>                                overviewList;
@@ -120,7 +120,7 @@ public class SnifferFrame : Tui.Frame {
             drawItemHandler = DrawLayer4Item
         };
 
-        hostList = new Tui.ShadowIndexListBox<IPPair, StreamCount>(this) {
+        tcpStatList = new Tui.ShadowIndexListBox<IPPair, StreamCount>(this) {
             left            = 0,
             right           = 0,
             top             = 3,
@@ -153,7 +153,6 @@ public class SnifferFrame : Tui.Frame {
             right = 0,
             items = [
                 new Tui.Toolbar.ToolbarItem() { text="Start",  key="F2", action=StartDialog },
-                new Tui.Toolbar.ToolbarItem() { text="Analyze", key="F3", action=AnalyzeDialog },
                 //new Tui.Toolbar.ToolbarItem() { text="Filter", key="F4", action=FiltersDialog },
             ],
             drawStatus = DrawStatus
@@ -186,10 +185,6 @@ public class SnifferFrame : Tui.Frame {
 
         case ConsoleKey.F2:
             StartDialog();
-            break;
-
-        case ConsoleKey.F3:
-            AnalyzeDialog();
             break;
 
         case ConsoleKey.F4:
@@ -279,7 +274,7 @@ public class SnifferFrame : Tui.Frame {
             3 => datagramList,
             4 => etherTypeList,
             5 => layer4ProtocolList,
-            6 => hostList,
+            6 => tcpStatList,
             7 => issuesList,
             _ => overviewList
         };
@@ -691,16 +686,16 @@ public class SnifferFrame : Tui.Frame {
     }
 
     private void DrawTcpStatItem(int index, int x, int y, int width) {
-        if (hostList.Count == 0) return;
+        if (tcpStatList.Count == 0) return;
         if (index < 0) return;
-        if (index >= hostList.Count) return;
+        if (index >= tcpStatList.Count) return;
 
-        int adjustedY = y + index - hostList.scrollOffset;
+        int adjustedY = y + index - tcpStatList.scrollOffset;
         if (adjustedY < y || adjustedY > Renderer.LastHeight) return;
 
-        bool isSelected = index == hostList.index;
+        bool isSelected = index == tcpStatList.index;
 
-        StreamCount count = hostList[index];
+        StreamCount count = tcpStatList[index];
 
         int nameWidth = width > 140 ? 82 : 48;
         int noteWidth = Math.Max(width - nameWidth - 44, 0);
@@ -713,8 +708,8 @@ public class SnifferFrame : Tui.Frame {
         Ansi.SetCursorPosition(1, adjustedY);
 
         if (isSelected) {
-            Ansi.SetFgColor(hostList.isFocused ? Glyphs.DARKGRAY_COLOR : fgColor);
-            Ansi.SetBgColor(hostList.isFocused ? Glyphs.FOCUS_COLOR : Glyphs.HIGHLIGHT_COLOR);
+            Ansi.SetFgColor(tcpStatList.isFocused ? Glyphs.DARKGRAY_COLOR : fgColor);
+            Ansi.SetBgColor(tcpStatList.isFocused ? Glyphs.FOCUS_COLOR : Glyphs.HIGHLIGHT_COLOR);
         }
         else {
             Ansi.SetFgColor(fgColor);
@@ -1031,7 +1026,7 @@ public class SnifferFrame : Tui.Frame {
                 datagramList.BindDictionary(sniffer.datagramCount);
                 etherTypeList.BindDictionary(sniffer.etherTypeCount);
                 layer4ProtocolList.BindDictionary(sniffer.transportCount);
-                hostList.BindDictionary(sniffer.streamsCount);
+                tcpStatList.BindDictionary(sniffer.streamsCount);
 
                 sniffer.Start();
 
@@ -1073,22 +1068,6 @@ public class SnifferFrame : Tui.Frame {
         };
 
         dialog.Show();
-    }
-
-    private void AnalyzeDialog() {
-        if (sniffer is null) {
-            new MessageDialog() {
-                 text = "No data to analyze."
-            }.Show();
-        }
-        else if (captureDevice is not null && captureDevice.Started) {
-            new MessageDialog() {
-                 text = "A session is in progress."
-            }.Show();
-        }
-        else {
-            //sniffer.AnalyzeTCP();
-        }
     }
 
     private void FiltersDialog() {

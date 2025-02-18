@@ -5,14 +5,16 @@ namespace Revolt.Sniff;
 
 public sealed partial class Sniffer {
 
-    public void SegmentAnalysis(ref Segment segment, ConcurrentQueue<Segment> stream) {
+    public void SegmentAnalysis(in Segment segment, ConcurrentQueue<Segment> stream) {
         IPPair pair = new IPPair(segment.fourTuple.sourceIP, segment.fourTuple.destinationIP);
         
         long segmentSize = segment.size;
 
         if (stream.Count == 3) {
-            long rtt = Analyze3WH(ref pair, stream);
-            streamsCount.AddOrUpdate(pair,
+            long rtt = Analyze3WH(in pair, stream);
+
+            streamsCount.AddOrUpdate(
+                pair,
 
                 new StreamCount() {
                     total3wh      = 1,
@@ -35,7 +37,8 @@ public sealed partial class Sniffer {
             );
         }
         else {
-            streamsCount.AddOrUpdate(pair,
+            streamsCount.AddOrUpdate(
+                pair,
 
                 new StreamCount() {
                     total3wh = 0,
@@ -54,7 +57,7 @@ public sealed partial class Sniffer {
 
     }
 
-    private long Analyze3WH(ref IPPair ips, ConcurrentQueue<Segment> stream) {
+    private long Analyze3WH(in IPPair ips, ConcurrentQueue<Segment> stream) {
         int index = 0;
         long timestampSyn = 0, timestampAck = 0;
 
@@ -64,8 +67,8 @@ public sealed partial class Sniffer {
             if (index == 0 && flags == 0b00000000_00000010) { //SYN
                 timestampSyn = segment.timestamp;
             }
-            else if (index == 1 && flags == 0b00000000_00010010) { //SYN-ACK
-                //
+            else if (index == 1 && flags != 0b00000000_00010010) { //SYN-ACK
+                return -1;
             }
             else if (index == 2 && flags == 0b00000000_00010000) { //ACK
                 timestampAck = segment.timestamp;
@@ -79,22 +82,6 @@ public sealed partial class Sniffer {
 
         long delta = timestampAck - timestampSyn;
         return delta;
-    }
-
-    private void AnalyzeSequenceNumbers(IPPair pair, ConcurrentQueue<Segment> stream) {
-
-        foreach (Segment segment in stream) {
-
-        }
-
-        /*streamsCount.AddOrUpdate(
-            pair,
-            new StreamCount() { totalSegments = stream.Count },
-            (ip, count) => {
-                Interlocked.Add(ref count.totalSegments, stream.Count);
-                return count;
-            }
-        );*/
     }
 
 }

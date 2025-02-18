@@ -242,16 +242,10 @@ public sealed partial class Sniffer : IDisposable {
         FourTuple fourTuple = new FourTuple(sourceIP, destinationIP, sourcePort, destinationPort);
         Segment   segment   = new Segment(timestamp, fourTuple, sequenceNo, ackNo, flags, window, size);
 
-        ConcurrentQueue<Segment> stream = streams.AddOrUpdate(
-            fourTuple,
-            new ConcurrentQueue<Segment>([segment]),
-            (tuple, queue) => {
-                queue.Enqueue(segment);
-                return queue;
-            }
-        );
+        ConcurrentQueue<Segment> stream = streams.GetOrAdd(fourTuple, _ => new ConcurrentQueue<Segment>());
+        stream.Enqueue(segment);
 
-        SegmentAnalysis(ref segment, stream);
+        SegmentAnalysis(in segment, stream);
     }
 
     private void HandleUDP(byte[] buffer, long timestamp, IP sourceIP, IP destinationIP, byte ihl) {
@@ -321,6 +315,8 @@ public sealed partial class Sniffer : IDisposable {
     }
 
     private (ushort, ushort, uint, uint, ushort, ushort, ushort, int) ParseSegmentHeader(byte[] buffer, int offset) {
+        int headerSize = (buffer[offset + 12] >> 4) << 2;
+
         return (
             BinaryPrimitives.ReadUInt16BigEndian(buffer.AsSpan(offset + 0)),  //source
             BinaryPrimitives.ReadUInt16BigEndian(buffer.AsSpan(offset + 2)),  //destination
@@ -329,7 +325,7 @@ public sealed partial class Sniffer : IDisposable {
             BinaryPrimitives.ReadUInt16BigEndian(buffer.AsSpan(offset + 12)), //flags
             BinaryPrimitives.ReadUInt16BigEndian(buffer.AsSpan(offset + 14)), //window
             BinaryPrimitives.ReadUInt16BigEndian(buffer.AsSpan(offset + 16)), //size
-            buffer.Length);
+            buffer.Length - headerSize - offset);
     }
 
     public void Dispose() {

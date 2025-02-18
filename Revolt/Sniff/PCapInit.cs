@@ -1,8 +1,10 @@
 ﻿using System.Runtime.InteropServices;
+using System.Runtime.Versioning;
 
 namespace Revolt.Sniff;
 public static class PCap {
 
+    [SupportedOSPlatform("windows")]
     [DllImport("kernel32", SetLastError = true, CharSet = CharSet.Auto)]
     static extern IntPtr LoadLibrary(string lpLibFileName);
 
@@ -17,6 +19,7 @@ public static class PCap {
 #endif
     }
 
+    [SupportedOSPlatform("windows")]
     static string ExtractResource(string outputPath, string resourceName) {
         string fullPath = Path.Combine(outputPath, resourceName);
         if (!File.Exists(fullPath)) {
