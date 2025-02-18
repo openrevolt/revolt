@@ -8,6 +8,7 @@ public static class PCap {
 
     public static void Init() {
 #if !DEBUG
+        if (!OperatingSystem.IsWindows()) return;
         string basePath = Directory.GetCurrentDirectory();
         string wpcapPath = ExtractResource(basePath, "wpcap.dll");
         string packetPath = ExtractResource(basePath, "Packet.dll");
