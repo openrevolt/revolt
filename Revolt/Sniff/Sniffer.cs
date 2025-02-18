@@ -211,7 +211,7 @@ public sealed partial class Sniffer : IDisposable {
     }
 
     private void HandleTCP(byte[] buffer, long timestamp, IP sourceIP, IP destinationIP, byte ihl) {
-        (ushort sourcePort, ushort destinationPort, uint sequenceNo, uint ackNo, ushort flags, ushort window, ushort checksum) = ParseSegmentHeader(buffer, 14 + ihl);
+        (ushort sourcePort, ushort destinationPort, uint sequenceNo, uint ackNo, ushort flags, ushort window, ushort checksum, int size) = ParseSegmentHeader(buffer, 14 + ihl);
 
         if (sourcePort < maxPort) {
             segmentCount.AddOrUpdate(
@@ -240,7 +240,7 @@ public sealed partial class Sniffer : IDisposable {
         }
 
         FourTuple fourTuple = new FourTuple(sourceIP, destinationIP, sourcePort, destinationPort);
-        Segment   segment   = new Segment(timestamp, fourTuple, sequenceNo, ackNo, flags, window);
+        Segment   segment   = new Segment(timestamp, fourTuple, sequenceNo, ackNo, flags, window, size);
 
         ConcurrentQueue<Segment> stream = streams.AddOrUpdate(
             fourTuple,
@@ -251,7 +251,7 @@ public sealed partial class Sniffer : IDisposable {
             }
         );
 
-        SegmentAnalysis(segment, stream);
+        SegmentAnalysis(ref segment, stream);
     }
 
     private void HandleUDP(byte[] buffer, long timestamp, IP sourceIP, IP destinationIP, byte ihl) {
@@ -320,7 +320,7 @@ public sealed partial class Sniffer : IDisposable {
             );
     }
 
-    private (ushort, ushort, uint, uint, ushort, ushort, ushort) ParseSegmentHeader(byte[] buffer, int offset) {
+    private (ushort, ushort, uint, uint, ushort, ushort, ushort, int) ParseSegmentHeader(byte[] buffer, int offset) {
         return (
             BinaryPrimitives.ReadUInt16BigEndian(buffer.AsSpan(offset + 0)),  //source
             BinaryPrimitives.ReadUInt16BigEndian(buffer.AsSpan(offset + 2)),  //destination
@@ -328,8 +328,8 @@ public sealed partial class Sniffer : IDisposable {
             BinaryPrimitives.ReadUInt32BigEndian(buffer.AsSpan(offset + 8)),  //acknowledgmentNo
             BinaryPrimitives.ReadUInt16BigEndian(buffer.AsSpan(offset + 12)), //flags
             BinaryPrimitives.ReadUInt16BigEndian(buffer.AsSpan(offset + 14)), //window
-            BinaryPrimitives.ReadUInt16BigEndian(buffer.AsSpan(offset + 16))  //checksum
-            );
+            BinaryPrimitives.ReadUInt16BigEndian(buffer.AsSpan(offset + 16)), //size
+            buffer.Length);
     }
 
     public void Dispose() {
