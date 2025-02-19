@@ -45,18 +45,22 @@ public sealed partial class Sniffer {
     }
 
     public sealed class StreamCount {
+        public long totalSegments;
+        public long totalBytes;
+
         public long total3wh;
         public long totalRtt;
         public long minRtt;
         public long maxRtt;
-
-        public long totalSegments;
-        public long totalBytes;
 
         public uint loss;
         public uint retransmission;
         public uint ooo;
         public uint checksumMismatch;
         public uint zeroWindowEvent;
+
+        public uint nextSeqNoA;
+        public uint nextSeqNoB;
     }
+
 }

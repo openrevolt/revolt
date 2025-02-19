@@ -10,38 +10,42 @@ public sealed partial class Sniffer {
     private const ushort ACK_MASK    = 0b00000000_00010000;
     private const ushort SYNACK_MASK = 0b00000000_00010010;
 
+    private readonly ConcurrentDictionary<FourTuple, (HashSet<uint>, HashSet<uint>)> sequenceTrackers = new ConcurrentDictionary<FourTuple, (HashSet<uint>, HashSet<uint>)>();
+
     public void SegmentAnalysis(in Segment segment, ConcurrentQueue<Segment> stream) {
         IPPair pair = new IPPair(segment.fourTuple.sourceIP, segment.fourTuple.destinationIP);
         
-        long rtt = stream.Count == 3 ? Analyze3WH(in pair, stream) : -1;
-        long segmentSize = segment.size;
+        long rtt           = stream.Count == 3 ? Analyze3WH(in pair, stream) : -1;
+        long segmentSize   = segment.size;
+        uint nextSegmentNo = segment.sequenceNo + segment.size;
 
         StreamCount count = tcpStatCount.AddOrUpdate(
             pair,
 
             new StreamCount {
+                totalSegments = 1,
+                totalBytes    = segmentSize,
                 total3wh      = rtt > 0 ? 1 : 0,
                 totalRtt      = rtt > 0 ? rtt : 0,
                 minRtt        = rtt > 0 ? rtt : 0,
                 maxRtt        = rtt > 0 ? rtt : 0,
-                totalSegments = 1,
-                totalBytes    = segmentSize
             },
 
             (_, count) => {
+                Interlocked.Increment(ref count.totalSegments);
+                Interlocked.Add(ref count.totalBytes, segmentSize);
+
                 if (rtt > 0) {
                     Interlocked.Increment(ref count.total3wh);
                     Interlocked.Add(ref count.totalRtt, rtt);
                     Interlocked.Exchange(ref count.minRtt, Math.Min(count.minRtt, rtt));
                     Interlocked.Exchange(ref count.maxRtt, Math.Max(count.maxRtt, rtt));
                 }
-                Interlocked.Increment(ref count.totalSegments);
-                Interlocked.Add(ref count.totalBytes, segmentSize);
                 return count;
             }
         );
 
-        AnalyzeSequenceNo(segment.fourTuple, stream, count);
+        AnalyzeSequenceNo(in segment, stream, count);
     }
 
     private long Analyze3WH(in IPPair ips, ConcurrentQueue<Segment> stream) {
@@ -68,7 +72,38 @@ public sealed partial class Sniffer {
         return timestampAck - timestampSyn;
     }
 
-    private void AnalyzeSequenceNo(in FourTuple fourTuple, ConcurrentQueue<Segment> stream, StreamCount count) {
+    private void AnalyzeSequenceNo(in Segment lastSegment, ConcurrentQueue<Segment> stream, StreamCount count) {
+        if (!sequenceTrackers.TryGetValue(lastSegment.fourTuple, out (HashSet<uint>, HashSet<uint>) sequenceTracker)) {
+            sequenceTracker = (new HashSet<uint>(), new HashSet<uint>());
+            sequenceTrackers[lastSegment.fourTuple] = sequenceTracker;
+        }
+
+        //bool isPhantomByte = false;
+
+        int sourceHash = unchecked(lastSegment.fourTuple.sourceIP.GetHashCode() + lastSegment.fourTuple.sourcePort);
+        int destinationHash = unchecked(lastSegment.fourTuple.destinationIP.GetHashCode() + lastSegment.fourTuple.destinationPort);
+
+        HashSet<uint> tracker = sourceHash < destinationHash ? sequenceTracker.Item1 : sequenceTracker.Item2;
+
+        if (tracker.Contains(lastSegment.sequenceNo)) {
+            Interlocked.Increment(ref count.retransmission);
+        }
+        else {
+            tracker.Add(lastSegment.sequenceNo);
+        }
+
+        if (sourceHash < destinationHash) {
+            if (lastSegment.sequenceNo > count.nextSeqNoA) {
+                Interlocked.Increment(ref count.loss);
+            }
+            count.nextSeqNoA = unchecked(lastSegment.sequenceNo + lastSegment.size);
+        }
+        else {
+            if (lastSegment.sequenceNo > count.nextSeqNoB) {
+                Interlocked.Increment(ref count.loss);
+            }
+            count.nextSeqNoB = unchecked(lastSegment.sequenceNo + lastSegment.size);
+        }
 
     }
 
