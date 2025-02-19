@@ -725,14 +725,14 @@ public class SnifferFrame : Tui.Frame {
         Ansi.SetBgColor(isSelected ? Glyphs.HIGHLIGHT_COLOR : Glyphs.PANE_COLOR);
 
         //WriteNumber(count.totalSegments, 12, Glyphs.LIGHT_COLOR);
-        WriteNumber(count.total3wh, 12, Glyphs.LIGHT_COLOR);
+        WriteNumber(count.totalSegments, 12, Glyphs.LIGHT_COLOR);
         WriteBytes(count.totalBytes, 12, Glyphs.LIGHT_COLOR);
 
-        if (count.total3wh > 0) {
-            WriteTextWithPost((count.totalRtt / count.total3wh / 10_000).ToString(), 7, Glyphs.LIGHT_COLOR, "ms");
+        if (count.total3wh == 0) {
+            Ansi.Write("    -  ");
         }
         else {
-            Ansi.Write("   - ms");
+            WriteTextWithPost((count.totalRtt / count.total3wh / 10_000).ToString(), 7, Glyphs.LIGHT_COLOR, "ms");
         }
 
         WriteTextWithPost($"{count.minRtt / 10_000}-{count.maxRtt / 10_000}", 12, Glyphs.LIGHT_COLOR, "ms");

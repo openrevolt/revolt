@@ -7,12 +7,10 @@ public sealed partial class Sniffer {
         public readonly IP b = b;
 
         public static bool operator ==(IPPair left, IPPair right) =>
-             left.a == right.a &&
-             left.b == right.b;
+             left.a == right.a && left.b == right.b;
 
         public static bool operator !=(IPPair left, IPPair right) =>
-            left.a != right.a ||
-            left.b != right.b;
+            left.a != right.a || left.b != right.b;
 
         public override bool Equals(object obj) =>
             obj is IPPair other && BidirectionallyEquals(this, other);
@@ -21,9 +19,7 @@ public sealed partial class Sniffer {
             BidirectionallyEquals(this, pair);
 
         public static bool BidirectionallyEquals(IPPair left, IPPair right) =>
-            left == right ||
-            left.a == right.b &&
-            left.b == right.a;
+            left == right || left.a == right.b && left.b == right.a;
 
         public override int GetHashCode() {
             int hash = 17;
@@ -48,13 +44,12 @@ public sealed partial class Sniffer {
             if (a.IsIPv4Private() && !b.IsIPv4Private()) {
                 return $"{a} - {b}";
             }
-            else if (b.IsIPv4Private()) {
+
+            if (!a.IsIPv4Private() && b.IsIPv4Private()) {
                 return $"{b} - {a}";
             }
 
-            return a.ipv6 < b.ipv6
-                ? $"{a} - {b}"
-                : $"{b} - {a}";
+            return a.ipv6 < b.ipv6 ? $"{a} - {b}" : $"{b} - {a}";
         }
 
     }
