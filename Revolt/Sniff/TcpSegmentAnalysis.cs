@@ -13,10 +13,10 @@ public sealed partial class Sniffer {
     public void SegmentAnalysis(in Segment segment, ConcurrentQueue<Segment> stream) {
         IPPair pair = new IPPair(segment.fourTuple.sourceIP, segment.fourTuple.destinationIP);
         
-        long segmentSize = segment.size;
         long rtt = stream.Count == 3 ? Analyze3WH(in pair, stream) : -1;
+        long segmentSize = segment.size;
 
-        streamsCount.AddOrUpdate(
+        StreamCount count = tcpStatCount.AddOrUpdate(
             pair,
 
             new StreamCount {
@@ -40,6 +40,8 @@ public sealed partial class Sniffer {
                 return count;
             }
         );
+
+        AnalyzeSequenceNo(segment.fourTuple, stream, count);
     }
 
     private long Analyze3WH(in IPPair ips, ConcurrentQueue<Segment> stream) {
@@ -66,8 +68,8 @@ public sealed partial class Sniffer {
         return timestampAck - timestampSyn;
     }
 
-    private void AnalyzeSequenceNo(in IPPair ips, ConcurrentQueue<Segment> stream) {
-        //TODO
+    private void AnalyzeSequenceNo(in FourTuple fourTuple, ConcurrentQueue<Segment> stream, StreamCount count) {
+
     }
 
 }

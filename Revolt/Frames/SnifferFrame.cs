@@ -700,7 +700,7 @@ public class SnifferFrame : Tui.Frame {
         int nameWidth = width > 140 ? 82 : 48;
         int noteWidth = Math.Max(width - nameWidth - 44, 0);
 
-        IPPair ips = sniffer.streamsCount.GetKeyByIndex(index);
+        IPPair ips = sniffer.tcpStatCount.GetKeyByIndex(index);
         string nameString = ips.ToString();
 
         Ansi.Color fgColor = ips.a.IsIPv4Private() && ips.b.IsIPv4Private() ? Glyphs.WHITE_COLOR : Glyphs.LIGHT_COLOR;
@@ -1026,7 +1026,7 @@ public class SnifferFrame : Tui.Frame {
                 datagramList.BindDictionary(sniffer.datagramCount);
                 etherTypeList.BindDictionary(sniffer.etherTypeCount);
                 layer4ProtocolList.BindDictionary(sniffer.transportCount);
-                tcpStatList.BindDictionary(sniffer.streamsCount);
+                tcpStatList.BindDictionary(sniffer.tcpStatCount);
 
                 sniffer.Start();
 

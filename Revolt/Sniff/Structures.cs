@@ -17,21 +17,21 @@ public sealed partial class Sniffer {
         public readonly byte   transportProtocol = transportProtocol;
     }
 
-    public readonly struct Segment(long timestamp, FourTuple fourTuple, uint sequenceNo, uint acknowledgmentNo, ushort flags, uint window, int size) {
+    public readonly struct Segment(long timestamp, FourTuple fourTuple, uint sequenceNo, uint acknowledgmentNo, ushort flags, uint window, uint size) {
         public readonly long      timestamp        = timestamp;
         public readonly FourTuple fourTuple        = fourTuple;
         public readonly uint      sequenceNo       = sequenceNo;
         public readonly uint      acknowledgmentNo = acknowledgmentNo;
         public readonly ushort    flags            = flags;
         public readonly uint      window           = window;
-        public readonly int       size             = size;
+        public readonly uint      size             = size;
     }
 
     public readonly struct SniffIssuesItem {
 
     }
 
-    public class TrafficData {
+    public sealed class TrafficData {
         public long bytesRx;
         public long bytesTx;
         public long packetsRx;
@@ -39,12 +39,12 @@ public sealed partial class Sniffer {
         public long lastActivity;
     }
 
-    public class Count {
+    public sealed class Count {
         public long bytes;
         public long packets;
     }
 
-    public class StreamCount {
+    public sealed class StreamCount {
         public long total3wh;
         public long totalRtt;
         public long minRtt;
@@ -55,9 +55,7 @@ public sealed partial class Sniffer {
 
         public uint loss;
         public uint retransmission;
-        public uint outOfOrder;
-        public uint duplicate;
-        public uint overlap;
+        public uint ooo;
         public uint checksumMismatch;
         public uint zeroWindowEvent;
     }
