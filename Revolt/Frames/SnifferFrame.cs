@@ -697,7 +697,7 @@ public class SnifferFrame : Tui.Frame {
 
         StreamCount count = tcpStatList[index];
 
-        int nameWidth = width > 140 ? 82 : 48;
+        int nameWidth = width > 150 ? 82 : 48;
         int noteWidth = Math.Max(width - nameWidth - 64, 0);
 
         IPPair ips = sniffer.tcpStatCount.GetKeyByIndex(index);
@@ -964,7 +964,7 @@ public class SnifferFrame : Tui.Frame {
     }
 
     private void WriteTcpStatLabels() {
-        int left = (Renderer.LastWidth > 140 ? 82 : 48) + 3;
+        int left = (Renderer.LastWidth > 150 ? 82 : 48) + 3;
         
         Ansi.SetFgColor(Glyphs.INPUT_COLOR);
         Tui.Frame.WriteLabel("   Packets", left, 3, 12);
