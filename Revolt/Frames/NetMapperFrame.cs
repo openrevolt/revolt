@@ -490,7 +490,7 @@ file sealed class OptionsDialog : Tui.DialogBox {
             networksString = [];
         }
         else {
-            networksString = networks.Select(o => $"{o.Item1}/{NetTools.SubnetMaskToCidr(o.Item2)}").ToArray(); ;
+            networksString = networks.Select(o => $"{o.Item1}/{NetTools.SubnetMaskToCidr(o.Item2)}").ToArray();
         }
 
         okButton.text = "  Start  ";

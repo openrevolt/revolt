@@ -165,7 +165,7 @@ public sealed partial class Sniffer {
 
         public bool IsIPv6Teredo() {
             if (!isIPv6) return false;
-            return (upper & 0xffffffff00000000) == (0x2001000000000000UL); ;
+            return (upper & 0xffffffff00000000) == (0x2001000000000000UL);
         }
 
         public bool IsIPv6UniqueLocal() {

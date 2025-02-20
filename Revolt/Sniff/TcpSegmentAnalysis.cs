@@ -23,8 +23,8 @@ public sealed partial class Sniffer {
         IPPair pair = new IPPair(segment.fourTuple.sourceIP, segment.fourTuple.destinationIP);
         
         long rtt           = stream.Count == 3 ? Analyze3WH(in pair, stream) : -1;
-        long segmentSize   = segment.size;
-        uint nextSegmentNo = segment.sequenceNo + segment.size;
+        long segmentSize   = segment.payloadSize;
+        uint nextSegmentNo = segment.sequenceNo + segment.payloadSize;
 
         StreamCount count = tcpStatCount.AddOrUpdate(
             pair,
@@ -95,13 +95,13 @@ public sealed partial class Sniffer {
         bool hasPhantomByte = isSyn || isFin;
 
         if (tracker.Contains(segment.sequenceNo)) {
-            Interlocked.Increment(ref count.retransmission);
+            Interlocked.Increment(ref count.duplicate);
         }
         else {
             tracker.Add(segment.sequenceNo);
         }
 
-        uint size = segment.size;
+        uint size = segment.payloadSize;
         if (hasPhantomByte && size == 0) size = 1;
 
         if (sourceHash < destinationHash) {
@@ -128,10 +128,9 @@ public sealed partial class Sniffer {
         bool isSyn = (segment.flags & SYN_MASK) == SYN_MASK;
         bool isFin = (segment.flags & FIN_MASK) == FIN_MASK;
 
-        if ((isSyn || isFin) && segment.size > 0) {
+        if ((isSyn || isFin) && segment.payloadSize > 0) {
             //protocol violation
         }
     }
-
 
 }

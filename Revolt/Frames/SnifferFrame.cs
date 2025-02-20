@@ -698,7 +698,7 @@ public class SnifferFrame : Tui.Frame {
         StreamCount count = tcpStatList[index];
 
         int nameWidth = width > 140 ? 82 : 48;
-        int noteWidth = Math.Max(width - nameWidth - 44, 0);
+        int noteWidth = Math.Max(width - nameWidth - 64, 0);
 
         IPPair ips = sniffer.tcpStatCount.GetKeyByIndex(index);
         string nameString = ips.ToString();
@@ -729,13 +729,29 @@ public class SnifferFrame : Tui.Frame {
         WriteBytes(count.totalBytes, 12, Glyphs.LIGHT_COLOR);
 
         if (count.total3wh == 0) {
-            Ansi.Write("    -  ");
+            Ansi.SetFgColor(Glyphs.GRAY_COLOR);
+            Ansi.Write("    -           -  ");
         }
         else {
             WriteTextWithPost((count.totalRtt / count.total3wh / 10_000).ToString(), 7, Glyphs.LIGHT_COLOR, "ms");
+            WriteTextWithPost($"{count.minRtt / 10_000}-{count.maxRtt / 10_000}", 12, Glyphs.LIGHT_COLOR, "ms");
         }
 
-        WriteTextWithPost($"{count.minRtt / 10_000}-{count.maxRtt / 10_000}", 12, Glyphs.LIGHT_COLOR, "ms");
+        if (count.loss == 0) {
+            Ansi.SetFgColor(Glyphs.GRAY_COLOR);
+            Ansi.Write("         -");
+        }
+        else {
+            WriteNumber(count.loss, 10, Glyphs.LIGHT_COLOR);
+        }
+
+        if (count.duplicate == 0) {
+            Ansi.SetFgColor(Glyphs.GRAY_COLOR);
+            Ansi.Write("         -");
+        }
+        else {
+            WriteNumber(count.duplicate, 10, Glyphs.LIGHT_COLOR);
+        }
 
         Ansi.Write(new String(' ', noteWidth));
     }
@@ -948,14 +964,18 @@ public class SnifferFrame : Tui.Frame {
     }
 
     private void WriteTcpStatLabels() {
-        int left = (Renderer.LastWidth > 140 ? 82 : 48) + 3; ;
+        int left = (Renderer.LastWidth > 140 ? 82 : 48) + 3;
         
         Ansi.SetFgColor(Glyphs.INPUT_COLOR);
         Tui.Frame.WriteLabel("   Packets", left, 3, 12);
         Tui.Frame.WriteLabel("     Bytes", left + 12, 3, 12);
 
-        Tui.Frame.WriteLabel("  avg", left + 24, 3, 7);
-        Tui.Frame.WriteLabel("   min-max", left + 31, 3, 12);
+        Tui.Frame.WriteLabel("  Avg", left + 24, 3, 7);
+        Tui.Frame.WriteLabel("   Min-max", left + 31, 3, 12);
+
+        Tui.Frame.WriteLabel("    Loss", left + 43, 3, 10);
+        Tui.Frame.WriteLabel(" Duplic.", left + 53, 3, 10);
+        //Tui.Frame.WriteLabel("0-win", left + 57, 3, 7);
     }
 
     private static string SizeToString(long size) {
