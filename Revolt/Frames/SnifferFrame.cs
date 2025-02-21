@@ -145,7 +145,7 @@ public class SnifferFrame : Tui.Frame {
             bottom          = 2,
             backgroundColor = Glyphs.PANE_COLOR,
             drawItemHandler = DrawOverviewItem,
-            items           = [0, 0, 0, 0, 0]
+            items           = [0, 0, 0, 0, 0, 0, 0]
         };
 
         toolbar = new Tui.Toolbar(this) {
@@ -782,8 +782,10 @@ public class SnifferFrame : Tui.Frame {
             0 => " Total:             ",
             1 => " IPv4:              ",
             2 => " IPv6:              ",
-            3 => " TCP:               ",
-            4 => " UDP:               ",
+            3 => " UDP:               ",
+            4 => " TCP:               ",
+            5 => " TCP loss:          ",
+            6 => " TCP duplicate:     ",
             _ => String.Empty
         };
 
@@ -837,8 +839,22 @@ public class SnifferFrame : Tui.Frame {
             }
             break;
         }
-        
+
         case 3: {
+            if (sniffer is null) goto default;
+            sniffer.transportCount.TryGetValue((byte)TransportProtocol.UDP, out Count count);
+            WriteNumber(count.packets, 16, Glyphs.LIGHT_COLOR);
+            WriteBytes(count.bytes, 16, Glyphs.LIGHT_COLOR);
+            if (count.packets > 0) {
+                Ansi.Write($"   {(((double)count.bytes * 100 / sniffer.totalBytes)).ToString("0.0")}%".PadRight(8));
+            }
+            else {
+                Ansi.Write(new String(' ', 8));
+            }
+            break;
+        }
+
+        case 4: {
             if (sniffer is null) goto default;
             sniffer.transportCount.TryGetValue((byte)TransportProtocol.TCP, out Count count);
             WriteNumber(count.packets, 16, Glyphs.LIGHT_COLOR);
@@ -851,14 +867,21 @@ public class SnifferFrame : Tui.Frame {
             }
             break;
         }
-        
-        case 4: {
+
+        case 5: {
             if (sniffer is null) goto default;
-            sniffer.transportCount.TryGetValue((byte)TransportProtocol.UDP, out Count count);
-            WriteNumber(count.packets, 16, Glyphs.LIGHT_COLOR);
-            WriteBytes(count.bytes, 16, Glyphs.LIGHT_COLOR);
-            if (count.packets > 0) {
-                Ansi.Write($"   {(((double)count.bytes * 100 / sniffer.totalBytes)).ToString("0.0")}%".PadRight(8));
+            WriteNumber(sniffer?.packetLoss ?? 0, 16, Glyphs.LIGHT_COLOR);
+            Ansi.Write(new String(' ', 24));
+            break;
+        }
+
+        case 6: {
+            if (sniffer is null) goto default;
+            sniffer.transportCount.TryGetValue((byte)TransportProtocol.TCP, out Count tcpCount);
+            WriteNumber(sniffer?.packetRetransmit ?? 0, 16, Glyphs.LIGHT_COLOR);
+            WriteBytes(sniffer?.bytesRetransmit ?? 0, 16, Glyphs.LIGHT_COLOR);
+            if (sniffer?.bytesRetransmit > 0) {
+                Ansi.Write($"   {(((double)sniffer.bytesRetransmit * 100 / tcpCount.bytes)).ToString("0.0")}%".PadRight(8));
             }
             else {
                 Ansi.Write(new String(' ', 8));

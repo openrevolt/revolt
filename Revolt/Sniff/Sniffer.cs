@@ -245,7 +245,12 @@ public sealed partial class Sniffer : IDisposable {
         ConcurrentQueue<Segment> stream = streams.GetOrAdd(fourTuple, _ => new ConcurrentQueue<Segment>());
         stream.Enqueue(segment);
 
-        SegmentAnalysis(in segment, stream);
+        IP target = new IP([192, 168, 169, 4]);
+
+        if (true || (sourceIP == target || destinationIP == target) && (fourTuple.sourcePort == 4443 || fourTuple.destinationPort == 4443)) {
+            SegmentAnalysis(in segment, stream);
+        }
+
     }
 
     private void HandleUDP(byte[] buffer, long timestamp, IP sourceIP, IP destinationIP, byte ihl) {
