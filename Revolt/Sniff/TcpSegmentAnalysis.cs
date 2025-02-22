@@ -154,15 +154,15 @@ public sealed partial class Sniffer {
             }
         }
 
-        bool isRes = (segment.flags & RST_MASK) == RST_MASK;
-        if (isRes) {
+        /*bool isRst = (segment.flags & RST_MASK) == RST_MASK;
+        if (isRst) {
             if (segment.fourTuple.sourceIP.isIPv6) {
                 issuesList.Add(new SniffIssuesItem($"Unexpected payload in RST packet: [{segment.fourTuple.sourceIP}]:{segment.fourTuple.sourcePort} -> [{segment.fourTuple.destinationIP}]:{segment.fourTuple.destinationPort}"));
             }
             else {
                 issuesList.Add(new SniffIssuesItem($"Unexpected payload in RST packet: {segment.fourTuple.sourceIP}:{segment.fourTuple.sourcePort} -> {segment.fourTuple.destinationIP}:{segment.fourTuple.destinationPort}"));
             }
-        }
+        }*/
     }
 
 }

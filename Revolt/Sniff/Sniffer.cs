@@ -172,6 +172,11 @@ public sealed partial class Sniffer : IDisposable {
                 macTable.TryAdd(sourceIP, sourceMac);
             }
         }
+
+        if (ttl == 0) {
+            issuesList.Add(new SniffIssuesItem($"TTL expired for packet {sourceIP}"));
+
+        }
     }
 
     private void HandleIPv6(byte[] buffer, long timestamp, Mac sourceMac, Mac destinationMac) {
@@ -211,6 +216,20 @@ public sealed partial class Sniffer : IDisposable {
                 return traffic;
             }
         );
+
+        if (!sourceMac.IsBroadcast() && !sourceMac.IsMulticast()) {
+            if (macTable.TryGetValue(sourceIP, out Mac other)) {
+                if (!sourceMac.Equals(other)) {
+                    macTable.Remove(sourceIP, out _);
+                    issuesList.Add(new SniffIssuesItem($"Duplicate IP detected for {other} and {sourceMac} with {sourceIP}"));
+                }
+            }
+            macTable.TryAdd(sourceIP, sourceMac);
+        }
+
+        if (ttl == 0) {
+            issuesList.Add(new SniffIssuesItem($"TTL expired for packet {sourceIP}"));
+        }
     }
 
     private void HandleTransportLayer(byte transportProtocol, byte[] buffer, long timestamp, IP sourceIP, IP destinationIP, byte ihl) {
