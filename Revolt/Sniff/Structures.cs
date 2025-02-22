@@ -54,6 +54,7 @@ public sealed partial class Sniffer {
         public long maxRtt;
 
         public uint loss;
+        public uint ooo;
         public uint duplicate;
         public uint checksumMismatch;
         public uint zeroWindowEvent;

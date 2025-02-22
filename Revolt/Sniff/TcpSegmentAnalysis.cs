@@ -17,11 +17,11 @@ public sealed partial class Sniffer {
     private const ushort ACC_MASK    = 0b00000001_00000000;
     private const ushort SYNACK_MASK = 0b00000000_00010010;
 
-    private readonly ConcurrentDictionary<FourTuple, (HashSet<uint>, HashSet<uint>)> sequenceTrackers = new ConcurrentDictionary<FourTuple, (HashSet<uint>, HashSet<uint>)>();
+    private readonly ConcurrentDictionary<FourTuple, (ConcurrentDictionary<uint, byte>, ConcurrentDictionary<uint, byte>)> sequenceTrackers = new ConcurrentDictionary<FourTuple, (ConcurrentDictionary<uint, byte>, ConcurrentDictionary<uint, byte>)>();
 
     public long packetLoss = 0;
-    public long packetRetransmit = 0;
-    public long bytesRetransmit = 0;
+    public long outOfOrder = 0;
+    public long packetRetransmit = 0, bytesRetransmit = 0;
 
     public void SegmentAnalysis(in Segment segment, ConcurrentQueue<Segment> stream) {
         IPPair pair = new IPPair(segment.fourTuple.sourceIP, segment.fourTuple.destinationIP);
@@ -84,12 +84,12 @@ public sealed partial class Sniffer {
     }
 
     private void AnalyzeSequenceNo(in Segment segment, ConcurrentQueue<Segment> stream, StreamCount count) {
-        (HashSet<uint>, HashSet<uint>) sequenceTracker = sequenceTrackers.GetOrAdd(segment.fourTuple, _ => (new HashSet<uint>(), new HashSet<uint>()));
+        (ConcurrentDictionary<uint, byte>, ConcurrentDictionary<uint, byte>) sequenceTracker = sequenceTrackers.GetOrAdd(segment.fourTuple, _ => (new ConcurrentDictionary<uint, byte>(), new ConcurrentDictionary<uint, byte>()));
 
         int sourceHash = unchecked(segment.fourTuple.sourceIP.GetHashCode() + segment.fourTuple.sourcePort);
         int destinationHash = unchecked(segment.fourTuple.destinationIP.GetHashCode() + segment.fourTuple.destinationPort);
 
-        HashSet<uint> tracker = sourceHash < destinationHash ? sequenceTracker.Item1 : sequenceTracker.Item2;
+        ConcurrentDictionary<uint, byte> tracker = sourceHash < destinationHash ? sequenceTracker.Item1 : sequenceTracker.Item2;
 
         bool isFIN = (segment.flags & FIN_MASK) == FIN_MASK;
         bool isSYN = (segment.flags & SYN_MASK) == SYN_MASK;
@@ -98,14 +98,14 @@ public sealed partial class Sniffer {
 
         uint size = segment.payloadSize;
 
-        if (tracker.Contains(segment.sequenceNo)) {
+        if (tracker.ContainsKey(segment.sequenceNo)) {
             Interlocked.Increment(ref count.duplicate);
             Interlocked.Increment(ref packetRetransmit);
             Interlocked.Add(ref bytesRetransmit, size);
         }
         else if (!isACK) {
             lock (tracker) {
-                tracker.Add(segment.sequenceNo);
+                tracker.TryAdd(segment.sequenceNo, 0);
             }
         }
 
@@ -116,12 +116,20 @@ public sealed partial class Sniffer {
                 Interlocked.Increment(ref count.loss);
                 Interlocked.Increment(ref packetLoss);
             }
+            else if (segment.sequenceNo < count.nextSeqNoA) {
+                Interlocked.Increment(ref count.ooo);
+                Interlocked.Increment(ref outOfOrder);
+            }
             count.nextSeqNoA = unchecked(segment.sequenceNo + size);
         }
         else {
             if (segment.sequenceNo > count.nextSeqNoB && count.nextSeqNoB != 0) {
                 Interlocked.Increment(ref count.loss);
                 Interlocked.Increment(ref packetLoss);
+            }
+            else if (segment.sequenceNo < count.nextSeqNoB) {
+                Interlocked.Increment(ref count.ooo);
+                Interlocked.Increment(ref outOfOrder);
             }
             count.nextSeqNoB = unchecked(segment.sequenceNo + size);
         }
