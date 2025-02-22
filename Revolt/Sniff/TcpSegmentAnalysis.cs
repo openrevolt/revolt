@@ -8,7 +8,7 @@ namespace Revolt.Sniff;
 public sealed partial class Sniffer {
     private const ushort FIN_MASK    = 0b00000000_00000001;
     private const ushort SYN_MASK    = 0b00000000_00000010;
-    private const ushort RES_MASK    = 0b00000000_00000100;
+    private const ushort RST_MASK    = 0b00000000_00000100;
     private const ushort PUS_MASK    = 0b00000000_00001000;
     private const ushort ACK_MASK    = 0b00000000_00010000;
     private const ushort URG_MASK    = 0b00000000_00100000;
@@ -57,6 +57,8 @@ public sealed partial class Sniffer {
         );
 
         AnalyzeSequenceNo(in segment, stream, count);
+        //CheckWindowSize(in segment, count);
+        CheckProtocolViolation(in segment, count);
     }
 
     private long Analyze3WH(in IPPair ips, ConcurrentQueue<Segment> stream) {
@@ -98,15 +100,10 @@ public sealed partial class Sniffer {
 
         uint size = segment.payloadSize;
 
-        if (tracker.ContainsKey(segment.sequenceNo)) {
+        if (!isACK && !tracker.TryAdd(segment.sequenceNo, 0)) {
             Interlocked.Increment(ref count.duplicate);
             Interlocked.Increment(ref packetRetransmit);
             Interlocked.Add(ref bytesRetransmit, size);
-        }
-        else if (!isACK) {
-            lock (tracker) {
-                tracker.TryAdd(segment.sequenceNo, 0);
-            }
         }
 
         if (hasPhantomByte && size == 0) size = 1;
@@ -135,18 +132,36 @@ public sealed partial class Sniffer {
         }
     }
 
-    private void AnalyzeWindow(in Segment segment, StreamCount count) {
-        if (segment.window == 0) {
-            //zero window size
+    private void CheckWindowSize(in Segment segment, StreamCount count) {
+        if (segment.fourTuple.sourceIP.isIPv6) {
+            issuesList.Add(new SniffIssuesItem($"Zero window size: [{segment.fourTuple.sourceIP}]:{segment.fourTuple.sourcePort} -> [{segment.fourTuple.destinationIP}]:{segment.fourTuple.destinationPort}"));
+        }
+        else {
+            issuesList.Add(new SniffIssuesItem($"Zero window size: {segment.fourTuple.sourceIP}:{segment.fourTuple.sourcePort} -> {segment.fourTuple.destinationIP}:{segment.fourTuple.destinationPort}"));
         }
     }
 
-    private void CheckProtocolViolations(in Segment segment, StreamCount count) {
-        bool isSyn = (segment.flags & SYN_MASK) == SYN_MASK;
-        bool isFin = (segment.flags & FIN_MASK) == FIN_MASK;
+    private void CheckProtocolViolation(in Segment segment, StreamCount count) {
+        if (segment.payloadSize == 0) return;
 
-        if ((isSyn || isFin) && segment.payloadSize > 0) {
-            //protocol violation
+        bool isSyn = (segment.flags & SYN_MASK) == SYN_MASK;
+        if (isSyn) {
+            if (segment.fourTuple.sourceIP.isIPv6) {
+                issuesList.Add(new SniffIssuesItem($"Unexpected payload in SYN packet: [{segment.fourTuple.sourceIP}]:{segment.fourTuple.sourcePort} -> [{segment.fourTuple.destinationIP}]:{segment.fourTuple.destinationPort}"));
+            }
+            else {
+                issuesList.Add(new SniffIssuesItem($"Unexpected payload in SYN packet: {segment.fourTuple.sourceIP}:{segment.fourTuple.sourcePort} -> {segment.fourTuple.destinationIP}:{segment.fourTuple.destinationPort}"));
+            }
+        }
+
+        bool isRes = (segment.flags & RST_MASK) == RST_MASK;
+        if (isRes) {
+            if (segment.fourTuple.sourceIP.isIPv6) {
+                issuesList.Add(new SniffIssuesItem($"Unexpected payload in RST packet: [{segment.fourTuple.sourceIP}]:{segment.fourTuple.sourcePort} -> [{segment.fourTuple.destinationIP}]:{segment.fourTuple.destinationPort}"));
+            }
+            else {
+                issuesList.Add(new SniffIssuesItem($"Unexpected payload in RST packet: {segment.fourTuple.sourceIP}:{segment.fourTuple.sourcePort} -> {segment.fourTuple.destinationIP}:{segment.fourTuple.destinationPort}"));
+            }
         }
     }
 

@@ -1,5 +1,6 @@
 ﻿using System.Buffers.Binary;
 using System.Collections.Concurrent;
+using System.Net.NetworkInformation;
 using SharpPcap;
 
 namespace Revolt.Sniff;
@@ -15,17 +16,20 @@ public sealed partial class Sniffer : IDisposable {
     public IndexedDictionary<byte, Count>         transportCount = new IndexedDictionary<byte, Count>();
     public IndexedDictionary<IPPair, StreamCount> tcpStatCount   = new IndexedDictionary<IPPair, StreamCount>();
 
+    private readonly Tui.ListBox<SniffIssuesItem> issuesList;
+
     public ConcurrentDictionary<FourTuple, ConcurrentQueue<Segment>> streams = new ConcurrentDictionary<FourTuple, ConcurrentQueue<Segment>>();
+
+    private ConcurrentDictionary<IP, Mac> macTable = new ConcurrentDictionary<IP, Mac>();
+    private ICaptureDevice device;
+    private const ushort maxPort = 1024; //49152
 
     //private ulong frameIndex = 0;
     //private ConcurrentDictionary<ulong, Packet> frames = new ConcurrentDictionary<ulong, Packet>();
 
-    private ICaptureDevice device;
-
-    private const ushort maxPort = 1024; //49152
-
-    public Sniffer(ICaptureDevice device) {
+    public Sniffer(ICaptureDevice device, Tui.ListBox<SniffIssuesItem> issuesList) {
         this.device = device;
+        this.issuesList = issuesList;
 
         etherTypeCount.TryAdd(0x0800, new Count() { packets = 0, bytes = 0 });
         etherTypeCount.TryAdd(0x86DD, new Count() { packets = 0, bytes = 0 });
@@ -58,13 +62,13 @@ public sealed partial class Sniffer : IDisposable {
         Mac       destinationMac    = new Mac(buffer, 6);
         ushort    networkProtocol   = (ushort)(buffer[12] << 8 | buffer[13]);
 
-        switch ((etherTypes)networkProtocol) {
-        case etherTypes.IPv4:
-            HandleIPv4(buffer, timestamp);
+        switch ((EtherTypes)networkProtocol) {
+        case EtherTypes.IPv4:
+            HandleIPv4(buffer, timestamp, sourceMac, destinationMac);
             break;
 
-        case etherTypes.IPv6:
-            HandleIPv6(buffer, timestamp);
+        case EtherTypes.IPv6:
+            HandleIPv6(buffer, timestamp, sourceMac, destinationMac);
             break;
         }
 
@@ -121,7 +125,7 @@ public sealed partial class Sniffer : IDisposable {
         );
     }
 
-    private void HandleIPv4(byte[] buffer, long timestamp) {
+    private void HandleIPv4(byte[] buffer, long timestamp, Mac sourceMac, Mac destinationMac) {
         (ushort l3Size, byte ttl, byte transportProtocol, byte ihl, IP sourceIP, IP destinationIP) = ParseV4PacketHeader(buffer, 14);
 
         HandleTransportLayer(transportProtocol, buffer, timestamp, sourceIP, destinationIP, ihl);
@@ -157,9 +161,20 @@ public sealed partial class Sniffer : IDisposable {
                 return traffic;
             }
         );
+
+        if (!sourceMac.IsBroadcast() && !sourceMac.IsMulticast()) {
+            if (macTable.TryGetValue(sourceIP, out Mac other)) {
+                if (!sourceMac.Equals(other)) {
+                    issuesList.Add(new SniffIssuesItem($"Duplicate IP detected for {other} and {sourceMac} with {sourceIP}"));
+                }
+            }
+            else {
+                macTable.TryAdd(sourceIP, sourceMac);
+            }
+        }
     }
 
-    private void HandleIPv6(byte[] buffer, long timestamp) {
+    private void HandleIPv6(byte[] buffer, long timestamp, Mac sourceMac, Mac destinationMac) {
         (ushort l3Size, byte transportProtocol, byte ttl, IP sourceIP, IP destinationIP) = ParseV6PacketHeader(buffer, 14);
         byte ihl = 40;
 

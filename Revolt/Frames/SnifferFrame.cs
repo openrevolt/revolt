@@ -1,4 +1,5 @@
 ﻿using System.Diagnostics;
+using PacketDotNet;
 using Revolt.Protocols;
 using Revolt.Sniff;
 using Revolt.Tui;
@@ -21,16 +22,16 @@ public class SnifferFrame : Tui.Frame {
     private static readonly Ansi.Color MULTICAST_COLOR = new Ansi.Color(0, 255, 255);
     private static readonly Ansi.Color INVALID_COLOR   = new Ansi.Color(176, 0, 0);
 
-    private Tui.ShadowIndexListBox<Mac, TrafficData>         framesList;
-    private Tui.ShadowIndexListBox<IP, TrafficData>          packetList;
-    private Tui.ShadowIndexListBox<ushort, TrafficData>      segmentList;
-    private Tui.ShadowIndexListBox<ushort, TrafficData>      datagramList;
-    private Tui.ShadowIndexListBox<ushort, Count>            etherTypeList;
-    private Tui.ShadowIndexListBox<byte, Count>              layer4ProtocolList;
-    private Tui.ShadowIndexListBox<IPPair, StreamCount>      tcpStatList;
+    private Tui.ShadowIndexListBox<Mac, TrafficData>    framesList;
+    private Tui.ShadowIndexListBox<IP, TrafficData>     packetList;
+    private Tui.ShadowIndexListBox<ushort, TrafficData> segmentList;
+    private Tui.ShadowIndexListBox<ushort, TrafficData> datagramList;
+    private Tui.ShadowIndexListBox<ushort, Count>       etherTypeList;
+    private Tui.ShadowIndexListBox<byte, Count>         layer4ProtocolList;
+    private Tui.ShadowIndexListBox<IPPair, StreamCount> tcpStatList;
 
-    private Tui.ListBox<SniffIssuesItem>                     issuesList;
-    private Tui.ListBox<byte>                                overviewList;
+    private Tui.ListBox<SniffIssuesItem>                issuesList;
+    private Tui.ListBox<byte>                           overviewList;
 
     private Tui.Element currentList;
 
@@ -767,6 +768,20 @@ public class SnifferFrame : Tui.Frame {
 
         bool isSelected = index == issuesList.index;
 
+        SniffIssuesItem issue = issuesList.items[index];
+
+        Ansi.SetCursorPosition(1, adjustedY);
+
+        if (isSelected) {
+            Ansi.SetFgColor(issuesList.isFocused ? Glyphs.DARKGRAY_COLOR : Glyphs.LIGHT_COLOR);
+            Ansi.SetBgColor(issuesList.isFocused ? Glyphs.FOCUS_COLOR : Glyphs.HIGHLIGHT_COLOR);
+        }
+        else {
+            Ansi.SetFgColor(Glyphs.LIGHT_COLOR);
+            Ansi.SetBgColor(Glyphs.PANE_COLOR);
+        }
+
+        Ansi.Write(issue.message.Length > width ? issue.message[..width] + Glyphs.ELLIPSIS : issue.message.PadRight(width));
     }
 
     private void DrawOverviewItem(int index, int x, int y, int width) {
@@ -816,7 +831,7 @@ public class SnifferFrame : Tui.Frame {
 
         case 1: {
             if (sniffer is null) goto default;
-            sniffer.etherTypeCount.TryGetValue((ushort)etherTypes.IPv4, out Count count);
+            sniffer.etherTypeCount.TryGetValue((ushort)EtherTypes.IPv4, out Count count);
             WriteNumber(count.packets, 16, Glyphs.LIGHT_COLOR);
             WriteBytes(count.bytes, 16, Glyphs.LIGHT_COLOR);
             if (count.packets > 0) {
@@ -830,7 +845,7 @@ public class SnifferFrame : Tui.Frame {
         
         case 2: {
             if (sniffer is null) goto default;
-            sniffer.etherTypeCount.TryGetValue((ushort)etherTypes.IPv6, out Count count);
+            sniffer.etherTypeCount.TryGetValue((ushort)EtherTypes.IPv6, out Count count);
             WriteNumber(count.packets, 16, Glyphs.LIGHT_COLOR);
             WriteBytes(count.bytes, 16, Glyphs.LIGHT_COLOR);
             if (count.packets > 0) {
@@ -1085,7 +1100,7 @@ public class SnifferFrame : Tui.Frame {
             dialog.Close();
 
             try {
-                sniffer = new Revolt.Sniff.Sniffer(captureDevice);
+                sniffer = new Revolt.Sniff.Sniffer(captureDevice, issuesList);
 
                 framesList.BindDictionary(sniffer.framesCount);
                 packetList.BindDictionary(sniffer.packetCount);
