@@ -163,12 +163,12 @@ public sealed partial class Sniffer : IDisposable {
         );
 
         if (ttl == 0) {
-            issuesList.Add(new SniffIssuesItem($"TTL expired for packet {sourceIP}"));
+            issuesList.Add(new SniffIssuesItem(2, $"TTL expired for packet {sourceIP}"));
         }
 
         if (!sourceIP.IsNull() && !sourceMac.IsBroadcast() && !sourceMac.IsMulticast()) {
             if (macTable.TryGetValue(sourceIP, out Mac existingMac) && !sourceMac.Equals(existingMac)) {
-                issuesList.Add(new SniffIssuesItem($"Duplicate IP: {sourceIP} used by {existingMac} and {sourceMac}"));
+                issuesList.Add(new SniffIssuesItem(3, $"Duplicate IP: {sourceIP} used by {existingMac} and {sourceMac}"));
                 macTable.Remove(sourceIP, out _);
             }
             macTable.TryAdd(sourceIP, sourceMac);
@@ -214,12 +214,12 @@ public sealed partial class Sniffer : IDisposable {
         );
 
         if (ttl == 0) {
-            issuesList.Add(new SniffIssuesItem($"TTL expired for packet {sourceIP}"));
+            issuesList.Add(new SniffIssuesItem(2, $"TTL expired for packet {sourceIP}"));
         }
 
         if (!sourceIP.IsNull() && !sourceMac.IsMulticast()) {
             if (macTable.TryGetValue(sourceIP, out Mac existingMac) && !sourceMac.Equals(existingMac)) {
-                issuesList.Add(new SniffIssuesItem($"Duplicate IP: {sourceIP} used by {existingMac} and {sourceMac}"));
+                issuesList.Add(new SniffIssuesItem(3, $"Duplicate IP: {sourceIP} used by {existingMac} and {sourceMac}"));
                 macTable.Remove(sourceIP, out _);
             }
             macTable.TryAdd(sourceIP, sourceMac);

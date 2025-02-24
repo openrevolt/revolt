@@ -27,8 +27,8 @@ public sealed partial class Sniffer {
         public readonly uint      payloadSize      = payloadSize;
     }
 
-    public readonly struct SniffIssuesItem(string message) {
-        public readonly byte severity;
+    public readonly struct SniffIssuesItem(byte severity, string message) {
+        public readonly byte severity  = severity;
         public readonly string message = message;
     }
 

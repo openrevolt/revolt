@@ -772,16 +772,53 @@ public class SnifferFrame : Tui.Frame {
 
         Ansi.SetCursorPosition(1, adjustedY);
 
-        if (isSelected) {
-            Ansi.SetFgColor(issuesList.isFocused ? Glyphs.DARKGRAY_COLOR : Glyphs.LIGHT_COLOR);
-            Ansi.SetBgColor(issuesList.isFocused ? Glyphs.FOCUS_COLOR : Glyphs.HIGHLIGHT_COLOR);
-        }
-        else {
-            Ansi.SetFgColor(Glyphs.LIGHT_COLOR);
-            Ansi.SetBgColor(Glyphs.PANE_COLOR);
+        Ansi.Color severityColor;
+        char severityChar;
+
+        switch (issue.severity) {
+        case 1:
+            severityColor = new Ansi.Color(0, 96, 255);
+            severityChar = 'i';
+            break;
+
+        case 2:
+            severityColor = new Ansi.Color(255, 192, 0);
+            severityChar = '!';
+            break;
+
+        case 3:
+            severityColor = Glyphs.RED_COLOR;
+            severityChar = 'x';
+            break;
+
+        default:
+            severityColor = Glyphs.LIGHT_COLOR;
+            severityChar = ' ';
+            break;
         }
 
-        Ansi.Write(issue.message.Length > width ? issue.message[..width] + Glyphs.ELLIPSIS : issue.message.PadRight(width));
+        Ansi.Color fgColor;
+
+        if (isSelected) {
+            Ansi.SetFgColor(issuesList.isFocused ? Glyphs.DARKGRAY_COLOR : severityColor);
+            Ansi.SetBgColor(issuesList.isFocused ? Glyphs.FOCUS_COLOR : Glyphs.HIGHLIGHT_COLOR);
+            Ansi.Write(' ');
+            Ansi.Write(severityChar);
+            fgColor = issuesList.isFocused ? Glyphs.DARKGRAY_COLOR : Glyphs.LIGHT_COLOR;
+        }
+        else {
+            Ansi.SetFgColor(severityColor);
+            Ansi.SetBgColor(Glyphs.PANE_COLOR);
+            Ansi.Write(' ');
+            Ansi.Write(severityChar);
+            fgColor = Glyphs.LIGHT_COLOR;
+        }
+
+        int messageWidth = width - 3;
+
+        Ansi.Write(' ');
+        Ansi.SetFgColor(fgColor);
+        Ansi.Write(issue.message.Length > messageWidth ? issue.message[..messageWidth] + Glyphs.ELLIPSIS : issue.message.PadRight(messageWidth));
     }
 
     private void DrawOverviewItem(int index, int x, int y, int width) {

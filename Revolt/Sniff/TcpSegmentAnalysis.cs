@@ -17,7 +17,10 @@ public sealed partial class Sniffer {
     private const ushort ACC_MASK    = 0b00000001_00000000;
     private const ushort SYNACK_MASK = 0b00000000_00010010;
 
-    private readonly ConcurrentDictionary<FourTuple, (ConcurrentDictionary<uint, byte>, ConcurrentDictionary<uint, byte>)> sequenceTrackers = new ConcurrentDictionary<FourTuple, (ConcurrentDictionary<uint, byte>, ConcurrentDictionary<uint, byte>)>();
+    private readonly ConcurrentDictionary<FourTuple, (ConcurrentDictionary<uint, byte>, ConcurrentDictionary<uint, byte>)> sequenceTrackers
+        = new ConcurrentDictionary<FourTuple, (ConcurrentDictionary<uint, byte>, ConcurrentDictionary<uint, byte>)>();
+
+    private readonly ConcurrentBag<FourTuple> zeroWindowEvent = new ConcurrentBag<FourTuple>();
 
     public long packetLoss = 0;
     public long outOfOrder = 0;
@@ -133,11 +136,20 @@ public sealed partial class Sniffer {
     }
 
     private void CheckWindowSize(in Segment segment, StreamCount count) {
+        if (segment.window > 0) return;
+
+        if (zeroWindowEvent.Contains(segment.fourTuple)) return;
+
+        if (zeroWindowEvent.Count > 512) {
+            zeroWindowEvent.Take(1);
+        }
+        zeroWindowEvent.Append(segment.fourTuple);
+
         if (segment.fourTuple.sourceIP.isIPv6) {
-            issuesList.Add(new SniffIssuesItem($"Zero window size: [{segment.fourTuple.sourceIP}]:{segment.fourTuple.sourcePort} -> [{segment.fourTuple.destinationIP}]:{segment.fourTuple.destinationPort}"));
+            issuesList.Add(new SniffIssuesItem(1, $"Zero window size: [{segment.fourTuple.sourceIP}]:{segment.fourTuple.sourcePort} -> [{segment.fourTuple.destinationIP}]:{segment.fourTuple.destinationPort}"));
         }
         else {
-            issuesList.Add(new SniffIssuesItem($"Zero window size: {segment.fourTuple.sourceIP}:{segment.fourTuple.sourcePort} -> {segment.fourTuple.destinationIP}:{segment.fourTuple.destinationPort}"));
+            issuesList.Add(new SniffIssuesItem(1, $"Zero window size: {segment.fourTuple.sourceIP}:{segment.fourTuple.sourcePort} -> {segment.fourTuple.destinationIP}:{segment.fourTuple.destinationPort}"));
         }
     }
 
@@ -147,22 +159,12 @@ public sealed partial class Sniffer {
         bool isSyn = (segment.flags & SYN_MASK) == SYN_MASK;
         if (isSyn) {
             if (segment.fourTuple.sourceIP.isIPv6) {
-                issuesList.Add(new SniffIssuesItem($"Unexpected payload in SYN packet: [{segment.fourTuple.sourceIP}]:{segment.fourTuple.sourcePort} -> [{segment.fourTuple.destinationIP}]:{segment.fourTuple.destinationPort}"));
+                issuesList.Add(new SniffIssuesItem(2, $"Unexpected payload in SYN packet: [{segment.fourTuple.sourceIP}]:{segment.fourTuple.sourcePort} -> [{segment.fourTuple.destinationIP}]:{segment.fourTuple.destinationPort}"));
             }
             else {
-                issuesList.Add(new SniffIssuesItem($"Unexpected payload in SYN packet: {segment.fourTuple.sourceIP}:{segment.fourTuple.sourcePort} -> {segment.fourTuple.destinationIP}:{segment.fourTuple.destinationPort}"));
+                issuesList.Add(new SniffIssuesItem(2, $"Unexpected payload in SYN packet: {segment.fourTuple.sourceIP}:{segment.fourTuple.sourcePort} -> {segment.fourTuple.destinationIP}:{segment.fourTuple.destinationPort}"));
             }
         }
-
-        /*bool isRst = (segment.flags & RST_MASK) == RST_MASK;
-        if (isRst) {
-            if (segment.fourTuple.sourceIP.isIPv6) {
-                issuesList.Add(new SniffIssuesItem($"Unexpected payload in RST packet: [{segment.fourTuple.sourceIP}]:{segment.fourTuple.sourcePort} -> [{segment.fourTuple.destinationIP}]:{segment.fourTuple.destinationPort}"));
-            }
-            else {
-                issuesList.Add(new SniffIssuesItem($"Unexpected payload in RST packet: {segment.fourTuple.sourceIP}:{segment.fourTuple.sourcePort} -> {segment.fourTuple.destinationIP}:{segment.fourTuple.destinationPort}"));
-            }
-        }*/
     }
 
 }
