@@ -831,7 +831,7 @@ public class SnifferFrame : Tui.Frame {
 
         case 1: {
             if (sniffer is null) goto default;
-            sniffer.etherTypeCount.TryGetValue((ushort)EtherTypes.IPv4, out Count count);
+            sniffer.etherTypeCount.TryGetValue((ushort)EtherType.IPv4, out Count count);
             WriteNumber(count.packets, 16, Glyphs.LIGHT_COLOR);
             WriteBytes(count.bytes, 16, Glyphs.LIGHT_COLOR);
             if (count.packets > 0) {
@@ -845,7 +845,7 @@ public class SnifferFrame : Tui.Frame {
         
         case 2: {
             if (sniffer is null) goto default;
-            sniffer.etherTypeCount.TryGetValue((ushort)EtherTypes.IPv6, out Count count);
+            sniffer.etherTypeCount.TryGetValue((ushort)EtherType.IPv6, out Count count);
             WriteNumber(count.packets, 16, Glyphs.LIGHT_COLOR);
             WriteBytes(count.bytes, 16, Glyphs.LIGHT_COLOR);
             if (count.packets > 0) {

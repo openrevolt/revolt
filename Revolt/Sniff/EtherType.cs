@@ -4,7 +4,7 @@ namespace Revolt.Sniff;
 
 public sealed partial class Sniffer {
 
-    public enum EtherTypes : ushort {
+    public enum EtherType : ushort {
         none   = 0,
         IPv4   = 0x0800,
         ARP    = 0x0806,

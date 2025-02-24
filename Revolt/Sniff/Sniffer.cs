@@ -58,16 +58,16 @@ public sealed partial class Sniffer : IDisposable {
     }
 
     private void HandleEthernetFrame(byte[] buffer, long timestamp) {
-        Mac       sourceMac         = new Mac(buffer, 0);
-        Mac       destinationMac    = new Mac(buffer, 6);
-        ushort    networkProtocol   = (ushort)(buffer[12] << 8 | buffer[13]);
+        Mac       sourceMac       = new Mac(buffer, 0);
+        Mac       destinationMac  = new Mac(buffer, 6);
+        ushort    networkProtocol = (ushort)(buffer[12] << 8 | buffer[13]);
 
-        switch ((EtherTypes)networkProtocol) {
-        case EtherTypes.IPv4:
+        switch ((EtherType)networkProtocol) {
+        case EtherType.IPv4:
             HandleIPv4(buffer, timestamp, sourceMac, destinationMac);
             break;
 
-        case EtherTypes.IPv6:
+        case EtherType.IPv6:
             HandleIPv6(buffer, timestamp, sourceMac, destinationMac);
             break;
         }
@@ -163,19 +163,17 @@ public sealed partial class Sniffer : IDisposable {
         );
 
         if (!sourceMac.IsBroadcast() && !sourceMac.IsMulticast()) {
-            if (macTable.TryGetValue(sourceIP, out Mac other)) {
-                if (!sourceMac.Equals(other)) {
-                    issuesList.Add(new SniffIssuesItem($"Duplicate IP detected for {other} and {sourceMac} with {sourceIP}"));
+            if (macTable.TryGetValue(sourceIP, out Mac existingMac)) {
+                if (!sourceMac.Equals(existingMac)) {
+                    macTable.Remove(sourceIP, out _);
+                    issuesList.Add(new SniffIssuesItem($"Duplicate IP: {sourceIP} used by {existingMac} and {sourceMac}"));
                 }
             }
-            else {
-                macTable.TryAdd(sourceIP, sourceMac);
-            }
+            macTable.TryAdd(sourceIP, sourceMac);
         }
 
         if (ttl == 0) {
             issuesList.Add(new SniffIssuesItem($"TTL expired for packet {sourceIP}"));
-
         }
     }
 
@@ -218,10 +216,10 @@ public sealed partial class Sniffer : IDisposable {
         );
 
         if (!sourceMac.IsBroadcast() && !sourceMac.IsMulticast()) {
-            if (macTable.TryGetValue(sourceIP, out Mac other)) {
-                if (!sourceMac.Equals(other)) {
+            if (macTable.TryGetValue(sourceIP, out Mac existingMac)) {
+                if (!sourceMac.Equals(existingMac)) {
                     macTable.Remove(sourceIP, out _);
-                    issuesList.Add(new SniffIssuesItem($"Duplicate IP detected for {other} and {sourceMac} with {sourceIP}"));
+                    issuesList.Add(new SniffIssuesItem($"Duplicate IP: {sourceIP} used by {existingMac} and {sourceMac}"));
                 }
             }
             macTable.TryAdd(sourceIP, sourceMac);
