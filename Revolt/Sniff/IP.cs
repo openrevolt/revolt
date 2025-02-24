@@ -136,6 +136,13 @@ public sealed partial class Sniffer {
             return new string(buffer[..index]);
         }
 
+        public bool IsNull() {
+            if (isIPv6) {
+                return upper == 0 && lower == 0;
+            }
+            return ipv4 == 0;
+        }
+
         public bool IsBroadcast() {
             if (isIPv6) return false;
             return ipv4 == 0xffffffff;

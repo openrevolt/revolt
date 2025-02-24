@@ -58,17 +58,17 @@ public sealed partial class Sniffer : IDisposable {
     }
 
     private void HandleEthernetFrame(byte[] buffer, long timestamp) {
-        Mac       sourceMac       = new Mac(buffer, 0);
-        Mac       destinationMac  = new Mac(buffer, 6);
+        Mac       destinationMac  = new Mac(buffer, 0);
+        Mac       sourceMac       = new Mac(buffer, 6);
         ushort    networkProtocol = (ushort)(buffer[12] << 8 | buffer[13]);
 
         switch ((EtherType)networkProtocol) {
         case EtherType.IPv4:
-            HandleIPv4(buffer, timestamp, sourceMac, destinationMac);
+            HandleIPv4(buffer, timestamp, sourceMac);
             break;
 
         case EtherType.IPv6:
-            HandleIPv6(buffer, timestamp, sourceMac, destinationMac);
+            HandleIPv6(buffer, timestamp, sourceMac);
             break;
         }
 
@@ -125,7 +125,7 @@ public sealed partial class Sniffer : IDisposable {
         );
     }
 
-    private void HandleIPv4(byte[] buffer, long timestamp, Mac sourceMac, Mac destinationMac) {
+    private void HandleIPv4(byte[] buffer, long timestamp, Mac sourceMac) {
         (ushort l3Size, byte ttl, byte transportProtocol, byte ihl, IP sourceIP, IP destinationIP) = ParseV4PacketHeader(buffer, 14);
 
         HandleTransportLayer(transportProtocol, buffer, timestamp, sourceIP, destinationIP, ihl);
@@ -162,22 +162,20 @@ public sealed partial class Sniffer : IDisposable {
             }
         );
 
-        if (!sourceMac.IsBroadcast() && !sourceMac.IsMulticast()) {
-            if (macTable.TryGetValue(sourceIP, out Mac existingMac)) {
-                if (!sourceMac.Equals(existingMac)) {
-                    macTable.Remove(sourceIP, out _);
-                    issuesList.Add(new SniffIssuesItem($"Duplicate IP: {sourceIP} used by {existingMac} and {sourceMac}"));
-                }
-            }
-            macTable.TryAdd(sourceIP, sourceMac);
-        }
-
         if (ttl == 0) {
             issuesList.Add(new SniffIssuesItem($"TTL expired for packet {sourceIP}"));
         }
+
+        if (!sourceIP.IsNull() && !sourceMac.IsBroadcast() && !sourceMac.IsMulticast()) {
+            if (macTable.TryGetValue(sourceIP, out Mac existingMac) && !sourceMac.Equals(existingMac)) {
+                issuesList.Add(new SniffIssuesItem($"Duplicate IP: {sourceIP} used by {existingMac} and {sourceMac}"));
+                macTable.Remove(sourceIP, out _);
+            }
+            macTable.TryAdd(sourceIP, sourceMac);
+        }
     }
 
-    private void HandleIPv6(byte[] buffer, long timestamp, Mac sourceMac, Mac destinationMac) {
+    private void HandleIPv6(byte[] buffer, long timestamp, Mac sourceMac) {
         (ushort l3Size, byte transportProtocol, byte ttl, IP sourceIP, IP destinationIP) = ParseV6PacketHeader(buffer, 14);
         byte ihl = 40;
 
@@ -215,18 +213,16 @@ public sealed partial class Sniffer : IDisposable {
             }
         );
 
-        if (!sourceMac.IsBroadcast() && !sourceMac.IsMulticast()) {
-            if (macTable.TryGetValue(sourceIP, out Mac existingMac)) {
-                if (!sourceMac.Equals(existingMac)) {
-                    macTable.Remove(sourceIP, out _);
-                    issuesList.Add(new SniffIssuesItem($"Duplicate IP: {sourceIP} used by {existingMac} and {sourceMac}"));
-                }
-            }
-            macTable.TryAdd(sourceIP, sourceMac);
-        }
-
         if (ttl == 0) {
             issuesList.Add(new SniffIssuesItem($"TTL expired for packet {sourceIP}"));
+        }
+
+        if (!sourceIP.IsNull() && !sourceMac.IsMulticast()) {
+            if (macTable.TryGetValue(sourceIP, out Mac existingMac) && !sourceMac.Equals(existingMac)) {
+                issuesList.Add(new SniffIssuesItem($"Duplicate IP: {sourceIP} used by {existingMac} and {sourceMac}"));
+                macTable.Remove(sourceIP, out _);
+            }
+            macTable.TryAdd(sourceIP, sourceMac);
         }
     }
 
