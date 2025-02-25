@@ -22,7 +22,10 @@ public sealed class Textbox(Frame parentFrame) : Element(parentFrame) {
         set {
             _value = value;
             index = value.Length;
-            DrawValue();
+
+            if (parentFrame.elements.Contains(this)) {
+                DrawValue();
+            }
         }
     }
 

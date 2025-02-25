@@ -53,8 +53,8 @@ public sealed class PingFrame : Tui.Frame {
                 new Tui.Toolbar.ToolbarItem() { text="Add",     key="INS", action=AddDialog},
                 new Tui.Toolbar.ToolbarItem() { text="Remove",  key="DEL", action=RemoveSelected},
                 new Tui.Toolbar.ToolbarItem() { text="Pause",   key="F2",  action=ToggleStatus },
-                new Tui.Toolbar.ToolbarItem() { text="Clear",   key="F3",  action=Clear },
                 new Tui.Toolbar.ToolbarItem() { text="Options", key="F4",  action=OptionsDialog },
+                new Tui.Toolbar.ToolbarItem() { text="Clear",   key="F6",  action=Clear },
             ],
             drawStatus = DrawStatus
         };
@@ -97,12 +97,12 @@ public sealed class PingFrame : Tui.Frame {
             ToggleStatus();
             break;
 
-        case ConsoleKey.F3:
-            Clear();
-            break;
-
         case ConsoleKey.F4:
             OptionsDialog();
+            break;
+
+        case ConsoleKey.F6:
+            Clear();
             break;
 
         default:

@@ -50,7 +50,7 @@ public sealed class NetMapperFrame : Tui.Frame {
             right = 0,
             items = [
                 new Tui.Toolbar.ToolbarItem() { text="Discover", key="F2", action=Start },
-                new Tui.Toolbar.ToolbarItem() { text="Clear",    key="F3", action=Clear }
+                new Tui.Toolbar.ToolbarItem() { text="Clear",    key="F6", action=Clear }
             ],
             drawStatus = DrawStatus
         };
@@ -87,7 +87,7 @@ public sealed class NetMapperFrame : Tui.Frame {
             Start();
             break;
 
-        case ConsoleKey.F3:
+        case ConsoleKey.F6:
             Clear();
             break;
 

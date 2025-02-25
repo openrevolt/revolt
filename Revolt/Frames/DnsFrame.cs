@@ -47,8 +47,8 @@ public sealed class DnsFrame : Tui.Frame {
             items = [
                 new Tui.Toolbar.ToolbarItem() { text="Add",     key="INS", action=AddDialog},
                 new Tui.Toolbar.ToolbarItem() { text="Remove",  key="DEL", action=RemoveSelected},
-                new Tui.Toolbar.ToolbarItem() { text="Clear",   key="F3",  action=Clear },
                 new Tui.Toolbar.ToolbarItem() { text="Options", key="F4",  action=OptionsDialog },
+                new Tui.Toolbar.ToolbarItem() { text="Clear",   key="F6",  action=Clear },
             ],
             drawStatus = DrawStatus
         };
@@ -83,12 +83,12 @@ public sealed class DnsFrame : Tui.Frame {
             RemoveSelected();
             break;
 
-        case ConsoleKey.F3:
-            Clear();
-            break;
-
         case ConsoleKey.F4:
             OptionsDialog();
+            break;
+
+        case ConsoleKey.F6:
+            Clear();
             break;
 
         default:

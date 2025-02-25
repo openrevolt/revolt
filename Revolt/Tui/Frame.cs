@@ -3,9 +3,9 @@
 namespace Revolt.Tui;
 
 public abstract class Frame {
-    protected List<Element> elements = [];
-    protected Element defaultElement;
+    public List<Element> elements = [];
     public Element focusedElement;
+    protected Element defaultElement;
 
     public virtual void Show(bool draw = true) {
         Renderer.ActiveFrame = this;
