@@ -145,7 +145,7 @@ public sealed partial class Sniffer {
         zeroWindowEvent.Enqueue(segment.fourTuple);
 
         if (segment.fourTuple.sourceIP.isIPv6) {
-            issuesList.Add(new SniffIssuesItem(1, $"Zero window size: [{segment.fourTuple.sourceIP}]:{segment.fourTuple.sourcePort} -> [{segment.fourTuple.destinationIP}]:{segment.fourTuple.diestinationPort}"));
+            issuesList.Add(new SniffIssuesItem(1, $"Zero window size: [{segment.fourTuple.sourceIP}]:{segment.fourTuple.sourcePort} -> [{segment.fourTuple.destinationIP}]:{segment.fourTuple.destinationPort}"));
         }
         else {
             issuesList.Add(new SniffIssuesItem(1, $"Zero window size: {segment.fourTuple.sourceIP}:{segment.fourTuple.sourcePort} -> {segment.fourTuple.destinationIP}:{segment.fourTuple.destinationPort}"));
