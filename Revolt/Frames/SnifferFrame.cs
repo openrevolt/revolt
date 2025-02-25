@@ -777,7 +777,7 @@ public class SnifferFrame : Tui.Frame {
 
         switch (issue.severity) {
         case 1:
-            severityColor = new Ansi.Color(0, 96, 255);
+            severityColor = new Ansi.Color(64, 128, 255);
             severityChar = 'i';
             break;
 
@@ -1096,6 +1096,7 @@ public class SnifferFrame : Tui.Frame {
         Tokens.dictionary.TryAdd(cancellationTokenSource, cancellationToken);
 
         long lastCount = 0;
+        int lastIssuesCount = 0;
 
         while (!cancellationToken.IsCancellationRequested) {
             await Task.Delay(250, cancellationToken);
@@ -1105,12 +1106,19 @@ public class SnifferFrame : Tui.Frame {
             if (Renderer.ActiveDialog is not null) continue;
             if (Renderer.ActiveFrame != this) continue;
 
+            if (lastIssuesCount != issuesList.items.Count && issuesList.items.Count > 0) {
+                tabs.items[7].label = issuesList.items.Count.ToString();
+                tabs.Draw(false);
+            }
+
             currentList.Draw(false);
             toolbar.drawStatus();
+
             Ansi.Push();
 
             lastUpdate = now;
             lastCount = sniffer.totalPackets;
+            lastIssuesCount = issuesList.items.Count;
         }
 
         Tokens.dictionary.TryRemove(cancellationTokenSource, out _);

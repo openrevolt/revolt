@@ -20,7 +20,7 @@ public sealed partial class Sniffer {
     private readonly ConcurrentDictionary<FourTuple, (ConcurrentDictionary<uint, byte>, ConcurrentDictionary<uint, byte>)> sequenceTrackers
         = new ConcurrentDictionary<FourTuple, (ConcurrentDictionary<uint, byte>, ConcurrentDictionary<uint, byte>)>();
 
-    private readonly ConcurrentBag<FourTuple> zeroWindowEvent = new ConcurrentBag<FourTuple>();
+    private readonly ConcurrentQueue<FourTuple> zeroWindowEvent = new ConcurrentQueue<FourTuple>();
 
     public long packetLoss = 0;
     public long outOfOrder = 0;
@@ -60,7 +60,7 @@ public sealed partial class Sniffer {
         );
 
         AnalyzeSequenceNo(in segment, stream, count);
-        //CheckWindowSize(in segment, count);
+        CheckWindowSize(in segment, count);
         CheckProtocolViolation(in segment, count);
     }
 
@@ -136,17 +136,16 @@ public sealed partial class Sniffer {
     }
 
     private void CheckWindowSize(in Segment segment, StreamCount count) {
+        if ((segment.flags & RST_MASK) == RST_MASK) return;
         if (segment.window > 0) return;
-
         if (zeroWindowEvent.Contains(segment.fourTuple)) return;
 
-        if (zeroWindowEvent.Count > 512) {
-            zeroWindowEvent.Take(1);
-        }
-        zeroWindowEvent.Append(segment.fourTuple);
+        while (zeroWindowEvent.Count > 512 && zeroWindowEvent.TryDequeue(out _)) { }
+
+        zeroWindowEvent.Enqueue(segment.fourTuple);
 
         if (segment.fourTuple.sourceIP.isIPv6) {
-            issuesList.Add(new SniffIssuesItem(1, $"Zero window size: [{segment.fourTuple.sourceIP}]:{segment.fourTuple.sourcePort} -> [{segment.fourTuple.destinationIP}]:{segment.fourTuple.destinationPort}"));
+            issuesList.Add(new SniffIssuesItem(1, $"Zero window size: [{segment.fourTuple.sourceIP}]:{segment.fourTuple.sourcePort} -> [{segment.fourTuple.destinationIP}]:{segment.fourTuple.diestinationPort}"));
         }
         else {
             issuesList.Add(new SniffIssuesItem(1, $"Zero window size: {segment.fourTuple.sourceIP}:{segment.fourTuple.sourcePort} -> {segment.fourTuple.destinationIP}:{segment.fourTuple.destinationPort}"));
