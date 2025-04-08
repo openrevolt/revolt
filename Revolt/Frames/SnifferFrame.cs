@@ -39,8 +39,6 @@ public class SnifferFrame : Tui.Frame {
     private CancellationToken cancellationToken;
 
     private ICaptureDevice captureDevice;
-    private bool   writePCapFile    = false;
-    private string pCapFilename = null;
 
     private Sniffer sniffer;
     
@@ -1144,9 +1142,6 @@ public class SnifferFrame : Tui.Frame {
         dialog.okButton.action = () => {
             captureDevice = dialog.devices[dialog.rangeSelectBox.index];
 
-            writePCapFile = dialog.writeFileToggle.Value;
-            pCapFilename  = dialog.pCapFilenameTextbox.Value;
-
             dialog.Close();
 
             try {
@@ -1184,11 +1179,6 @@ public class SnifferFrame : Tui.Frame {
         };
 
         dialog.Show(true);
-
-        dialog.writeFileToggle.Value = writePCapFile;
-        dialog.pCapFilenameTextbox.Value = String.IsNullOrEmpty(pCapFilename) ? string.Empty : pCapFilename;
-
-        dialog.writeFileToggle.action();
     }
 
     private void StopDialog() {
@@ -1214,8 +1204,6 @@ public class SnifferFrame : Tui.Frame {
 
 file sealed class StartDialog : Tui.DialogBox {
     public SelectBox rangeSelectBox;
-    public Toggle writeFileToggle;
-    public Textbox pCapFilenameTextbox;
 
     public List<ILiveDevice> devices;
 
@@ -1247,16 +1235,7 @@ file sealed class StartDialog : Tui.DialogBox {
             placeholder = "no nic found"
         };
 
-        writeFileToggle = new Tui.Toggle(this, "Write PCAP file");
-        writeFileToggle.action = WriteFileToggle_OnToggle;
-
-        pCapFilenameTextbox = new Tui.Textbox(this) {
-            placeholder = "PCAP filename",
-            backColor = Glyphs.DIALOG_COLOR
-        };
-
         elements.Add(rangeSelectBox);
-        elements.Add(writeFileToggle);
 
         defaultElement = rangeSelectBox;
     }
@@ -1278,19 +1257,10 @@ file sealed class StartDialog : Tui.DialogBox {
         rangeSelectBox.right = Renderer.LastWidth - width - left + 2;
         rangeSelectBox.top = top++ - 1;
 
-        for (int i = 0; i < 5; i++) {
+        for (int i = 0; i < 3; i++) {
             Ansi.SetCursorPosition(left, top + i);
             Ansi.Write(blank);
         }
-
-        writeFileToggle.left = left;
-        writeFileToggle.top = top;
-
-        pCapFilenameTextbox.left = left + 20;
-        pCapFilenameTextbox.right = Renderer.LastWidth - width - left + 2;
-        pCapFilenameTextbox.top = top;
-
-        top += 2;
 
         okButton.left = left + (width - 20) / 2;
         okButton.top = top;
@@ -1334,18 +1304,6 @@ file sealed class StartDialog : Tui.DialogBox {
         default:
             return base.HandleKey(key);
         }
-    }
-
-    private void WriteFileToggle_OnToggle() {
-        if (writeFileToggle.Value) {
-            if (elements.Contains(pCapFilenameTextbox)) return;
-            elements.Add(pCapFilenameTextbox);
-        }
-        else {
-            if (!elements.Contains(pCapFilenameTextbox)) return;
-            elements.Remove(pCapFilenameTextbox);
-        }
-        Draw();
     }
 
     public override void Close() {
